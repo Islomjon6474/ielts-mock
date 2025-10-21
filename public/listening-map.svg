@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 600" width="500" height="600">
+  <!-- Background -->
+  <rect width="500" height="600" fill="#ffffff"/>
+  
+  <!-- Top Section Buildings -->
+  <g id="top-section">
+    <!-- Staff Lounge -->
+    <rect x="150" y="50" width="80" height="60" fill="none" stroke="#000" stroke-width="2"/>
+    <text x="190" y="85" text-anchor="middle" font-size="10" font-family="Arial">Staff</text>
+    <text x="190" y="95" text-anchor="middle" font-size="10" font-family="Arial">Lounge</text>
+    
+    <!-- Art Room -->
+    <rect x="320" y="50" width="80" height="60" fill="none" stroke="#000" stroke-width="2"/>
+    <text x="360" y="85" text-anchor="middle" font-size="10" font-family="Arial">Art</text>
+    <text x="360" y="95" text-anchor="middle" font-size="10" font-family="Arial">Room</text>
+  </g>
+  
+  <!-- Middle Section - Accommodation -->
+  <g id="middle-section">
+    <!-- Girls' Accommodation -->
+    <rect x="50" y="130" width="70" height="50" fill="none" stroke="#000" stroke-width="2"/>
+    <text x="85" y="152" text-anchor="middle" font-size="9" font-family="Arial">Girls'</text>
+    <text x="85" y="165" text-anchor="middle" font-size="9" font-family="Arial">Accomm.</text>
+    
+    <!-- Boys' Accommodation -->
+    <rect x="50" y="190" width="70" height="50" fill="none" stroke="#000" stroke-width="2"/>
+    <text x="85" y="212" text-anchor="middle" font-size="9" font-family="Arial">Boys'</text>
+    <text x="85" y="225" text-anchor="middle" font-size="9" font-family="Arial">Accomm.</text>
+    
+    <!-- Craft Room -->
+    <rect x="380" y="190" width="70" height="50" fill="none" stroke="#000" stroke-width="2"/>
+    <text x="415" y="212" text-anchor="middle" font-size="9" font-family="Arial">Craft</text>
+    <text x="415" y="225" text-anchor="middle" font-size="9" font-family="Arial">Room</text>
+  </g>
+  
+  <!-- Garden (center) -->
+  <g id="garden">
+    <ellipse cx="250" cy="215" rx="80" ry="60" fill="#e8f5e9" stroke="#4caf50" stroke-width="2" stroke-dasharray="4,4"/>
+    <text x="250" y="220" text-anchor="middle" font-size="11" font-family="Arial" fill="#2e7d32">Garden</text>
+    
+    <!-- Trees around garden -->
+    <circle cx="180" cy="190" r="15" fill="#81c784"/>
+    <circle cx="210" cy="240" r="15" fill="#81c784"/>
+    <circle cx="290" cy="240" r="15" fill="#81c784"/>
+    <circle cx="320" cy="190" r="15" fill="#81c784"/>
+  </g>
+  
+  <!-- Bottom Section -->
+  <g id="bottom-section">
+    <!-- Main Hall -->
+    <rect x="100" y="320" width="300" height="120" fill="none" stroke="#000" stroke-width="3"/>
+    <text x="250" y="385" text-anchor="middle" font-size="14" font-family="Arial" font-weight="bold">Main Hall</text>
+    
+    <!-- Co-ordinator's Office -->
+    <rect x="100" y="450" width="140" height="70" fill="none" stroke="#000" stroke-width="2"/>
+    <text x="170" y="480" text-anchor="middle" font-size="10" font-family="Arial">Co-ordinator's</text>
+    <text x="170" y="492" text-anchor="middle" font-size="10" font-family="Arial">Office</text>
+    
+    <!-- Reception -->
+    <rect x="250" y="450" width="150" height="70" fill="none" stroke="#000" stroke-width="2"/>
+    <text x="325" y="490" text-anchor="middle" font-size="11" font-family="Arial">Reception</text>
+  </g>
+  
+  <!-- Question Position Markers (invisible rectangles for positioning) -->
+  <rect id="pos-18" x="100" y="70" width="100" height="30" fill="none" opacity="0"/>
+  <rect id="pos-19" x="320" y="70" width="100" height="30" fill="none" opacity="0"/>
+  <rect id="pos-16" x="200" y="200" width="100" height="30" fill="none" opacity="0"/>
+  <rect id="pos-20" x="360" y="260" width="100" height="30" fill="none" opacity="0"/>
+  <rect id="pos-17" x="40" y="260" width="100" height="30" fill="none" opacity="0"/>
+</svg>
