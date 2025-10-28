@@ -124,9 +124,10 @@ const SectionParts = ({ sectionId, onViewContent }: { sectionId: string, onViewC
     <List
       dataSource={parts}
       renderItem={(part: any) => (
-        <List.Item
+        <List.Item key={part.id}
           actions={[
             <Button
+                key={part.id}
               type="link"
               onClick={() => onViewContent(part.id)}
             >

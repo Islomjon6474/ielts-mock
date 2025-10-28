@@ -214,8 +214,9 @@ const QuestionGroupEditorPage = () => {
                 dataSource={['i', 'ii', 'iii', 'iv', 'v']}
                 renderItem={(item) => (
                   <List.Item
+                      key={item}
                     actions={[
-                      <Button type="link" danger icon={<DeleteOutlined />}>
+                      <Button key={item} type="link" danger icon={<DeleteOutlined />}>
                         Remove
                       </Button>
                     ]}

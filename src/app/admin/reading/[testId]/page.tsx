@@ -79,9 +79,10 @@ const TestPartsPage = () => {
           <List
             dataSource={test.parts}
             renderItem={(part) => (
-              <List.Item
+              <List.Item key={part.id}
                 actions={[
                   <Button
+                      key={part.id}
                     type="link"
                     icon={<EditOutlined />}
                     onClick={() => router.push(`/admin/reading/${testId}/part/${part.id}`)}

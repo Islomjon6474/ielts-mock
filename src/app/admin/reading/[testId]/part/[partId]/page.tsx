@@ -118,15 +118,17 @@ const PartEditorPage = () => {
               dataSource={part.questionGroups}
               renderItem={(group) => (
                 <List.Item
+                    key={group.id}
                   actions={[
                     <Button
+                        key={group.id + 'edit'}
                       type="link"
                       icon={<EditOutlined />}
                       onClick={() => router.push(`/admin/reading/${testId}/part/${partId}/group/${group.id}`)}
                     >
                       Edit Questions
                     </Button>,
-                    <Button type="link" danger icon={<DeleteOutlined />}>
+                    <Button key={group.id + 'delete'} type="link" danger icon={<DeleteOutlined />}>
                       Delete
                     </Button>,
                   ]}
