@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { Typography, Card, Row, Col, Button } from 'antd'
-import { BookOutlined, SoundOutlined, EditOutlined, MessageOutlined } from '@ant-design/icons'
+import { BookOutlined, SoundOutlined, EditOutlined, MessageOutlined, SettingOutlined } from '@ant-design/icons'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 
@@ -47,6 +47,17 @@ const HomePage = observer(() => {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto py-12 border-b">
         <div className="text-center mb-12">
+          <div className="flex justify-end mb-4">
+            <Button
+              type="primary"
+              icon={<SettingOutlined />}
+              onClick={() => router.push('/admin')}
+              size="large"
+              style={{ background: '#cf1322', borderColor: '#cf1322' }}
+            >
+              Admin Panel
+            </Button>
+          </div>
           <Title level={1} className="mb-4">
             IELTS Mock Assessment Platform
           </Title>
