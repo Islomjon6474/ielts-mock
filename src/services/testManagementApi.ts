@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const BASE_URL = 'http://localhost:8080/ielts-mock-main'
+const BASE_URL = 'https://mock.fleetoneld.com/ielts-mock-main'
 
 // Configure axios instance
 const api = axios.create({
@@ -9,6 +9,21 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 })
+
+// Add request interceptor for authentication token if needed
+api.interceptors.request.use(
+  (config) => {
+    // Add auth token here if available
+    // const token = localStorage.getItem('token')
+    // if (token) {
+    //   config.headers.Authorization = `Bearer ${token}`
+    // }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
 
 // Test Management APIs
 export const testManagementApi = {
@@ -22,6 +37,15 @@ export const testManagementApi = {
   getAllTests: async (page: number = 0, size: number = 10) => {
     const response = await api.get('/test-management/get-all', {
       params: { page, size },
+    })
+    return response.data
+  },
+
+  // Update test active status
+  updateTestActive: async (id: string, isActive: number) => {
+    const response = await api.post('/test-management/update-active', {
+      id,
+      isActive,
     })
     return response.data
   },
@@ -69,6 +93,16 @@ export const testManagementApi = {
     return response.data
   },
 
+  // Update question
+  updateQuestion: async (id: string, partId: string, answers: string[]) => {
+    const response = await api.put('/test-management/update-question', {
+      id,
+      partId,
+      answers,
+    })
+    return response.data
+  },
+
   // Delete question
   deleteQuestion: async (id: string) => {
     const response = await api.delete(`/test-management/delete-question/${id}`)
@@ -79,6 +113,49 @@ export const testManagementApi = {
   getAllQuestions: async (sectionId: string) => {
     const response = await api.get('/test-management/get-all-question', {
       params: { sectionId },
+    })
+    return response.data
+  },
+}
+
+// Mock Submission APIs (for user-side test taking)
+export const mockSubmissionApi = {
+  // Get all active tests
+  getAllTests: async (page: number = 0, size: number = 10) => {
+    const response = await api.get('/mock-submission/get-all-test', {
+      params: { page, size },
+    })
+    return response.data
+  },
+
+  // Get all sections for a test
+  getAllSections: async (testId: string) => {
+    const response = await api.get('/mock-submission/get-all-section', {
+      params: { testId },
+    })
+    return response.data
+  },
+
+  // Get all parts for a section
+  getAllParts: async (sectionId: string) => {
+    const response = await api.get('/mock-submission/get-all-part', {
+      params: { sectionId },
+    })
+    return response.data
+  },
+
+  // Get part question content
+  getPartQuestionContent: async (partId: string) => {
+    const response = await api.get('/mock-submission/get-part-question-content', {
+      params: { partId },
+    })
+    return response.data
+  },
+
+  // Get all listening audio for a test
+  getAllListeningAudio: async (testId: string) => {
+    const response = await api.get('/mock-submission/get-all-listening-audio', {
+      params: { testId },
     })
     return response.data
   },

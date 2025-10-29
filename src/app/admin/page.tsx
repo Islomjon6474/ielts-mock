@@ -1,32 +1,35 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Layout, Menu, Typography, Card, Button, Table, Space, message } from 'antd'
-import { PlusOutlined, BookOutlined, SoundOutlined, EditOutlined, SettingOutlined } from '@ant-design/icons'
+import { Layout, Typography, Card, Button, Row, Col, message, Modal, Form, Input, Tag, Pagination, Space } from 'antd'
+import { PlusOutlined, HomeOutlined, FileTextOutlined, CalendarOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
 import { testManagementApi } from '@/services/testManagementApi'
 
-const { Header, Sider, Content } = Layout
-const { Title, Paragraph } = Typography
+const { Header, Content } = Layout
+const { Title, Text } = Typography
 
 const AdminPage = () => {
   const router = useRouter()
-  const [selectedMenu, setSelectedMenu] = useState('reading')
-  const [tests, setTests] = useState([])
+  const [tests, setTests] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [createForm] = Form.useForm()
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalTests, setTotalTests] = useState(0)
+  const pageSize = 9 // 3x3 grid
 
-  // Fetch tests from API
   useEffect(() => {
-    if (selectedMenu === 'reading') {
-      fetchTests()
-    }
-  }, [selectedMenu])
+    fetchTests(currentPage - 1)
+  }, [currentPage])
 
-  const fetchTests = async () => {
+  const fetchTests = async (page: number) => {
     try {
       setLoading(true)
-      const response = await testManagementApi.getAllTests(0, 10)
-      setTests(response.content || response || [])
+      const response = await testManagementApi.getAllTests(page, pageSize)
+      const data = response.data || response
+      setTests(Array.isArray(data) ? data : data.content || [])
+      setTotalTests(data.totalCount || data.totalElements || 0)
     } catch (error) {
       console.error('Error fetching tests:', error)
       message.error('Failed to load tests')
@@ -35,154 +38,257 @@ const AdminPage = () => {
     }
   }
 
-  const handleDelete = async (testId: string) => {
-    // Note: Delete API is not in the provided list, but we can add it later
-    message.info('Delete functionality will be implemented when API is available')
-  }
+  const handleCreateTest = async () => {
+    try {
+      const values = await createForm.validateFields()
+      const response = await testManagementApi.createTest(values.name)
+      
+      // Response format: { success: boolean, data: UUID }
+      const testId = response.data
+      
+      if (!testId) {
+        throw new Error('Failed to create test - no ID returned')
+      }
 
-  const columns = [
-    {
-      title: 'Test Title',
-      dataIndex: 'name',
-      key: 'name',
-    },
-    {
-      title: 'Test ID',
-      dataIndex: 'id',
-      key: 'id',
-      ellipsis: true,
-    },
-    {
-      title: 'Created',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (date: string) => date ? new Date(date).toLocaleDateString() : '-',
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      render: (_: any, record: any) => (
-        <Space>
-          <Button 
-            type="link" 
-            onClick={() => router.push(`/admin/reading/test/${record.id}`)}
-          >
-            Manage
-          </Button>
-          <Button 
-            type="link" 
-            danger
-            onClick={() => handleDelete(record.id)}
-          >
-            Delete
-          </Button>
-        </Space>
-      ),
-    },
-  ]
-
-  const renderContent = () => {
-    switch (selectedMenu) {
-      case 'reading':
-        return (
-          <Card>
-            <div className="flex items-center justify-between mb-6">
-              <Title level={4} className="mb-0">Reading Tests</Title>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => router.push('/admin/reading/create')}
-              >
-                Create New Test
-              </Button>
-            </div>
-
-            <Table
-              columns={columns}
-              dataSource={tests}
-              rowKey="id"
-              loading={loading}
-              pagination={{ pageSize: 10 }}
-            />
-          </Card>
-        )
-      case 'listening':
-        return (
-          <Card>
-            <Title level={4}>Listening Tests</Title>
-            <Paragraph type="secondary">Coming soon...</Paragraph>
-          </Card>
-        )
-      case 'writing':
-        return (
-          <Card>
-            <Title level={4}>Writing Tasks</Title>
-            <Paragraph type="secondary">Coming soon...</Paragraph>
-          </Card>
-        )
-      case 'settings':
-        return (
-          <Card>
-            <Title level={4}>Settings</Title>
-            <Paragraph type="secondary">Application settings...</Paragraph>
-          </Card>
-        )
-      default:
-        return null
+      message.success('Test created successfully!')
+      setIsCreateModalOpen(false)
+      createForm.resetFields()
+      
+      // Navigate to the new test
+      router.push(`/admin/test/${testId}`)
+    } catch (error: any) {
+      console.error('Error creating test:', error)
+      if (error.errorFields) {
+        // Validation error
+        return
+      }
+      message.error('Failed to create test')
     }
   }
 
+  const handleTestClick = (testId: string) => {
+    router.push(`/admin/test/${testId}`)
+  }
+
   return (
-    <Layout className="min-h-screen" style={{ background: '#fff' }}>
+    <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
       {/* Header */}
-      <Header style={{ background: '#fff', borderBottom: '1px solid #f0f0f0', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Title level={3} style={{ margin: 0, color: '#cf1322' }}>IELTS Admin Panel</Title>
-        <Button type="primary" onClick={() => router.push('/')}>
+      <Header style={{ 
+        background: '#fff', 
+        borderBottom: '1px solid #f0f0f0', 
+        padding: '20px 48px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        height: 'auto',
+        lineHeight: 'normal'
+      }}>
+        <Title level={2} style={{ margin: 0, color: '#cf1322', lineHeight: '1.3' }}>
+          IELTS Admin Panel
+        </Title>
+        <Button 
+          icon={<HomeOutlined />}
+          onClick={() => router.push('/')}
+          size="large"
+        >
           Back to Home
         </Button>
       </Header>
 
-      <Layout style={{ background: '#fff' }}>
-        {/* Sidebar */}
-        <Sider width={250} style={{ background: '#fff', borderRight: '1px solid #f0f0f0' }}>
-          <Menu
-            mode="inline"
-            selectedKeys={[selectedMenu]}
-            style={{ height: '100%', borderRight: 0, background: '#fff' }}
-            items={[
-              {
-                key: 'reading',
-                icon: <BookOutlined />,
-                label: 'Reading Tests',
-                onClick: () => setSelectedMenu('reading'),
-              },
-              {
-                key: 'listening',
-                icon: <SoundOutlined />,
-                label: 'Listening Tests',
-                onClick: () => setSelectedMenu('listening'),
-              },
-              {
-                key: 'writing',
-                icon: <EditOutlined />,
-                label: 'Writing Tasks',
-                onClick: () => setSelectedMenu('writing'),
-              },
-              {
-                key: 'settings',
-                icon: <SettingOutlined />,
-                label: 'Settings',
-                onClick: () => setSelectedMenu('settings'),
-              },
-            ]}
-          />
-        </Sider>
+      <Content style={{ padding: '48px', background: '#f5f5f5', minHeight: 'calc(100vh - 64px)' }}>
+        <div className="max-w-7xl mx-auto">
+          {/* Page Title and Create Button */}
+          <div className="text-center mb-12">
+            <Title level={2} style={{ marginBottom: '8px', fontSize: '32px', fontWeight: 700 }}>
+              Available Mock Examinations
+            </Title>
+            <Text type="secondary" style={{ fontSize: '16px' }}>
+              Practice with realistic IELTS mock exams from your test library
+            </Text>
+            <div className="mt-6">
+              <Button
+                type="primary"
+                size="large"
+                icon={<PlusOutlined />}
+                onClick={() => setIsCreateModalOpen(true)}
+                style={{ 
+                  background: '#1677ff',
+                  borderColor: '#1677ff',
+                  height: 48,
+                  paddingLeft: 32,
+                  paddingRight: 32,
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: 500
+                }}
+              >
+                Create New Test
+              </Button>
+            </div>
+          </div>
 
-        {/* Main Content */}
-        <Content style={{ padding: '24px', background: '#f5f5f5' }}>
-          {renderContent()}
-        </Content>
-      </Layout>
+          {/* Test Cards Grid - 3 per row */}
+          <Row gutter={[24, 24]}>
+            {tests.map((test) => (
+              <Col xs={24} sm={12} lg={8} key={test.id}>
+                <Card
+                  hoverable
+                  style={{ 
+                    borderRadius: '12px',
+                    border: '1px solid #e8e8e8',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                    height: '100%'
+                  }}
+                  bodyStyle={{ 
+                    padding: '20px'
+                  }}
+                  className="test-card"
+                >
+                  {/* Header: Title and Status */}
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'flex-start',
+                    marginBottom: '20px'
+                  }}>
+                    <Title 
+                      level={4} 
+                      style={{ 
+                        margin: 0,
+                        fontSize: '18px',
+                        fontWeight: 600,
+                        flex: 1,
+                        paddingRight: '12px'
+                      }}
+                      ellipsis={{ rows: 1 }}
+                    >
+                      {test.name}
+                    </Title>
+                    <Tag 
+                      color={test.isActive === 1 ? 'success' : 'default'}
+                      style={{ 
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: 500,
+                        padding: '2px 8px',
+                        margin: 0
+                      }}
+                    >
+                      {test.isActive === 1 ? 'Active' : 'Inactive'}
+                    </Tag>
+                  </div>
+
+                  {/* Metadata */}
+                  <Space direction="vertical" size={10} style={{ width: '100%', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FileTextOutlined style={{ color: '#8c8c8c', fontSize: '14px' }} />
+                      <Text type="secondary" style={{ fontSize: '14px' }}>
+                        Available Tests: 3 sections
+                      </Text>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <CalendarOutlined style={{ color: '#8c8c8c', fontSize: '14px' }} />
+                      <Text style={{ fontSize: '14px', color: '#52c41a', fontWeight: 500 }}>
+                        Created {test.createdDate ? new Date(test.createdDate).toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric', 
+                          year: 'numeric' 
+                        }) : 'N/A'}
+                      </Text>
+                    </div>
+                  </Space>
+
+                  {/* Footer: Price and Button */}
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    paddingTop: '16px',
+                    borderTop: '1px solid #f0f0f0'
+                  }}>
+                    <Text strong style={{ fontSize: '18px', color: '#52c41a' }}>
+                      Admin
+                    </Text>
+                    <Button 
+                      type="primary"
+                      onClick={() => handleTestClick(test.id)}
+                      style={{
+                        borderRadius: '6px',
+                        fontWeight: 500,
+                        height: '36px',
+                        paddingLeft: '20px',
+                        paddingRight: '20px'
+                      }}
+                    >
+                      View Details →
+                    </Button>
+                  </div>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+
+          {/* Pagination */}
+          {totalTests > pageSize && (
+            <div className="flex justify-center mt-8">
+              <Pagination
+                current={currentPage}
+                total={totalTests}
+                pageSize={pageSize}
+                onChange={setCurrentPage}
+                showSizeChanger={false}
+              />
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!loading && tests.length === 0 && (
+            <Card className="text-center py-12">
+              <Title level={4} type="secondary">No tests yet</Title>
+              <Text type="secondary">Create your first test to get started</Text>
+              <div className="mt-4">
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => setIsCreateModalOpen(true)}
+                >
+                  Create Test
+                </Button>
+              </div>
+            </Card>
+          )}
+        </div>
+      </Content>
+
+      {/* Create Test Modal */}
+      <Modal
+        title="Create New Test"
+        open={isCreateModalOpen}
+        onOk={handleCreateTest}
+        onCancel={() => {
+          setIsCreateModalOpen(false)
+          createForm.resetFields()
+        }}
+        okText="Create"
+        cancelText="Cancel"
+      >
+        <Form
+          form={createForm}
+          layout="vertical"
+          className="mt-4"
+        >
+          <Form.Item
+            label="Test Name"
+            name="name"
+            rules={[{ required: true, message: 'Please enter test name' }]}
+          >
+            <Input 
+              placeholder="e.g., IELTS Practice Test 1" 
+              size="large"
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </Layout>
   )
 }
