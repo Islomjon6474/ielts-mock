@@ -6,9 +6,12 @@ import { PlayCircleOutlined } from '@ant-design/icons'
 interface AudioInstructionModalProps {
   visible: boolean
   onStart: () => void
+  loading?: boolean
+  ready?: boolean
+  error?: string | null
 }
 
-const AudioInstructionModal = ({ visible, onStart }: AudioInstructionModalProps) => {
+const AudioInstructionModal = ({ visible, onStart, loading, ready, error }: AudioInstructionModalProps) => {
   return (
     <Modal
       open={visible}
@@ -44,9 +47,15 @@ const AudioInstructionModal = ({ visible, onStart }: AudioInstructionModalProps)
           You will be listening to an audio clip during this test. You will not be permitted to pause or rewind the audio while answering the questions.
         </p>
 
-        <p className="text-sm text-gray-600 mb-6">
-          To continue, click Play
-        </p>
+        {error ? (
+          <p className="text-sm text-red-600 mb-6">{error}</p>
+        ) : loading ? (
+          <p className="text-sm text-gray-600 mb-6">Preparing audio files…</p>
+        ) : ready ? (
+          <p className="text-sm text-gray-600 mb-6">All audios are ready. Click Play to start.</p>
+        ) : (
+          <p className="text-sm text-gray-600 mb-6">Preparing audio files…</p>
+        )}
 
         {/* Play Button */}
         <Button
@@ -54,6 +63,7 @@ const AudioInstructionModal = ({ visible, onStart }: AudioInstructionModalProps)
           size="large"
           icon={<PlayCircleOutlined />}
           onClick={onStart}
+          disabled={!ready}
           className="bg-gray-800 hover:bg-gray-700 px-8 py-2 h-auto text-base"
         >
           Play

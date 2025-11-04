@@ -36,13 +36,14 @@ const MultipleChoiceQuestion = observer(({ question, questionNumber }: MultipleC
             value={answer}
             onChange={(checkedValues) => handleChange(checkedValues as string[])}
             className="w-full"
+            disabled={readingStore.isPreviewMode}
           >
             <div className="space-y-3">
               {question.options?.map((option, index) => (
                 <div key={index} className="block">
                   <Checkbox
                     value={option}
-                    disabled={!answer.includes(option) && answer.length >= maxAnswers}
+                    disabled={readingStore.isPreviewMode || (!answer.includes(option) && answer.length >= maxAnswers)}
                     className="whitespace-normal"
                   >
                     <span className="ml-2">{option}</span>

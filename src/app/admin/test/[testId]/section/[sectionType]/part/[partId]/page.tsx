@@ -5,6 +5,8 @@ import { Layout, Typography, Tabs, Button, Form, Input, message, Spin, Space, Ca
 import { ArrowLeftOutlined, SaveOutlined, PlusOutlined } from '@ant-design/icons'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { testManagementApi } from '@/services/testManagementApi'
+import { safeMultiParseJson, normalizeArrayMaybeStringOrObject } from '@/utils/json'
+import { AdminPartContent, AdminQuestionGroup, AdminQuestion, PersistedPartContentEnvelope } from '@/types/testContent'
 import { QuestionGroupEditor } from '@/components/admin/questions'
 import { ImageUpload } from '@/components/admin/ImageUpload'
 import { AudioUpload } from '@/components/admin/AudioUpload'
@@ -28,6 +30,7 @@ const PartEditorPage = () => {
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('content')
   const [questionGroupCount, setQuestionGroupCount] = useState(0)
+  const [loadedData, setLoadedData] = useState<AdminPartContent | null>(null)
 
   useEffect(() => {
     if (partId) {
@@ -35,27 +38,109 @@ const PartEditorPage = () => {
     }
   }, [partId])
 
+  // Effect to set form values after question groups are rendered
+  useEffect(() => {
+    if (loadedData && questionGroupCount > 0) {
+      console.log('📝 Setting form values now that components are rendered')
+      form.setFieldsValue(loadedData)
+      console.log(`✅ Form populated with ${questionGroupCount} question groups`)
+      setLoadedData(null) // Clear to prevent re-setting
+    }
+  }, [questionGroupCount, loadedData, form])
+
   const fetchPartContent = async () => {
     try {
       setLoading(true)
       const response = await testManagementApi.getPartQuestionContent(partId)
-      const content = response.data?.content || response.content
       
-      if (content) {
-        try {
-          const parsedContent = JSON.parse(content)
-          form.setFieldsValue(parsedContent)
-          
-          // Count question groups
-          const groups = parsedContent.questionGroups || []
-          setQuestionGroupCount(groups.length)
-        } catch (e) {
-          console.error('Failed to parse content:', e)
-        }
+      console.log('Raw API response:', response)
+      
+      // Extract content from response
+      // Backend format: { success: true, data: { content: "JSON string" } }
+      const contentString = response.data?.content || response.content || null
+      
+      console.log('Content string:', contentString)
+      
+      if (!contentString) {
+        console.log('No content found for this part')
+        setLoading(false)
+        return
       }
+      
+      const parsedContent = safeMultiParseJson<PersistedPartContentEnvelope>(contentString, 10) as PersistedPartContentEnvelope
+      
+      console.log('Parsed content structure:', parsedContent)
+      
+      // Check if content has admin/user structure (new format)
+      let dataToLoad: AdminPartContent | string | null
+      if (parsedContent && parsedContent.admin !== undefined) {
+        // New format: admin may be object or string
+        dataToLoad = safeMultiParseJson<AdminPartContent>(parsedContent.admin, 10)
+        console.log('✅ Loading admin format (with answers)')
+      } else if (parsedContent && parsedContent.questionGroups !== undefined) {
+        // Old format: direct object with questionGroups (may be stringified)
+        dataToLoad = safeMultiParseJson<AdminPartContent>(parsedContent as any, 10)
+        console.log('⚠️ Loading old format (no admin/user split)')
+      } else {
+        // Fallback: try to parse once more if it's a string
+        dataToLoad = safeMultiParseJson<AdminPartContent>(parsedContent as any, 10)
+        console.warn('⚠️ Unknown content format, using as-is after parse attempt')
+      }
+
+      // If somehow still a string, parse again (deep legacy cases)
+      for (let i = 0; i < 5 && typeof dataToLoad === 'string'; i++) {
+        console.warn('dataToLoad is still string, parsing again (iteration', i + 1, ')...')
+        dataToLoad = safeMultiParseJson(dataToLoad, 10)
+      }
+      // If root is an array, assume it's actually questionGroups array
+      if (Array.isArray(dataToLoad)) {
+        dataToLoad = { questionGroups: dataToLoad }
+      }
+      console.log('Type of dataToLoad:', typeof dataToLoad)
+      
+      // Normalize questionGroups which may be a string or object map
+      const rawGroups = (dataToLoad as AdminPartContent | null)?.questionGroups
+      let normalizedGroups: AdminQuestionGroup[] = normalizeArrayMaybeStringOrObject<AdminQuestionGroup>(rawGroups)
+      
+
+      // Normalize nested questions arrays too (they might be strings)
+      normalizedGroups = normalizedGroups.map((g) => {
+        const ng: AdminQuestionGroup = { ...g }
+        ng.questions = normalizeArrayMaybeStringOrObject<AdminQuestion>(ng.questions)
+        return ng
+      })
+
+      // If we successfully normalized, replace in dataToLoad
+      if (normalizedGroups.length > 0) {
+        const base: AdminPartContent = (typeof dataToLoad === 'object' && dataToLoad) ? (dataToLoad as AdminPartContent) : {}
+        dataToLoad = { ...base, questionGroups: normalizedGroups }
+      }
+
+      // dataToLoad = JSON.parse(dataToLoad)
+
+      console.log('Data to load into form (normalized):', dataToLoad, (dataToLoad as any)?.questionGroups)
+
+      // Count question groups and store data
+      const groups = Array.isArray((dataToLoad as AdminPartContent | null)?.questionGroups)
+        ? (dataToLoad as AdminPartContent).questionGroups as AdminQuestionGroup[]
+        : []
+      console.log(`Found ${groups.length} question groups in data`)
+      
+      if (groups.length > 0) {
+        // Store data and set count - useEffect will populate form after render
+        if (typeof dataToLoad === 'object' && dataToLoad) {
+          setLoadedData(dataToLoad as AdminPartContent)
+        } else {
+          console.warn('Normalized groups exist but dataToLoad is not an object; skipping setLoadedData')
+        }
+        setQuestionGroupCount(groups.length)
+      } else {
+        console.warn('No question groups found in data')
+      }
+      
     } catch (error) {
-      console.error('Error fetching part content:', error)
-      // Not an error if content doesn't exist yet
+      console.error('❌ Error fetching part content:', error)
+      // Not an error if content doesn't exist yet (first time creating)
     } finally {
       setLoading(false)
     }
@@ -66,11 +151,16 @@ const PartEditorPage = () => {
       setSaving(true)
       const values = await form.validateFields()
       
-      // Remove answers from content before saving
-      const contentWithoutAnswers = removeAnswersFromContent(values)
+      // Save BOTH formats:
+      // 1. Admin format (with answers) for re-editing
+      // 2. User format (without answers) for preview/testing
+      const contentToSave = {
+        admin: values,  // Keep everything including answers for editing
+        user: removeAnswersFromContent(values)  // Without answers for user-side
+      }
       
-      // Save content without answers (for user-side)
-      await testManagementApi.savePartQuestionContent(partId, JSON.stringify(contentWithoutAnswers))
+      // Note: API function already does JSON.stringify, so pass the object directly
+      await testManagementApi.savePartQuestionContent(partId, contentToSave)
       
       message.success('Content saved successfully!')
     } catch (error: any) {
@@ -330,14 +420,8 @@ const PartEditorPage = () => {
     },
   ]
 
-  // Add Listening Audio tab only for listening section
-  if (sectionType.toLowerCase() === 'listening') {
-    tabs.push({
-      key: 'audio',
-      label: 'Listening Audio',
-      children: renderListeningAudioTab(),
-    })
-  }
+  // Audio upload moved to section level for listening
+  // No longer needed at part level
 
   tabs.push({
     key: 'answers',

@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Layout, Typography, Card, Button, Row, Col, message, Modal, Form, Input, Tag, Pagination, Space } from 'antd'
-import { PlusOutlined, HomeOutlined, FileTextOutlined, CalendarOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons'
+import { Layout, Typography, Card, Button, Row, Col, message, Modal, Form, Input, Tag, Pagination, Space, Skeleton } from 'antd'
+import { PlusOutlined, HomeOutlined, FileTextOutlined, CalendarOutlined, CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
 import { testManagementApi } from '@/services/testManagementApi'
 
@@ -17,19 +17,28 @@ const AdminPage = () => {
   const [createForm] = Form.useForm()
   const [currentPage, setCurrentPage] = useState(1)
   const [totalTests, setTotalTests] = useState(0)
-  const pageSize = 9 // 3x3 grid
+  const [pageSize, setPageSize] = useState(9) // 3x3 grid
 
   useEffect(() => {
     fetchTests(currentPage - 1)
-  }, [currentPage])
+  }, [currentPage, pageSize])
 
   const fetchTests = async (page: number) => {
     try {
       setLoading(true)
       const response = await testManagementApi.getAllTests(page, pageSize)
-      const data = response.data || response
-      setTests(Array.isArray(data) ? data : data.content || [])
-      setTotalTests(data.totalCount || data.totalElements || 0)
+      
+      console.log('API Response:', response)
+      
+      // Response format: { success: true, data: [tests], totalCount: X }
+      const tests = response.data || []
+      const total = response.totalCount || 0
+      
+      console.log('Tests:', tests)
+      console.log('Total Count:', total)
+      
+      setTests(tests)
+      setTotalTests(total)
     } catch (error) {
       console.error('Error fetching tests:', error)
       message.error('Failed to load tests')
@@ -95,9 +104,20 @@ const AdminPage = () => {
         </Button>
       </Header>
 
-      <Content style={{ padding: '48px', background: '#f5f5f5', minHeight: 'calc(100vh - 64px)' }}>
-        <div className="max-w-7xl mx-auto">
-          {/* Page Title and Create Button */}
+      <Content style={{ 
+        padding: '48px', 
+        background: '#f5f5f5', 
+        minHeight: 'calc(100vh - 64px)',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        <div className="max-w-7xl mx-auto" style={{ 
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          width: '100%'
+        }}>
+          {/* Page Title and Create Button - Only show button when tests exist */}
           <div className="text-center mb-12">
             <Title level={2} style={{ marginBottom: '8px', fontSize: '32px', fontWeight: 700 }}>
               Available Mock Examinations
@@ -105,31 +125,47 @@ const AdminPage = () => {
             <Text type="secondary" style={{ fontSize: '16px' }}>
               Practice with realistic IELTS mock exams from your test library
             </Text>
-            <div className="mt-6">
-              <Button
-                type="primary"
-                size="large"
-                icon={<PlusOutlined />}
-                onClick={() => setIsCreateModalOpen(true)}
-                style={{ 
-                  background: '#1677ff',
-                  borderColor: '#1677ff',
-                  height: 48,
-                  paddingLeft: 32,
-                  paddingRight: 32,
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  fontWeight: 500
-                }}
-              >
-                Create New Test
-              </Button>
-            </div>
+            {!loading && tests.length > 0 && (
+              <div className="mt-6">
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<PlusOutlined />}
+                  onClick={() => setIsCreateModalOpen(true)}
+                  style={{ 
+                    background: '#1677ff',
+                    borderColor: '#1677ff',
+                    height: 48,
+                    paddingLeft: 32,
+                    paddingRight: 32,
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: 500
+                  }}
+                >
+                  Create New Test
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Test Cards Grid - 3 per row */}
-          <Row gutter={[24, 24]}>
-            {tests.map((test) => (
+          <div style={{ flex: 1, marginBottom: '24px' }}>
+            <Row gutter={[24, 24]}>
+              {loading ? (
+                // Loading skeleton - show minimum of 6 cards for better UX
+                Array.from({ length: Math.min(pageSize, 6) }).map((_, index) => (
+                  <Col xs={24} sm={12} lg={8} key={`skeleton-${index}`}>
+                    <Card style={{ 
+                      borderRadius: '12px',
+                      height: '280px'
+                    }}>
+                      <Skeleton active paragraph={{ rows: 4 }} />
+                    </Card>
+                  </Col>
+                ))
+              ) : (
+                tests.map((test) => (
               <Col xs={24} sm={12} lg={8} key={test.id}>
                 <Card
                   hoverable
@@ -198,63 +234,128 @@ const AdminPage = () => {
                     </div>
                   </Space>
 
-                  {/* Footer: Price and Button */}
+                  {/* Footer: Buttons */}
                   <div style={{ 
                     display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
+                    gap: '12px',
                     paddingTop: '16px',
                     borderTop: '1px solid #f0f0f0'
                   }}>
-                    <Text strong style={{ fontSize: '18px', color: '#52c41a' }}>
-                      Admin
-                    </Text>
+                    <Button 
+                      onClick={() => router.push(`/admin/reading/preview/${test.id}`)}
+                      style={{
+                        flex: 1,
+                        borderRadius: '6px',
+                        fontWeight: 500,
+                        height: '36px'
+                      }}
+                    >
+                      Preview
+                    </Button>
                     <Button 
                       type="primary"
                       onClick={() => handleTestClick(test.id)}
                       style={{
+                        flex: 1,
                         borderRadius: '6px',
                         fontWeight: 500,
-                        height: '36px',
-                        paddingLeft: '20px',
-                        paddingRight: '20px'
+                        height: '36px'
                       }}
                     >
-                      View Details →
+                      Manage →
                     </Button>
                   </div>
                 </Card>
               </Col>
-            ))}
-          </Row>
+            ))
+            )}
+            </Row>
+          </div>
 
           {/* Pagination */}
-          {totalTests > pageSize && (
-            <div className="flex justify-center mt-8">
+          {!loading && tests.length > 0 && (
+            <div style={{ 
+              marginTop: 'auto',
+              padding: '24px',
+              background: '#fff',
+              borderRadius: '8px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '16px'
+            }}>
+              <Text type="secondary" style={{ fontSize: '14px' }}>
+                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalTests)} of {totalTests} tests
+              </Text>
               <Pagination
                 current={currentPage}
                 total={totalTests}
                 pageSize={pageSize}
-                onChange={setCurrentPage}
-                showSizeChanger={false}
+                onChange={(page, newPageSize) => {
+                  console.log('Page changed:', page, 'New page size:', newPageSize)
+                  if (newPageSize && newPageSize !== pageSize) {
+                    // Page size changed
+                    setPageSize(newPageSize)
+                    setCurrentPage(1) // Reset to first page when page size changes
+                  } else {
+                    // Just page changed
+                    setCurrentPage(page)
+                  }
+                }}
+                showSizeChanger
+                showTotal={(total, range) => `${range[0]}-${range[1]} of ${total}`}
+                pageSizeOptions={['6', '9', '12', '18', '24']}
+                style={{ display: 'flex', alignItems: 'center' }}
               />
             </div>
           )}
 
           {/* Empty State */}
           {!loading && tests.length === 0 && (
-            <Card className="text-center py-12">
-              <Title level={4} type="secondary">No tests yet</Title>
-              <Text type="secondary">Create your first test to get started</Text>
-              <div className="mt-4">
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={() => setIsCreateModalOpen(true)}
-                >
-                  Create Test
-                </Button>
+            <Card 
+              className="text-center" 
+              style={{ 
+                padding: '80px 40px',
+                borderRadius: '12px',
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <div style={{ 
+                fontSize: 64, 
+                color: '#d9d9d9', 
+                marginBottom: 24 
+              }}>
+                📝
               </div>
+              <Title level={3} style={{ marginBottom: 12 }}>
+                No tests yet
+              </Title>
+              <Text type="secondary" style={{ fontSize: '16px', display: 'block', marginBottom: 32 }}>
+                Create your first test to get started with your IELTS mock examinations
+              </Text>
+              <Button
+                type="primary"
+                size="large"
+                icon={<PlusOutlined />}
+                onClick={() => setIsCreateModalOpen(true)}
+                style={{ 
+                  background: '#1677ff',
+                  borderColor: '#1677ff',
+                  height: 48,
+                  paddingLeft: 32,
+                  paddingRight: 32,
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: 500
+                }}
+              >
+                Create New Test
+              </Button>
             </Card>
           )}
         </div>

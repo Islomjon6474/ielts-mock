@@ -2,9 +2,11 @@ import { makeAutoObservable } from 'mobx'
 
 export interface ListeningQuestion {
   id: number
-  type: 'FILL_IN_BLANK' | 'MULTIPLE_CHOICE' | 'MATCHING' | 'TABLE'
+  type: 'FILL_IN_BLANK' | 'MULTIPLE_CHOICE' | 'MATCHING' | 'TABLE' | 'IMAGE_INPUTS'
   text: string
   options?: string[]
+  // For IMAGE_INPUTS questions, we repeat imageUrl per question id; UI will render image once per imageUrl group
+  imageUrl?: string
 }
 
 export interface ListeningPart {
@@ -13,6 +15,7 @@ export interface ListeningPart {
   instruction: string
   questionRange: [number, number]
   audioUrl: string
+  audioFileId?: string
   questions: ListeningQuestion[]
 }
 
@@ -24,6 +27,9 @@ export class ListeningStore {
   isPlaying: boolean = false
   hasStarted: boolean = false
   audioProgress: number = 0
+  audioLoading: boolean = false
+  audioError: string | null = null
+  allAudioReady: boolean = false
 
   constructor() {
     makeAutoObservable(this)
@@ -31,6 +37,32 @@ export class ListeningStore {
 
   setParts(parts: ListeningPart[]) {
     this.parts = parts
+  }
+
+  setPartAudio(partId: number, url: string) {
+    const idx = this.parts.findIndex((p) => p.id === partId)
+    if (idx >= 0) {
+      this.parts[idx] = { ...this.parts[idx], audioUrl: url }
+    }
+  }
+
+  setPartAudioMeta(partId: number, url: string, fileId?: string) {
+    const idx = this.parts.findIndex((p) => p.id === partId)
+    if (idx >= 0) {
+      this.parts[idx] = { ...this.parts[idx], audioUrl: url, audioFileId: fileId }
+    }
+  }
+
+  setAudioLoading(loading: boolean) {
+    this.audioLoading = loading
+  }
+
+  setAudioError(err: string | null) {
+    this.audioError = err
+  }
+
+  setAllAudioReady(ready: boolean) {
+    this.allAudioReady = ready
   }
 
   setCurrentPart(partNumber: number) {

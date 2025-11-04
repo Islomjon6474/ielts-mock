@@ -1,0 +1,79 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { Card, Row, Col, Typography, Button, Spin, Empty } from 'antd'
+import { BookOutlined, SoundOutlined, EditOutlined } from '@ant-design/icons'
+import { mockSubmissionApi } from '@/services/testManagementApi'
+
+const { Title, Paragraph } = Typography
+
+export default function TestSectionsPage() {
+  const params = useParams()
+  const router = useRouter()
+  const testId = params?.testId as string
+  const [loading, setLoading] = useState(true)
+  const [sections, setSections] = useState<any[]>([])
+  const [testName, setTestName] = useState<string>('Test')
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true)
+        // Load sections for this test
+        const testsResp = await mockSubmissionApi.getAllTests(0, 100)
+        const tests = testsResp?.data || testsResp?.content || testsResp || []
+        const found = (Array.isArray(tests) ? tests : tests?.data || []).find((t: any) => (t.id || t.testId) == testId)
+        if (found) setTestName(found.name || found.title || `Test ${testId}`)
+
+        const sectionsResp = await mockSubmissionApi.getAllSections(testId)
+        const list = sectionsResp?.data || sectionsResp || []
+        setSections(list)
+      } finally {
+        setLoading(false)
+      }
+    }
+    if (testId) load()
+  }, [testId])
+
+  const go = (sectionType: string) => {
+    const lower = sectionType.toLowerCase()
+    if (lower === 'listening') router.push(`/test/${testId}/listening`)
+    else if (lower === 'reading') router.push(`/test/${testId}/reading`)
+    else if (lower === 'writing') router.push(`/test/${testId}/writing`)
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto py-12">
+        <Title level={2} className="mb-6">{testName}</Title>
+        {loading ? (
+          <div className="flex justify-center py-12"><Spin /></div>
+        ) : sections.length === 0 ? (
+          <Empty description="No sections available for this test" />
+        ) : (
+          <Row gutter={[24, 24]}>
+            {sections.map((s) => (
+              <Col xs={24} md={12} lg={8} key={s.id}>
+                <Card hoverable onClick={() => go(String(s.sectionType))}>
+                  <div className="flex items-center gap-3">
+                    {`${s.sectionType}`.toLowerCase() === 'listening' && <SoundOutlined className="text-2xl text-blue-500" />}
+                    {`${s.sectionType}`.toLowerCase() === 'reading' && <BookOutlined className="text-2xl text-green-600" />}
+                    {`${s.sectionType}`.toLowerCase() === 'writing' && <EditOutlined className="text-2xl text-purple-600" />}
+                    <div>
+                      <Title level={4} className="m-0">{String(s.sectionType)}</Title>
+                      <Paragraph className="m-0 text-gray-600">Start practicing this section</Paragraph>
+                    </div>
+                  </div>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        )}
+        <div className="mt-8">
+          <Button onClick={() => router.push('/')}>Back to tests</Button>
+        </div>
+      </div>
+    </div>
+  )
+}

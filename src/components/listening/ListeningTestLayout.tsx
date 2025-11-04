@@ -28,31 +28,28 @@ const ListeningTestLayout = observer(() => {
 
   // Play/pause audio based on isPlaying state
   useEffect(() => {
-    if (listeningStore.hasStarted && audioRef.current) {
+    if (listeningStore.hasStarted && listeningStore.allAudioReady && audioRef.current) {
       if (listeningStore.isPlaying) {
         audioRef.current.play()
       } else {
         audioRef.current.pause()
       }
     }
-  }, [listeningStore.isPlaying, listeningStore.hasStarted])
+  }, [listeningStore.isPlaying, listeningStore.hasStarted, listeningStore.allAudioReady])
 
   // Update audio source when part changes
   useEffect(() => {
     if (audioRef.current && currentPart?.audioUrl) {
       audioRef.current.src = currentPart.audioUrl
-      if (listeningStore.hasStarted && listeningStore.isPlaying) {
+      if (listeningStore.hasStarted && listeningStore.isPlaying && listeningStore.allAudioReady) {
         audioRef.current.play()
       }
     }
-  }, [currentPart?.audioUrl, listeningStore.hasStarted, listeningStore.isPlaying])
+  }, [currentPart?.audioUrl, listeningStore.hasStarted, listeningStore.isPlaying, listeningStore.allAudioReady])
 
-  // Check if parts are loaded
-  if (!listeningStore.parts || listeningStore.parts.length === 0) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>
-  }
-
+  // Handler functions - defined before conditional returns
   const handleStart = () => {
+    if (!listeningStore.allAudioReady) return
     setShowModal(false)
     listeningStore.setHasStarted(true)
     listeningStore.setIsPlaying(true)
@@ -81,6 +78,11 @@ const ListeningTestLayout = observer(() => {
   const handleModalConfirm = () => {
     setShowSubmitModal(false)
     router.push('/')
+  }
+
+  // Check if parts are loaded - conditional returns at the end
+  if (!listeningStore.parts || listeningStore.parts.length === 0) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>
   }
 
   if (!currentPart) {
@@ -115,9 +117,58 @@ const ListeningTestLayout = observer(() => {
 
       {/* Main Content */}
       <Content className="flex-1 overflow-y-auto bg-gray-200 flex justify-center py-6">
-        <div className="w-[70%] max-w-[1200px] bg-white px-8 py-6 shadow-lg overflow-x-auto">
+        <div className="w-full max-w-4xl bg-white p-8 rounded shadow">
           {/* Render questions based on part */}
-          <div>
+          {/* Dynamic generic renderer: if questions are provided, show them; otherwise fall back to legacy hardcoded UI */}
+          {Array.isArray(currentPart.questions) && currentPart.questions.length > 0 && (
+            <div className="space-y-4">
+              {currentPart.questions.map((q) => (
+              <div key={q.id} className="border-b pb-4">
+                <div className="text-sm text-gray-700 whitespace-pre-wrap mb-2">{q.text}</div>
+                {q.type === 'IMAGE_INPUTS' ? (
+                  <div className="flex items-start gap-4">
+                    {q.imageUrl && (
+                      <img src={q.imageUrl} alt={`Question ${q.id}`} className="max-w-sm rounded border" />
+                    )}
+                    <div>
+                      <Input
+                        value={(listeningStore.getAnswer(q.id) as string) || ''}
+                        onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
+                        placeholder={`${q.id}`}
+                        className="inline-block"
+                        style={{ width: '240px' }}
+                      />
+                    </div>
+                  </div>
+                ) : Array.isArray(q.options) && q.options.length > 0 ? (
+                  <div className="ml-2 space-y-1">
+                    {q.options.map((opt, idx) => (
+                      <label key={idx} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="radio"
+                          name={`q-${q.id}`}
+                          value={opt}
+                          checked={listeningStore.getAnswer(q.id) === opt}
+                          onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
+                        />
+                        {opt}
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <Input
+                    value={(listeningStore.getAnswer(q.id) as string) || ''}
+                    onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
+                    placeholder={`${q.id}`}
+                    className="inline-block text-center"
+                    style={{ width: '200px' }}
+                  />
+                )}
+              </div>
+            ))}
+            </div>
+          )}
+          <div style={{ display: Array.isArray(currentPart.questions) && currentPart.questions.length > 0 ? 'none' : 'block' }}>
             {/* Part 1: Fill in the blank questions */}
             {currentPart.id === 1 && (
               <div className="space-y-4">
@@ -621,7 +672,13 @@ const ListeningTestLayout = observer(() => {
       />
 
       {/* Audio Instruction Modal */}
-      <AudioInstructionModal visible={showModal} onStart={handleStart} />
+      <AudioInstructionModal
+        visible={showModal}
+        onStart={handleStart}
+        loading={listeningStore.audioLoading}
+        ready={listeningStore.allAudioReady}
+        error={listeningStore.audioError}
+      />
 
       {/* Submit Modal */}
       <SubmitModal visible={showSubmitModal} onClose={handleModalClose} onConfirm={handleModalConfirm} />

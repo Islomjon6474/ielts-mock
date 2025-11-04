@@ -5,6 +5,7 @@ import { Layout, Card, Button, Form, Input, Typography, message, Select, Divider
 import { ArrowLeftOutlined, SaveOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
 import { testManagementApi } from '@/services/testManagementApi'
+import { prepareDataForBackend } from '@/utils/transformTestData'
 
 const { Header, Content } = Layout
 const { Title, Text } = Typography
@@ -144,23 +145,47 @@ const SentenceCompletionQuestion = ({ groupPath, questionIndex, onRemove }: any)
 
 // Question component for Match Headings
 const MatchHeadingQuestion = ({ groupPath, questionIndex, onRemove }: any) => {
+  const [form] = Form.useForm()
+  
   return (
-    <Card size="small" className="mb-3" title={`Section ${questionIndex + 1}`} extra={
+    <Card size="small" className="mb-3" title={`Question ${questionIndex + 1}`} extra={
       <Button type="text" danger icon={<DeleteOutlined />} onClick={onRemove} />
     }>
       <Form.Item
-        label="Section Identifier"
-        name={[...groupPath, 'questions', questionIndex, 'sectionId']}
-        rules={[{ required: true }]}
+        label="Section Number"
+        name={[...groupPath, 'questions', questionIndex, 'sectionNumber']}
+        rules={[{ required: true, message: 'Please enter section number' }]}
+        initialValue={questionIndex + 14} 
       >
-        <Input placeholder="e.g., A, B, C" style={{ width: 100 }} />
+        <Input type="number" placeholder="e.g., 14, 15, 16" />
+      </Form.Item>
+      <Form.Item
+        label="Section Content"
+        name={[...groupPath, 'questions', questionIndex, 'content']}
+        rules={[{ required: true, message: 'Please enter section content' }]}
+        tooltip="This is the paragraph/section that will be matched to a heading"
+      >
+        <TextArea rows={4} placeholder="Enter the section content here..." />
+      </Form.Item>
+      <Divider orientation="left">Available Headings</Divider>
+      <Form.Item
+        label="Heading Options (one per line)"
+        name={[...groupPath, 'questions', questionIndex, 'headingOptions']}
+        rules={[{ required: true, message: 'Please enter heading options' }]}
+        tooltip="Enter all available heading options, one per line. These will be shown to students."
+      >
+        <TextArea 
+          rows={6} 
+          placeholder={`Example:\ni. How a concept from one field was applied\nii. Areas of doubt between experts\niii. The impact of driver behavior\niv. A proposal to take control from drivers\nv. How different countries dealt with traffic`}
+        />
       </Form.Item>
       <Form.Item
         label="Correct Heading"
         name={[...groupPath, 'questions', questionIndex, 'correctAnswer']}
-        rules={[{ required: true }]}
+        rules={[{ required: true, message: 'Please enter the correct heading' }]}
+        tooltip="Enter the exact heading that matches this section"
       >
-        <Input placeholder="e.g., i, ii, iii" style={{ width: 100 }} />
+        <TextArea rows={2} placeholder="e.g., How a concept from one field was applied" />
       </Form.Item>
     </Card>
   )
@@ -282,6 +307,10 @@ const CreateReadingTestPage = () => {
       setSaving(true)
       const values = await form.validateFields()
       
+      // Transform data to standard format
+      const transformedData = prepareDataForBackend(values)
+      console.log('Transformed data:', transformedData)
+      
       // Step 1: Create the test
       const testResponse = await testManagementApi.createTest(values.title)
       const testId = testResponse.id || testResponse.data?.id
@@ -296,13 +325,16 @@ const CreateReadingTestPage = () => {
       const sections = await testManagementApi.getAllSections(testId)
       
       if (sections && sections.length > 0) {
-        // Step 3: For each section, get parts and save content
-        for (const section of sections) {
+        // Step 3: For each section, save the structured data
+        for (let i = 0; i < sections.length && i < transformedData.parts.length; i++) {
+          const section = sections[i]
+          const partData = transformedData.parts[i]
+          
           const parts = await testManagementApi.getAllParts(section.id)
           
-          // Save the test content for each part
-          for (const part of parts) {
-            await testManagementApi.savePartQuestionContent(part.id, values)
+          // Save the transformed part data as JSON content
+          if (parts && parts.length > 0) {
+            await testManagementApi.savePartQuestionContent(parts[0].id, partData)
           }
         }
       }

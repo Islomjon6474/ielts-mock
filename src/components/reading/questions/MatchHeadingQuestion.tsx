@@ -32,6 +32,7 @@ const MatchHeadingQuestion = observer(({ question, questionNumber }: MatchHeadin
             value={answer}
             onChange={handleChange}
             options={headingOptions.map(h => ({ label: h, value: h }))}
+            disabled={readingStore.isPreviewMode}
           />
         </div>
       </div>

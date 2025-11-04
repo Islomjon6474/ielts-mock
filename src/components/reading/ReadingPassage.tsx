@@ -103,6 +103,17 @@ const ReadingPassage = observer(({ passage, sections, onHeadingDrop, getHeadingF
   }
 
   // Default passage view for other question types
+  // Handle undefined or empty passage
+  if (!passage) {
+    return (
+      <div className="p-6">
+        <div className="text-center text-gray-400 py-8">
+          No passage content available
+        </div>
+      </div>
+    )
+  }
+
   const paragraphs = passage.split('\n\n').filter(p => p.trim())
 
   return (

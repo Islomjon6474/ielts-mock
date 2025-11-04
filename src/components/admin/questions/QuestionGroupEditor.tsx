@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, Button, Select, Form, Input, Divider } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import { MultipleChoiceQuestion } from './MultipleChoiceQuestion'
@@ -7,6 +7,7 @@ import { SentenceCompletionQuestion } from './SentenceCompletionQuestion'
 import { MatchHeadingQuestion } from './MatchHeadingQuestion'
 import { ShortAnswerQuestion } from './ShortAnswerQuestion'
 import { questionTypes } from './index'
+import { ImageInputsQuestion } from './ImageInputsQuestion'
 import { ImageUpload } from '../ImageUpload'
 
 const { TextArea } = Input
@@ -31,6 +32,24 @@ export const QuestionGroupEditor = ({
   const [questionCount, setQuestionCount] = useState(0)
   const [selectedType, setSelectedType] = useState<string>('')
   const [questionRange, setQuestionRange] = useState(defaultQuestionRange || '')
+
+  // Sync local UI state from form values when data is programmatically loaded
+  useEffect(() => {
+    const type = form.getFieldValue([...groupPath, 'type'])
+    const range = form.getFieldValue([...groupPath, 'range'])
+    const questions = form.getFieldValue([...groupPath, 'questions']) || []
+
+    if (type && type !== selectedType) {
+      setSelectedType(type)
+    }
+    if (range && range !== questionRange) {
+      setQuestionRange(range)
+    }
+    if (Array.isArray(questions) && questions.length !== questionCount) {
+      setQuestionCount(questions.length)
+    }
+    // We deliberately include selectedType/questionRange/questionCount to avoid stale UI
+  }, [form, groupPath, selectedType, questionRange, questionCount])
 
   const addQuestion = () => {
     setQuestionCount(prev => prev + 1)
@@ -79,6 +98,8 @@ export const QuestionGroupEditor = ({
         return <MatchHeadingQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} />
       case 'SHORT_ANSWER':
         return <ShortAnswerQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} />
+      case 'IMAGE_INPUTS':
+        return <ImageInputsQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} />
       default:
         return null
     }
@@ -139,6 +160,21 @@ v. Conclusion and summary`}
           help="Upload an image to accompany this question group"
         >
           <ImageUpload label="Upload Image" />
+        </Form.Item>
+      )}
+
+      {/* When IMAGE_INPUTS is selected and imageId present, copy imageUrl into each question for preview/user */}
+      {selectedType === 'IMAGE_INPUTS' && (
+        <Form.Item shouldUpdate noStyle>
+          {() => {
+            const imageId = form.getFieldValue([...groupPath, 'imageId'])
+            const qs = form.getFieldValue([...groupPath, 'questions']) || []
+            if (imageId && Array.isArray(qs)) {
+              const withUrls = qs.map((q: any) => ({ ...q, imageUrl: `/api/file/download/${imageId}` }))
+              form.setFieldValue([...groupPath, 'questions'], withUrls)
+            }
+            return null
+          }}
         </Form.Item>
       )}
       

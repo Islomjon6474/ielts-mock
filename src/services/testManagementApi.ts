@@ -163,6 +163,15 @@ export const mockSubmissionApi = {
 
 // Listening Audio Management APIs
 export const listeningAudioApi = {
+  // Save listening audio (link uploaded file to test)
+  saveListeningAudio: async (testId: string, fileId: string) => {
+    const response = await api.post('/test-management/save-listening-audio', {
+      testId,
+      fileId,
+    })
+    return response.data
+  },
+
   // Get all listening audio for a test
   getAllListeningAudio: async (testId: string) => {
     const response = await api.get('/test-management/get-all-listening-audio', {

@@ -32,6 +32,7 @@ const TrueFalseQuestion = observer(({ question, questionNumber }: TrueFalseQuest
             value={answer}
             onChange={(e) => handleChange(e.target.value)}
             className="w-full"
+            disabled={readingStore.isPreviewMode}
           >
             <Space direction="vertical" className="w-full">
               <Radio value="TRUE">TRUE</Radio>

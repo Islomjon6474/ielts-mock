@@ -33,6 +33,7 @@ const FillInBlankQuestion = observer(({ question, questionNumber }: FillInBlankQ
             value={blankAnswer || ''}
             onChange={(e) => readingStore.setAnswer(blankNumber, e.target.value)}
             placeholder={blankNumber.toString()}
+            disabled={readingStore.isPreviewMode}
           />
         )
       }

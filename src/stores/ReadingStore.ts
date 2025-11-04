@@ -36,9 +36,14 @@ export class ReadingStore {
   currentQuestionIndex: number = 0
   answers: Map<number, string | string[]> = new Map()
   parts: Part[] = []
+  isPreviewMode: boolean = false
 
   constructor() {
     makeAutoObservable(this)
+  }
+
+  setPreviewMode(isPreview: boolean) {
+    this.isPreviewMode = isPreview
   }
 
   setCurrentPart(partNumber: number) {

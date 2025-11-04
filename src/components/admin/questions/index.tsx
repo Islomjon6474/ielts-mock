@@ -13,4 +13,5 @@ export const questionTypes = [
   { value: 'SENTENCE_COMPLETION', label: 'Sentence Completion' },
   { value: 'SUMMARY_COMPLETION', label: 'Summary Completion' },
   { value: 'SHORT_ANSWER', label: 'Short Answer Questions' },
+  { value: 'IMAGE_INPUTS', label: 'Image with Inputs (Listening)' },
 ]

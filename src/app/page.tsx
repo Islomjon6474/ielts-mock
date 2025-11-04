@@ -1,47 +1,41 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Typography, Card, Row, Col, Button } from 'antd'
-import { BookOutlined, SoundOutlined, EditOutlined, MessageOutlined, SettingOutlined } from '@ant-design/icons'
+import { Typography, Card, Row, Col, Button, Empty, Spin } from 'antd'
+import { FileTextOutlined, SettingOutlined } from '@ant-design/icons'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
+import { mockSubmissionApi } from '@/services/testManagementApi'
 
 const { Title, Paragraph } = Typography
 
 const HomePage = observer(() => {
   const { appStore } = useStore()
+  const [loading, setLoading] = useState(true)
+  const [tests, setTests] = useState<any[]>([])
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true)
+        const resp = await mockSubmissionApi.getAllTests(0, 20)
+        const list = resp?.data || resp?.content || resp || []
+        const arr = Array.isArray(list) ? list : (list?.data || [])
+        setTests(arr)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
   const router = useRouter()
 
-  const modules = [
-    {
-      title: 'Listening',
-      icon: <SoundOutlined className="text-4xl text-blue-500" />,
-      description: 'Practice your listening skills with authentic IELTS audio materials',
-      duration: '30 minutes',
-      path: '/listening',
-    },
-    {
-      title: 'Reading',
-      icon: <BookOutlined className="text-4xl text-green-500" />,
-      description: 'Improve your reading comprehension with real IELTS passages',
-      duration: '60 minutes',
-      path: '/reading' as string | undefined,
-    },
-    {
-      title: 'Writing',
-      icon: <EditOutlined className="text-4xl text-purple-500" />,
-      description: 'Master IELTS writing tasks with Task 1 and Task 2 practice',
-      duration: '60 minutes',
-      path: '/writing',
-    },
-    {
-      title: 'Speaking',
-      icon: <MessageOutlined className="text-4xl text-orange-500" />,
-      description: 'Prepare for the speaking test with structured practice sessions',
-      duration: '11-14 minutes',
-      path: undefined as string | undefined,
-    },
-  ]
+  const handleOpenTest = (test: any) => {
+    const id = test.id || test.testId || test?.uuid || test?.ID
+    if (!id) return
+    router.push(`/test/${id}`)
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -66,38 +60,27 @@ const HomePage = observer(() => {
           </Paragraph>
         </div>
 
-        <Row gutter={[24, 24]}>
-          {modules.map((module) => (
-            <Col xs={24} sm={12} lg={6} key={module.title}>
-              <Card
-                hoverable
-                className="h-full"
-                bodyStyle={{ padding: '24px' }}
-              >
-                <div className="text-center">
-                  <div className="mb-4">{module.icon}</div>
-                  <Title level={3} className="mb-2">
-                    {module.title}
-                  </Title>
-                  <Paragraph className="text-gray-600 mb-4">
-                    {module.description}
-                  </Paragraph>
-                  <div className="text-sm text-gray-500 mb-4">
-                    Duration: {module.duration}
+        {loading ? (
+          <div className="flex justify-center py-12"><Spin /></div>
+        ) : tests.length === 0 ? (
+          <Empty description="No tests available" />
+        ) : (
+          <Row gutter={[24, 24]}>
+            {tests.map((t) => (
+              <Col xs={24} sm={12} lg={8} key={t.id || t.testId}>
+                <Card hoverable onClick={() => handleOpenTest(t)}>
+                  <div className="flex items-center gap-3">
+                    <FileTextOutlined className="text-2xl" />
+                    <div>
+                      <Title level={4} className="m-0">{t.name || t.title || `Test ${t.id}`}</Title>
+                      <Paragraph className="m-0 text-gray-600">{t.description || 'Mock IELTS test'}</Paragraph>
+                    </div>
                   </div>
-                  <Button 
-                    type="primary" 
-                    block
-                    disabled={!module.path}
-                    onClick={() => module.path && router.push(module.path)}
-                  >
-                    {module.path ? 'Start Practice' : 'Coming Soon'}
-                  </Button>
-                </div>
-              </Card>
-            </Col>
-          ))}
-        </Row>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        )}
 
         <div className="mt-12 text-center">
           <Card>
