@@ -112,16 +112,25 @@ html {
 /* Test Card Hover Effects */
 .test-card {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  min-height: 280px;
 }
 
 .test-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12) !important;
-  border-color: #667eea !important;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+  border-color: #1677ff !important;
 }
 
 .test-card:active {
   transform: translateY(-2px);
+}
+
+/* Button hover effects for Start Test button */
+.test-card .ant-btn-primary:hover {
+  background: #0958d9 !important;
+  transform: translateX(2px);
+  transition: all 0.2s ease;
 }
 
 /* Paper Container Responsive Widths */

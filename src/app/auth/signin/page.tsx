@@ -17,14 +17,22 @@ const SignInPage = observer(() => {
 
   const onFinish = async (values: { username: string; password: string }) => {
     try {
-      await authStore.signIn(values)
+      const response = await authStore.signIn(values)
+      
+      // Wait for auth state to fully update
+      await new Promise(resolve => setTimeout(resolve, 150))
+      
+      // Log for debugging
+      console.log('🔐 Sign-in complete, user:', authStore.user)
+      console.log('🔐 Is admin:', authStore.isAdmin)
+      
       message.success('Successfully signed in!')
       
-      // Redirect based on role
+      // Use replace instead of push to force fresh mount
       if (authStore.isAdmin) {
-        router.push('/admin')
+        router.replace('/admin')
       } else {
-        router.push('/')
+        router.replace('/')
       }
     } catch (error: any) {
       message.error(authStore.error || 'Failed to sign in')

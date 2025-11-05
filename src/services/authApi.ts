@@ -74,11 +74,12 @@ export interface AuthResponse {
 }
 
 export interface UserDto {
-  id: string
+  id?: string
   firstName: string
   lastName: string
   username: string
   role: 'USER' | 'ADMIN'
+  roles?: string[]  // API returns roles array
 }
 
 // Helper function to extract token and user from various response formats
@@ -101,11 +102,30 @@ const parseAuthResponse = (responseData: any): { token: string; user: UserDto } 
     token = responseData.data.token
   }
 
+  // Helper to determine role from roles array or single role
+  const getRoleFromData = (data: any): 'ADMIN' | 'USER' => {
+    // Check if roles array contains ADMIN
+    if (data.roles && Array.isArray(data.roles)) {
+      return data.roles.includes('ADMIN') ? 'ADMIN' : 'USER'
+    }
+    // Fallback to single role field
+    if (data.role) {
+      return data.role.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'USER'
+    }
+    return 'USER'
+  }
+
   // Try to find user info
   if (responseData.user) {
-    user = responseData.user
+    user = {
+      ...responseData.user,
+      role: getRoleFromData(responseData.user)
+    }
   } else if (responseData.data && responseData.data.user) {
-    user = responseData.data.user
+    user = {
+      ...responseData.data.user,
+      role: getRoleFromData(responseData.data.user)
+    }
   } else if (responseData.id) {
     // User fields might be at root level
     user = {
@@ -113,7 +133,7 @@ const parseAuthResponse = (responseData: any): { token: string; user: UserDto } 
       firstName: responseData.firstName,
       lastName: responseData.lastName,
       username: responseData.username,
-      role: responseData.role || 'USER',
+      role: getRoleFromData(responseData),
     }
   } else if (responseData.data && responseData.data.id) {
     user = {
@@ -121,7 +141,17 @@ const parseAuthResponse = (responseData: any): { token: string; user: UserDto } 
       firstName: responseData.data.firstName,
       lastName: responseData.data.lastName,
       username: responseData.data.username,
-      role: responseData.data.role || 'USER',
+      role: getRoleFromData(responseData.data),
+    }
+  } else if (responseData.data) {
+    // New format: data contains user fields directly
+    const data = responseData.data
+    user = {
+      id: data.id || data.username,  // Use username as ID if no ID
+      firstName: data.firstName,
+      lastName: data.lastName,
+      username: data.username,
+      role: getRoleFromData(data),
     }
   }
 
@@ -135,7 +165,8 @@ const parseAuthResponse = (responseData: any): { token: string; user: UserDto } 
         firstName: payload.firstName || payload.first_name,
         lastName: payload.lastName || payload.last_name,
         username: payload.username || payload.sub,
-        role: payload.role || payload.authorities?.[0] || 'USER',
+        role: getRoleFromData(payload),  // Use the same helper for consistency
+        roles: payload.roles || payload.authorities,
       }
     } catch (e) {
       console.error('❌ Failed to decode JWT:', e)
@@ -156,7 +187,8 @@ const parseAuthResponse = (responseData: any): { token: string; user: UserDto } 
       firstName: user.firstName || '',
       lastName: user.lastName || '',
       username: user.username || '',
-      role: (user.role?.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'USER') as 'USER' | 'ADMIN',
+      role: user.role || 'USER',  // Role already determined by getRoleFromData
+      roles: user.roles,  // Preserve roles array
     },
   }
 }
@@ -178,24 +210,47 @@ export const auth = {
   // Get current user info
   getMe: async (): Promise<UserDto> => {
     const response = await authApi.get('/auth/me')
-    const data = response.data
+    const respData = response.data
     
-    // Parse user from /me endpoint
-    if (data.user) {
-      return data.user
-    } else if (data.data) {
-      return data.data
-    } else if (data.id) {
-      return {
-        id: data.id,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        username: data.username,
-        role: (data.role?.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'USER') as 'USER' | 'ADMIN',
+    console.log('📱 /me endpoint response:', respData)
+    
+    // Helper to determine role from roles array or single role
+    const getRoleFromData = (data: any): 'ADMIN' | 'USER' => {
+      if (data.roles && Array.isArray(data.roles)) {
+        return data.roles.includes('ADMIN') ? 'ADMIN' : 'USER'
       }
+      if (data.role) {
+        return data.role.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'USER'
+      }
+      return 'USER'
     }
     
-    throw new Error('Invalid response from /me endpoint')
+    // Parse user from /me endpoint - handle various formats
+    let userData: any = null
+    
+    if (respData.data) {
+      userData = respData.data
+    } else if (respData.user) {
+      userData = respData.user
+    } else if (respData.username) {
+      userData = respData
+    }
+    
+    if (!userData) {
+      throw new Error('Invalid response from /me endpoint')
+    }
+    
+    const user: UserDto = {
+      id: userData.id || userData.username,  // Use username as fallback ID
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      username: userData.username,
+      role: getRoleFromData(userData),
+      roles: userData.roles,  // Store original roles array
+    }
+    
+    console.log('✅ Parsed user from /me:', user)
+    return user
   },
 
   // Sign out (clear local storage)

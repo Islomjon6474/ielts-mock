@@ -19,13 +19,21 @@ export class AuthStore {
       const token = auth.getToken()
       const user = auth.getUser()
       
+      console.log('🔧 AuthStore: Initializing auth', { token: token?.substring(0, 20) + '...', user })
+      
       if (token && user) {
         runInAction(() => {
           this.user = user
           this.isAuthenticated = true
         })
         
-        // Verify token is still valid
+        console.log('🔧 AuthStore: Set initial state', { 
+          isAuthenticated: this.isAuthenticated, 
+          isAdmin: this.isAdmin,
+          userRole: this.user?.role 
+        })
+        
+        // Verify token is still valid and refresh user data
         this.verifyAuth()
       }
     }
@@ -34,14 +42,23 @@ export class AuthStore {
   // Verify auth by calling /me endpoint
   async verifyAuth() {
     try {
+      console.log('🔍 AuthStore: Verifying auth...')
       const user = await auth.getMe()
+      console.log('🔍 AuthStore: Got user from /me:', user)
+      
       runInAction(() => {
         this.user = user
         this.isAuthenticated = true
         auth.storeAuth(auth.getToken()!, user)
       })
+      
+      console.log('🔍 AuthStore: After verification', {
+        isAdmin: this.isAdmin,
+        userRole: this.user?.role,
+        user: this.user
+      })
     } catch (error) {
-      console.error('Auth verification failed:', error)
+      console.error('❌ Auth verification failed:', error)
       this.signOut()
     }
   }
@@ -111,7 +128,9 @@ export class AuthStore {
       
       console.log('💾 Stored auth data:', {
         token: response.token.substring(0, 20) + '...',
-        user: response.user
+        user: response.user,
+        isAdmin: this.isAdmin,
+        userRole: response.user.role
       })
 
       return response

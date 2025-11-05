@@ -33,6 +33,11 @@ export function withAuth<P extends object>(
         // Wait a bit for auth state to initialize
         await new Promise(resolve => setTimeout(resolve, 100))
         
+        // If authenticated but no user data, wait for it to load
+        if (authStore.isAuthenticated && !authStore.user) {
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
+        
         // If not authenticated, redirect to signin
         if (!authStore.isAuthenticated) {
           console.log('❌ User not authenticated, redirecting to:', redirectTo)
