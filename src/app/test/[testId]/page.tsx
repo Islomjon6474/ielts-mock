@@ -28,7 +28,41 @@ export default function TestSectionsPage() {
 
         const sectionsResp = await mockSubmissionApi.getAllSections(testId)
         const list = sectionsResp?.data || sectionsResp || []
-        setSections(list)
+        
+        // Filter sections that have content
+        const sectionsWithContent: any[] = []
+        for (const section of list) {
+          try {
+            const partsResp = await mockSubmissionApi.getAllParts(section.id)
+            const parts = partsResp?.data || partsResp || []
+            
+            // Check if section has at least one part with content
+            if (parts && parts.length > 0) {
+              let hasContent = false
+              for (const part of parts) {
+                try {
+                  const contentResp = await mockSubmissionApi.getPartQuestionContent(part.id)
+                  const content = contentResp?.data?.content || contentResp?.content
+                  if (content) {
+                    hasContent = true
+                    break
+                  }
+                } catch (e) {
+                  // Skip this part
+                }
+              }
+              
+              if (hasContent) {
+                sectionsWithContent.push(section)
+              }
+            }
+          } catch (e) {
+            console.error(`Error checking section ${section.id}:`, e)
+          }
+        }
+        
+        console.log(`📋 Sections with content: ${sectionsWithContent.length}/${list.length}`)
+        setSections(sectionsWithContent)
       } finally {
         setLoading(false)
       }
@@ -38,9 +72,10 @@ export default function TestSectionsPage() {
 
   const go = (sectionType: string) => {
     const lower = sectionType.toLowerCase()
-    if (lower === 'listening') router.push(`/test/${testId}/listening`)
-    else if (lower === 'reading') router.push(`/test/${testId}/reading`)
-    else if (lower === 'writing') router.push(`/test/${testId}/writing`)
+    // Navigate to section pages with testId parameter
+    if (lower === 'listening') router.push(`/listening?testId=${testId}`)
+    else if (lower === 'reading') router.push(`/reading?testId=${testId}`)
+    else if (lower === 'writing') router.push(`/writing?testId=${testId}`)
   }
 
   return (

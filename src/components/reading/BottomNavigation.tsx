@@ -6,9 +6,10 @@ import BottomNavigationComponent from '@/components/common/BottomNavigation'
 
 interface BottomNavigationProps {
   onSubmit?: () => void
+  isPreviewMode?: boolean
 }
 
-const BottomNavigation = observer(({ onSubmit }: BottomNavigationProps) => {
+const BottomNavigation = observer(({ onSubmit, isPreviewMode = false }: BottomNavigationProps) => {
   const { readingStore } = useStore()
 
   const handlePartClick = (partNumber: number) => {
@@ -28,6 +29,7 @@ const BottomNavigation = observer(({ onSubmit }: BottomNavigationProps) => {
       onQuestionClick={handleQuestionClick}
       isQuestionAnswered={(qNum) => readingStore.isQuestionAnswered(qNum)}
       onSubmit={onSubmit}
+      isPreviewMode={isPreviewMode}
     />
   )
 })

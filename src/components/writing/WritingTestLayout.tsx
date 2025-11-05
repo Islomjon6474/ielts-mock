@@ -12,7 +12,12 @@ import SubmitModal from '@/components/common/SubmitModal'
 const { Content, Footer } = Layout
 const { TextArea } = Input
 
-const WritingTestLayout = observer(() => {
+interface WritingTestLayoutProps {
+  isPreviewMode?: boolean
+  onBackClick?: () => void
+}
+
+const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: WritingTestLayoutProps) => {
   const { writingStore } = useStore()
   const router = useRouter()
   const [leftWidth, setLeftWidth] = useState(50)
@@ -97,14 +102,18 @@ const WritingTestLayout = observer(() => {
 
   return (
     <Layout className="h-screen flex flex-col">
-      <Header />
+      <Header 
+        isPreviewMode={isPreviewMode}
+        previewSectionType="writing"
+        onBackClick={onBackClick}
+      />
 
-      {/* Task Info */}
-      <div className="bg-gray-50 px-6 py-2 border-b">
-        <h2 className="font-bold text-base text-black">{currentTask.title}</h2>
-        <p className="text-xs text-gray-600 mt-0.5">
-          You should spend about <span className="text-blue-600 font-semibold">{currentTask.timeMinutes} minutes</span> on this task. Write at least <span className="text-blue-600 font-semibold">{currentTask.minWords} words</span>.
-        </p>
+      {/* Task Info - Compact */}
+      <div className="bg-gray-50 px-4 py-1.5 border-b">
+        <h2 className="font-semibold text-sm text-black inline-block mr-3">{currentTask.title}</h2>
+        <span className="text-xs text-gray-600">
+          Spend about <span className="text-blue-600 font-semibold">{currentTask.timeMinutes} min</span> • Write at least <span className="text-blue-600 font-semibold">{currentTask.minWords} words</span>
+        </span>
       </div>
 
       {/* Main Content Area with Resizable Panes */}
@@ -223,6 +232,7 @@ const WritingTestLayout = observer(() => {
               type="primary"
               icon={<CheckOutlined />}
               onClick={handleSubmit}
+              disabled={isPreviewMode}
               className="bg-green-600 hover:bg-green-700"
             >
               Submit

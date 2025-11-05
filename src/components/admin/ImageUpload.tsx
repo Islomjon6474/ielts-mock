@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Upload, Button, message, Image, Space, Card } from 'antd'
 import { UploadOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons'
 import type { UploadFile } from 'antd/es/upload/interface'
@@ -15,6 +15,15 @@ export const ImageUpload = ({ value, onChange, label = 'Upload Image' }: ImageUp
   const [previewUrl, setPreviewUrl] = useState<string | undefined>(
     value ? fileApi.getDownloadUrl(value) : undefined
   )
+
+  // Update preview URL when value prop changes (when form data is loaded)
+  useEffect(() => {
+    if (value) {
+      setPreviewUrl(fileApi.getDownloadUrl(value))
+    } else {
+      setPreviewUrl(undefined)
+    }
+  }, [value])
 
   const handleUpload = async (file: File) => {
     try {

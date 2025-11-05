@@ -39,6 +39,18 @@ export class ListeningStore {
     this.parts = parts
   }
 
+  reset() {
+    this.currentPart = 1
+    this.currentQuestionIndex = 0
+    this.answers.clear()
+    this.isPlaying = false
+    this.hasStarted = false
+    this.audioProgress = 0
+    this.audioLoading = false
+    this.audioError = null
+    this.allAudioReady = false
+  }
+
   setPartAudio(partId: number, url: string) {
     const idx = this.parts.findIndex((p) => p.id === partId)
     if (idx >= 0) {

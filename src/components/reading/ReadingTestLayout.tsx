@@ -14,7 +14,12 @@ import SubmitModal from '@/components/common/SubmitModal'
 
 const { Content } = Layout
 
-const ReadingTestLayout = observer(() => {
+interface ReadingTestLayoutProps {
+  isPreviewMode?: boolean
+  onBackClick?: () => void
+}
+
+const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: ReadingTestLayoutProps) => {
   const { readingStore } = useStore()
   const router = useRouter()
   const [leftWidth, setLeftWidth] = useState(50)
@@ -107,12 +112,16 @@ const ReadingTestLayout = observer(() => {
 
   return (
     <Layout className="h-screen flex flex-col">
-      <Header />
+      <Header 
+        isPreviewMode={isPreviewMode}
+        previewSectionType="reading"
+        onBackClick={onBackClick}
+      />
 
-      {/* Part Title */}
-      <div className="bg-gray-50 px-6 border-b">
-        <h2 className="font-bold text-base text-black">{currentPart.title}</h2>
-        <p className="text-xs text-gray-600 mt-0.5">{currentPart.instruction}</p>
+      {/* Part Title - Compact */}
+      <div className="bg-gray-50 px-4 py-1.5 border-b">
+        <h2 className="font-semibold text-sm text-black inline-block mr-4">{currentPart.title}</h2>
+        <span className="text-xs text-gray-600">{currentPart.instruction}</span>
       </div>
 
       {/* Main Content Area with Resizable Panes */}
@@ -124,6 +133,7 @@ const ReadingTestLayout = observer(() => {
         >
           <ReadingPassage 
             passage={currentPart.passage}
+            imageUrl={currentPart.imageUrl}
             sections={currentPart.sections}
             onHeadingDrop={handleHeadingDrop}
             getHeadingForSection={getHeadingForSection}
@@ -169,7 +179,7 @@ const ReadingTestLayout = observer(() => {
       </Content>
 
       {/* Bottom Navigation */}
-      <BottomNavigation onSubmit={handleSubmit} />
+      <BottomNavigation onSubmit={handleSubmit} isPreviewMode={isPreviewMode} />
 
       {/* Submit Modal */}
       <SubmitModal visible={showSubmitModal} onClose={handleModalClose} onConfirm={handleModalConfirm} />

@@ -19,6 +19,7 @@ interface BottomNavigationProps {
   onQuestionClick: (questionNumber: number) => void
   isQuestionAnswered: (questionNumber: number) => boolean
   onSubmit?: () => void
+  isPreviewMode?: boolean
 }
 
 const BottomNavigation = observer(({
@@ -28,7 +29,8 @@ const BottomNavigation = observer(({
   onPartClick,
   onQuestionClick,
   isQuestionAnswered,
-  onSubmit
+  onSubmit,
+  isPreviewMode = false
 }: BottomNavigationProps) => {
   const currentPartData = parts.find(p => p.id === currentPart)
   const currentQuestionNumber = currentPartData
@@ -45,7 +47,7 @@ const BottomNavigation = observer(({
       <div className="flex items-center justify-between px-6 py-3">
         {/* Part Navigation with Question Numbers */}
         <div className="flex items-center gap-3 flex-1">
-          {parts.map((part) => {
+          {parts && parts.length > 0 ? parts.map((part) => {
             const [start, end] = part.questionRange
             const answeredCount = R.range(start, end + 1).filter(qNum =>
               isQuestionAnswered(qNum)
@@ -126,7 +128,9 @@ const BottomNavigation = observer(({
                 )}
               </div>
             )
-          })}
+          }) : (
+            <div className="text-gray-400 text-sm">Loading...</div>
+          )}
         </div>
 
         {/* Submit Button */}
@@ -135,6 +139,7 @@ const BottomNavigation = observer(({
           icon={<CheckOutlined />}
           className="bg-green-600 hover:bg-green-700 flex-shrink-0"
           onClick={onSubmit}
+          disabled={isPreviewMode}
         >
           Submit
         </Button>

@@ -1,8 +1,14 @@
 import axios from 'axios'
 
+// Always use the production backend URL - never use relative paths
 const BASE_URL = 'https://mock.fleetoneld.com/ielts-mock-main'
 
-// Configure axios instance
+// Log the BASE_URL to verify it's correct
+if (typeof window !== 'undefined') {
+  console.log('API BASE_URL:', BASE_URL)
+}
+
+// Configure axios instance with full absolute URL
 const api = axios.create({
   baseURL: BASE_URL,
   headers: {
@@ -10,17 +16,45 @@ const api = axios.create({
   },
 })
 
-// Add request interceptor for authentication token if needed
+// Add request interceptor for authentication token and debugging
 api.interceptors.request.use(
   (config) => {
-    // Add auth token here if available
-    // const token = localStorage.getItem('token')
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`
-    // }
+    // Add auth token from localStorage
+    const token = localStorage.getItem('authToken')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    
+    // Log the full request URL for debugging
+    if (typeof window !== 'undefined') {
+      const fullUrl = `${config.baseURL}${config.url || ''}`
+      console.log('🌐 API Request:', fullUrl)
+      
+      // Verify it's not going to localhost
+      if (fullUrl.includes('localhost')) {
+        console.error('❌ WARNING: Request going to localhost!', fullUrl)
+      }
+    }
+    
     return config
   },
   (error) => {
+    return Promise.reject(error)
+  }
+)
+
+// Add response interceptor for handling auth errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expired or invalid - redirect to login
+      localStorage.removeItem('authToken')
+      localStorage.removeItem('user')
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth/signin'
+      }
+    }
     return Promise.reject(error)
   }
 )
@@ -114,6 +148,12 @@ export const testManagementApi = {
     const response = await api.get('/test-management/get-all-question', {
       params: { sectionId },
     })
+    return response.data
+  },
+
+  // Delete test
+  deleteTest: async (id: string) => {
+    const response = await api.delete(`/test-management/delete/${id}`)
     return response.data
   },
 }
@@ -213,6 +253,16 @@ export const fileApi = {
   // Get download URL
   getDownloadUrl: (fileId: string) => {
     return `${BASE_URL}/file/download/${fileId}`
+  },
+
+  // Convert imageId to full image URL (utility for transforming stored imageId to displayable URL)
+  getImageUrl: (imageId: string | undefined) => {
+    return imageId ? `${BASE_URL}/file/download/${imageId}` : undefined
+  },
+
+  // Convert fileId to full file URL (for any file type: images, audio, etc.)
+  getFileUrl: (fileId: string | undefined) => {
+    return fileId ? `${BASE_URL}/file/download/${fileId}` : undefined
   },
 }
 

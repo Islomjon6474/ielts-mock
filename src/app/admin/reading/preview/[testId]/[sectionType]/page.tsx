@@ -8,7 +8,7 @@ import ReadingTestLayout from '@/components/reading/ReadingTestLayout'
 import type { Part as ReadingPart, Question as ReadingQuestion, Section as ReadingSection } from '@/stores/ReadingStore'
 import ListeningTestLayout from '@/components/listening/ListeningTestLayout'
 import WritingTestLayout from '@/components/writing/WritingTestLayout'
-import { testManagementApi, listeningAudioApi } from '@/services/testManagementApi'
+import { testManagementApi, listeningAudioApi, fileApi } from '@/services/testManagementApi'
 import { safeMultiParseJson } from '@/utils/json'
 import { transformAdminPartsToListening } from '@/utils/transformListeningData'
 import { Spin, message, Button, Card, Typography } from 'antd'
@@ -95,6 +95,9 @@ const SectionPreviewPage = observer(() => {
       // Handle based on section type
       if (isListening) {
         // LISTENING SECTION
+        // Reset listening store to prevent auto-play from previous state
+        listeningStore.reset()
+        
         // Fetch audio files for the test and preload them
         let audioUrls: { [partId: string]: string } = {}
         try {
@@ -113,7 +116,9 @@ const SectionPreviewPage = observer(() => {
             const fileId = audio.fileId
             if (!fileId) return
 
-            const fileUrl = `/api/file/download/${fileId}`
+            const fileUrl = fileApi.getFileUrl(fileId)
+            if (!fileUrl) return
+            
             audioUrls[partId] = fileUrl
 
             // Preload via Audio object and canplaythrough
@@ -171,15 +176,27 @@ const SectionPreviewPage = observer(() => {
           
           // Validate part data has required fields
           if (dataToUse && typeof dataToUse === 'object') {
+            // Transform question groups with imageId to imageUrl
+            let questionGroups = undefined
+            if (dataToUse.questionGroups && Array.isArray(dataToUse.questionGroups)) {
+              questionGroups = dataToUse.questionGroups.map((group: any) => ({
+                instruction: group.instruction,
+                imageUrl: fileApi.getImageUrl(group.imageId),
+                questions: group.questions || []
+              }))
+            }
+
             // Ensure all required fields exist with defaults
             const validatedPart: ReadingPart = {
               id: dataToUse.id || allParts.length + 1,
               title: dataToUse.title || `Part ${allParts.length + 1}`,
               instruction: dataToUse.instruction || '',
               passage: dataToUse.passage || '',
+              imageUrl: fileApi.getImageUrl(dataToUse.imageId),
               questions: (dataToUse.questions || []) as ReadingQuestion[],
               questionRange: (dataToUse.questionRange || [1, 13]) as [number, number],
               sections: (dataToUse.sections || undefined) as ReadingSection[] | undefined,
+              questionGroups: questionGroups,
             }
             allParts.push(validatedPart)
           }
@@ -241,7 +258,7 @@ const SectionPreviewPage = observer(() => {
             minWords: Number(dataToUse.minWords) || defaultWords,
             instruction: dataToUse.instruction || '',
             question: questionText || 'Write your response based on the task instructions.',
-            image: dataToUse.imageId ? `/api/file/download/${dataToUse.imageId}` : undefined,
+            image: fileApi.getImageUrl(dataToUse.imageId),
           }
           tasks.push(task)
         })
@@ -313,39 +330,15 @@ const SectionPreviewPage = observer(() => {
     )
   }
 
+  const handleBackClick = () => {
+    router.push(`/admin/reading/preview/${testId}`)
+  }
+
   return (
     <div>
-      <div style={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
-        zIndex: 1000, 
-        background: '#fff', 
-        borderBottom: '1px solid #f0f0f0',
-        padding: '12px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <Button
-            icon={<ArrowLeftOutlined />}
-            onClick={() => router.push(`/admin/reading/preview/${testId}`)}
-            size="large"
-          >
-            Back to Sections
-          </Button>
-          <span style={{ fontSize: '16px', fontWeight: 500, color: '#cf1322' }}>
-            PREVIEW MODE - {sectionType.toUpperCase()} - All inputs are disabled
-          </span>
-        </div>
-      </div>
-      <div style={{ marginTop: '60px' }}>
-        {isReading && <ReadingTestLayout />}
-        {isListening && <ListeningTestLayout />}
-        {isWriting && <WritingTestLayout />}
-      </div>
+      {isReading && <ReadingTestLayout isPreviewMode={true} onBackClick={handleBackClick} />}
+      {isListening && <ListeningTestLayout isPreviewMode={true} onBackClick={handleBackClick} />}
+      {isWriting && <WritingTestLayout isPreviewMode={true} onBackClick={handleBackClick} />}
     </div>
   )
 })

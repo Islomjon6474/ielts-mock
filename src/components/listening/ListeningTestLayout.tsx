@@ -5,6 +5,7 @@ import { Layout, Input } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useRouter } from 'next/navigation'
 import { useStore } from '@/stores/StoreContext'
+import { ListeningQuestion } from '@/stores/ListeningStore'
 import Header from '@/components/common/Header'
 import BottomNavigationComponent from '@/components/common/BottomNavigation'
 import AudioInstructionModal from './AudioInstructionModal'
@@ -17,7 +18,18 @@ import SubmitModal from '@/components/common/SubmitModal'
 
 const { Content } = Layout
 
-const ListeningTestLayout = observer(() => {
+interface ListeningTestLayoutProps {
+  isPreviewMode?: boolean
+  onBackClick?: () => void
+}
+
+interface QuestionGroup {
+  imageUrl?: string
+  instruction?: string
+  questions: ListeningQuestion[]
+}
+
+const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: ListeningTestLayoutProps) => {
   const { listeningStore } = useStore()
   const router = useRouter()
   const [showModal, setShowModal] = useState(true)
@@ -41,8 +53,12 @@ const ListeningTestLayout = observer(() => {
   useEffect(() => {
     if (audioRef.current && currentPart?.audioUrl) {
       audioRef.current.src = currentPart.audioUrl
+      // Only auto-play if user has explicitly started AND is currently playing
+      // This prevents auto-play on initial load
       if (listeningStore.hasStarted && listeningStore.isPlaying && listeningStore.allAudioReady) {
-        audioRef.current.play()
+        audioRef.current.play().catch(err => {
+          console.error('Failed to play audio:', err)
+        })
       }
     }
   }, [currentPart?.audioUrl, listeningStore.hasStarted, listeningStore.isPlaying, listeningStore.allAudioReady])
@@ -94,78 +110,170 @@ const ListeningTestLayout = observer(() => {
       {/* Hidden Audio Player */}
       <audio ref={audioRef} style={{ display: 'none' }} />
       
-      <Header />
+      <Header 
+        isPreviewMode={isPreviewMode}
+        previewSectionType="listening"
+        onBackClick={onBackClick}
+      />
 
-      {/* Test Info Header */}
-      <div className="bg-gray-50 px-6 py-2 border-b flex items-center justify-between">
-        <div>
-          <span className="text-sm font-semibold">Test taker ID</span>
+      {/* Part Info - Compact */}
+      <div className="bg-gray-50 px-4 py-1.5 border-b flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <h2 className="font-semibold text-sm text-black">{currentPart.title}</h2>
+          <p className="text-xs text-gray-600">{currentPart.instruction}</p>
         </div>
         {listeningStore.isPlaying && (
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-            <span className="text-sm text-gray-700">Audio is playing</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
+            <span className="text-xs text-gray-700">Audio is playing</span>
           </div>
         )}
       </div>
 
-      {/* Part Info */}
-      <div className="bg-white px-6 py-3 border-b">
-        <h2 className="font-bold text-base text-black mb-1">{currentPart.title}</h2>
-        <p className="text-sm text-gray-700">{currentPart.instruction}</p>
-      </div>
-
       {/* Main Content */}
-      <Content className="flex-1 overflow-y-auto bg-gray-200 flex justify-center py-6">
-        <div className="w-full max-w-4xl bg-white p-8 rounded shadow">
+      <Content className="flex-1 overflow-hidden bg-gray-200 flex justify-center py-6">
+        <div className="w-full max-w-4xl bg-white p-8 rounded shadow overflow-y-auto">
           {/* Render questions based on part */}
           {/* Dynamic generic renderer: if questions are provided, show them; otherwise fall back to legacy hardcoded UI */}
           {Array.isArray(currentPart.questions) && currentPart.questions.length > 0 && (
             <div className="space-y-4">
-              {currentPart.questions.map((q) => (
-              <div key={q.id} className="border-b pb-4">
-                <div className="text-sm text-gray-700 whitespace-pre-wrap mb-2">{q.text}</div>
-                {q.type === 'IMAGE_INPUTS' ? (
-                  <div className="flex items-start gap-4">
-                    {q.imageUrl && (
-                      <img src={q.imageUrl} alt={`Question ${q.id}`} className="max-w-sm rounded border" />
+              {(() => {
+                // Group questions by imageUrl to show image once per group
+                const grouped: QuestionGroup[] = []
+                let currentGroup: QuestionGroup | null = null
+                
+                currentPart.questions.forEach((q: ListeningQuestion) => {
+                  // Start a new group if imageUrl changes or this is the first question
+                  const shouldStartNewGroup = !currentGroup || q.imageUrl !== currentGroup.imageUrl
+                  
+                  if (shouldStartNewGroup) {
+                    // Extract instruction from first question's text (first line)
+                    const lines = q.text.split('\n')
+                    const instruction = lines.length > 1 && !lines[0].match(/^\d+/) ? lines[0] : ''
+                    
+                    currentGroup = { imageUrl: q.imageUrl, instruction, questions: [q] }
+                    grouped.push(currentGroup)
+                  } else {
+                    if (currentGroup) {
+                      currentGroup.questions.push(q)
+                    }
+                  }
+                })
+                
+                return grouped.map((group: QuestionGroup, groupIdx: number) => {
+                  return (
+                  <div key={`group-${groupIdx}`} className="mb-6">
+                    {/* Show instruction above questions/image if available */}
+                    {group.instruction && (
+                      <div className="text-sm text-gray-700 mb-4 font-semibold">
+                        {group.instruction}
+                      </div>
                     )}
-                    <div>
-                      <Input
-                        value={(listeningStore.getAnswer(q.id) as string) || ''}
-                        onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
-                        placeholder={`${q.id}`}
-                        className="inline-block"
-                        style={{ width: '240px' }}
-                      />
-                    </div>
+                    
+                    {/* Image and questions side by side */}
+                    {group.imageUrl ? (
+                      <div className="flex gap-6">
+                        {/* Image on the left - fixed width */}
+                        <div className="flex-shrink-0">
+                          <img 
+                            src={group.imageUrl} 
+                            alt={`Question group ${groupIdx + 1}`} 
+                            className="rounded border"
+                            style={{ maxWidth: '450px', maxHeight: '500px', objectFit: 'contain' }}
+                          />
+                        </div>
+                        
+                        {/* Questions on the right */}
+                        <div className="flex-1 space-y-4">
+                          {group.questions.map((q: ListeningQuestion) => (
+                            <div key={q.id} className="border-b pb-4">
+                              <div className="text-sm text-gray-700 whitespace-pre-wrap mb-2">{q.text}</div>
+                              {q.type === 'IMAGE_INPUTS' ? (
+                                <div>
+                                  <Input
+                                    value={(listeningStore.getAnswer(q.id) as string) || ''}
+                                    onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
+                                    placeholder={`${q.id}`}
+                                    className="inline-block"
+                                    style={{ width: '240px' }}
+                                  />
+                                </div>
+                              ) : q.options && Array.isArray(q.options) && q.options.length > 0 ? (
+                                <div className="ml-2 space-y-1">
+                                  {q.options.map((opt: string, idx: number) => (
+                                    <label key={idx} className="flex items-center gap-2 text-sm">
+                                      <input
+                                        type="radio"
+                                        name={`q-${q.id}`}
+                                        value={opt}
+                                        checked={listeningStore.getAnswer(q.id) === opt}
+                                        onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
+                                      />
+                                      {opt}
+                                    </label>
+                                  ))}
+                                </div>
+                              ) : (
+                                <Input
+                                  value={(listeningStore.getAnswer(q.id) as string) || ''}
+                                  onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
+                                  placeholder={`${q.id}`}
+                                  className="inline-block text-center"
+                                  style={{ width: '200px' }}
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      // No image - render questions normally
+                      <div className="space-y-4">
+                        {group.questions.map((q: ListeningQuestion) => (
+                          <div key={q.id} className="border-b pb-4">
+                            <div className="text-sm text-gray-700 whitespace-pre-wrap mb-2">{q.text}</div>
+                            {q.type === 'IMAGE_INPUTS' ? (
+                              <div>
+                                <Input
+                                  value={(listeningStore.getAnswer(q.id) as string) || ''}
+                                  onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
+                                  placeholder={`${q.id}`}
+                                  className="inline-block"
+                                  style={{ width: '240px' }}
+                                />
+                              </div>
+                            ) : q.options && Array.isArray(q.options) && q.options.length > 0 ? (
+                              <div className="ml-2 space-y-1">
+                                {q.options.map((opt: string, idx: number) => (
+                                  <label key={idx} className="flex items-center gap-2 text-sm">
+                                    <input
+                                      type="radio"
+                                      name={`q-${q.id}`}
+                                      value={opt}
+                                      checked={listeningStore.getAnswer(q.id) === opt}
+                                      onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
+                                    />
+                                    {opt}
+                                  </label>
+                                ))}
+                              </div>
+                            ) : (
+                              <Input
+                                value={(listeningStore.getAnswer(q.id) as string) || ''}
+                                onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
+                                placeholder={`${q.id}`}
+                                className="inline-block text-center"
+                                style={{ width: '200px' }}
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                ) : Array.isArray(q.options) && q.options.length > 0 ? (
-                  <div className="ml-2 space-y-1">
-                    {q.options.map((opt, idx) => (
-                      <label key={idx} className="flex items-center gap-2 text-sm">
-                        <input
-                          type="radio"
-                          name={`q-${q.id}`}
-                          value={opt}
-                          checked={listeningStore.getAnswer(q.id) === opt}
-                          onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
-                        />
-                        {opt}
-                      </label>
-                    ))}
-                  </div>
-                ) : (
-                  <Input
-                    value={(listeningStore.getAnswer(q.id) as string) || ''}
-                    onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
-                    placeholder={`${q.id}`}
-                    className="inline-block text-center"
-                    style={{ width: '200px' }}
-                  />
-                )}
-              </div>
-            ))}
+                  )
+                })
+              })()}
             </div>
           )}
           <div style={{ display: Array.isArray(currentPart.questions) && currentPart.questions.length > 0 ? 'none' : 'block' }}>
@@ -669,6 +777,7 @@ const ListeningTestLayout = observer(() => {
         onQuestionClick={handleQuestionClick}
         isQuestionAnswered={(qNum) => listeningStore.isQuestionAnswered(qNum)}
         onSubmit={handleSubmit}
+        isPreviewMode={isPreviewMode}
       />
 
       {/* Audio Instruction Modal */}

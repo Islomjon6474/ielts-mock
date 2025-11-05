@@ -51,8 +51,80 @@ export const QuestionGroupEditor = ({
     // We deliberately include selectedType/questionRange/questionCount to avoid stale UI
   }, [form, groupPath, selectedType, questionRange, questionCount])
 
+  // Update imageUrl for IMAGE_INPUTS questions when imageId changes
+  useEffect(() => {
+    if (selectedType === 'IMAGE_INPUTS') {
+      const imageId = form.getFieldValue([...groupPath, 'imageId'])
+      const qs = form.getFieldValue([...groupPath, 'questions']) || []
+      
+      if (imageId && Array.isArray(qs) && qs.length > 0) {
+        const needsUpdate = qs.some((q: any) => q.imageUrl !== `/api/file/download/${imageId}`)
+        
+        if (needsUpdate) {
+          const withUrls = qs.map((q: any) => ({ ...q, imageUrl: `/api/file/download/${imageId}` }))
+          form.setFieldValue([...groupPath, 'questions'], withUrls)
+        }
+      }
+    }
+  }, [form, groupPath, selectedType])
+
   const addQuestion = () => {
+    const path = [...groupPath, 'questions']
+    const currentQuestions = form.getFieldValue(path) || []
+    
+    // Create a new question object based on type
+    let newQuestion: any = {}
+    
+    switch (selectedType) {
+      case 'MULTIPLE_CHOICE':
+        newQuestion = { text: '', options: ['', '', '', ''], answer: '' }
+        break
+      case 'TRUE_FALSE_NOT_GIVEN':
+      case 'YES_NO_NOT_GIVEN':
+        newQuestion = { text: '', answer: '' }
+        break
+      case 'SENTENCE_COMPLETION':
+      case 'SUMMARY_COMPLETION':
+        newQuestion = { text: '', answer: '' }
+        break
+      case 'MATCH_HEADING':
+        newQuestion = { paragraphText: '', answer: '' }
+        break
+      case 'SHORT_ANSWER':
+        newQuestion = { text: '', answer: '' }
+        break
+      case 'IMAGE_INPUTS':
+        const imageId = form.getFieldValue([...groupPath, 'imageId'])
+        newQuestion = { 
+          x: 50, 
+          y: 50, 
+          answer: '',
+          imageUrl: imageId ? `/api/file/download/${imageId}` : undefined
+        }
+        break
+      default:
+        newQuestion = { text: '', answer: '' }
+    }
+    
+    // Add the new question to the form
+    const newQuestions = [...currentQuestions, newQuestion]
+    form.setFieldValue(path, newQuestions)
+    
+    // Update the range to reflect the new question count
+    updateRange(newQuestions.length)
+    
     setQuestionCount(prev => prev + 1)
+  }
+
+  const updateRange = (questionCount: number) => {
+    const currentRange = form.getFieldValue([...groupPath, 'range']) || ''
+    const match = currentRange.match(/^(\d+)-(\d+)$/)
+    
+    if (match) {
+      const startNum = parseInt(match[1])
+      const newEndNum = startNum + questionCount - 1
+      form.setFieldValue([...groupPath, 'range'], `${startNum}-${newEndNum}`)
+    }
   }
 
   const removeQuestion = (index: number) => {
@@ -60,6 +132,10 @@ export const QuestionGroupEditor = ({
     const currentQuestions = form.getFieldValue(path) || []
     const newQuestions = currentQuestions.filter((_: any, i: number) => i !== index)
     form.setFieldValue(path, newQuestions)
+    
+    // Update the range to reflect the new question count
+    updateRange(newQuestions.length)
+    
     setQuestionCount(prev => Math.max(0, prev - 1))
   }
 
@@ -160,21 +236,6 @@ v. Conclusion and summary`}
           help="Upload an image to accompany this question group"
         >
           <ImageUpload label="Upload Image" />
-        </Form.Item>
-      )}
-
-      {/* When IMAGE_INPUTS is selected and imageId present, copy imageUrl into each question for preview/user */}
-      {selectedType === 'IMAGE_INPUTS' && (
-        <Form.Item shouldUpdate noStyle>
-          {() => {
-            const imageId = form.getFieldValue([...groupPath, 'imageId'])
-            const qs = form.getFieldValue([...groupPath, 'questions']) || []
-            if (imageId && Array.isArray(qs)) {
-              const withUrls = qs.map((q: any) => ({ ...q, imageUrl: `/api/file/download/${imageId}` }))
-              form.setFieldValue([...groupPath, 'questions'], withUrls)
-            }
-            return null
-          }}
         </Form.Item>
       )}
       

@@ -7,6 +7,8 @@ import { FileTextOutlined, SettingOutlined } from '@ant-design/icons'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import { mockSubmissionApi } from '@/services/testManagementApi'
+import { UserMenu } from '@/components/auth/UserMenu'
+import { withAuth } from '@/components/auth/withAuth'
 
 const { Title, Paragraph } = Typography
 
@@ -41,7 +43,7 @@ const HomePage = observer(() => {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto py-12 border-b">
         <div className="text-center mb-12">
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-end items-center gap-3 mb-4">
             <Button
               type="primary"
               icon={<SettingOutlined />}
@@ -51,6 +53,7 @@ const HomePage = observer(() => {
             >
               Admin Panel
             </Button>
+            <UserMenu />
           </div>
           <Title level={1} className="mb-4">
             IELTS Mock Assessment Platform
@@ -96,4 +99,4 @@ const HomePage = observer(() => {
   )
 })
 
-export default HomePage
+export default withAuth(HomePage)

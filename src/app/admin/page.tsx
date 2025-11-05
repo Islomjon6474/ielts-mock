@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Layout, Typography, Card, Button, Row, Col, message, Modal, Form, Input, Tag, Pagination, Space, Skeleton } from 'antd'
-import { PlusOutlined, HomeOutlined, FileTextOutlined, CalendarOutlined, CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined } from '@ant-design/icons'
+import { Layout, Typography, Card, Button, Row, Col, message, Modal, Form, Input, Tag, Pagination, Space, Skeleton, Switch } from 'antd'
+import { PlusOutlined, HomeOutlined, FileTextOutlined, CalendarOutlined, CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined, DeleteOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
 import { testManagementApi } from '@/services/testManagementApi'
+import { UserMenu } from '@/components/auth/UserMenu'
+import { withAuth } from '@/components/auth/withAuth'
 
 const { Header, Content } = Layout
 const { Title, Text } = Typography
@@ -79,6 +81,57 @@ const AdminPage = () => {
     router.push(`/admin/test/${testId}`)
   }
 
+  const handleDeleteTest = (testId: string, testName: string) => {
+    Modal.confirm({
+      title: 'Delete Test',
+      icon: <ExclamationCircleOutlined />,
+      content: `Are you sure you want to delete "${testName}"? This action cannot be undone.`,
+      okText: 'Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        try {
+          await testManagementApi.deleteTest(testId)
+          message.success('Test deleted successfully')
+          // Refresh the tests list
+          fetchTests(currentPage - 1)
+        } catch (error) {
+          console.error('Error deleting test:', error)
+          message.error('Failed to delete test')
+        }
+      },
+    })
+  }
+
+  const handleToggleStatus = async (testId: string, currentStatus: number) => {
+    const newStatus = currentStatus === 1 ? 0 : 1
+    
+    // Optimistically update the UI
+    setTests(prevTests => 
+      prevTests.map(test => 
+        test.id === testId 
+          ? { ...test, isActive: newStatus }
+          : test
+      )
+    )
+    
+    try {
+      await testManagementApi.updateTestActive(testId, newStatus)
+      message.success(`Test ${newStatus === 1 ? 'activated' : 'deactivated'} successfully`)
+    } catch (error) {
+      console.error('Error updating test status:', error)
+      message.error('Failed to update test status')
+      // Revert on error
+      setTests(prevTests => 
+        prevTests.map(test => 
+          test.id === testId 
+            ? { ...test, isActive: currentStatus }
+            : test
+        )
+      )
+    }
+  }
+
   return (
     <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
       {/* Header */}
@@ -95,13 +148,16 @@ const AdminPage = () => {
         <Title level={2} style={{ margin: 0, color: '#cf1322', lineHeight: '1.3' }}>
           IELTS Admin Panel
         </Title>
-        <Button 
-          icon={<HomeOutlined />}
-          onClick={() => router.push('/')}
-          size="large"
-        >
-          Back to Home
-        </Button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Button 
+            icon={<HomeOutlined />}
+            onClick={() => router.push('/')}
+            size="large"
+          >
+            Back to Home
+          </Button>
+          <UserMenu />
+        </div>
       </Header>
 
       <Content style={{ 
@@ -180,7 +236,7 @@ const AdminPage = () => {
                   }}
                   className="test-card"
                 >
-                  {/* Header: Title and Status */}
+                  {/* Header: Title and Delete Button */}
                   <div style={{ 
                     display: 'flex', 
                     justifyContent: 'space-between', 
@@ -200,18 +256,20 @@ const AdminPage = () => {
                     >
                       {test.name}
                     </Title>
-                    <Tag 
-                      color={test.isActive === 1 ? 'success' : 'default'}
-                      style={{ 
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        fontWeight: 500,
-                        padding: '2px 8px',
-                        margin: 0
+                    <Button 
+                      danger
+                      type="text"
+                      icon={<DeleteOutlined />}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteTest(test.id, test.name)
                       }}
-                    >
-                      {test.isActive === 1 ? 'Active' : 'Inactive'}
-                    </Tag>
+                      style={{
+                        color: '#ff4d4f',
+                        fontSize: '16px'
+                      }}
+                      title="Delete test"
+                    />
                   </div>
 
                   {/* Metadata */}
@@ -231,6 +289,22 @@ const AdminPage = () => {
                           year: 'numeric' 
                         }) : 'N/A'}
                       </Text>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Text style={{ fontSize: '14px', fontWeight: 500 }}>
+                        Status:
+                      </Text>
+                      <div 
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Switch
+                          checked={test.isActive === 1}
+                          onChange={() => handleToggleStatus(test.id, test.isActive)}
+                          checkedChildren="Active"
+                          unCheckedChildren="Inactive"
+                        />
+                      </div>
                     </div>
                   </Space>
 
@@ -394,4 +468,4 @@ const AdminPage = () => {
   )
 }
 
-export default AdminPage
+export default withAuth(AdminPage, { requireAdmin: true })

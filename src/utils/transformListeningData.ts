@@ -1,4 +1,5 @@
 import { ListeningPart } from '@/stores/ListeningStore'
+import { fileApi } from '@/services/testManagementApi'
 
 /**
  * Transform admin question data to listening part format
@@ -76,25 +77,40 @@ function flattenQuestionGroups(questionGroups: any[]): any[] {
   questionGroups.forEach(group => {
     const groupType = group.type
     const groupInstruction = group.instruction || ''
+    // Convert imageId to imageUrl at group level with full URL
+    const groupImageUrl = fileApi.getImageUrl(group.imageId)
+    
+    // Parse question range to get starting question number
+    let startingQuestionNumber = 1
+    if (group.range) {
+      const match = group.range.match(/^(\d+)-(\d+)$/)
+      if (match) {
+        startingQuestionNumber = parseInt(match[1])
+      }
+    }
     
     if (group.questions && group.questions.length > 0) {
       // Each question group becomes one or more questions
       group.questions.forEach((question: any, index: number) => {
+        const questionNumber = startingQuestionNumber + index
+        
         allQuestions.push({
-          id: question.questionNumber || (allQuestions.length + 1),
+          id: questionNumber,
           type: groupType,
           text: buildQuestionText(group, question, index),
           options: question.options || undefined,
-          imageUrl: question.imageUrl || undefined,
+          // Use imageUrl from question if available, otherwise use group's imageUrl
+          imageUrl: question.imageUrl || groupImageUrl,
           // Note: correctAnswer is NOT included in user format
         })
       })
     } else {
       // Group without individual questions - create single question for the group
       allQuestions.push({
-        id: allQuestions.length + 1,
+        id: startingQuestionNumber,
         type: groupType,
         text: groupInstruction,
+        imageUrl: groupImageUrl,
       })
     }
   })

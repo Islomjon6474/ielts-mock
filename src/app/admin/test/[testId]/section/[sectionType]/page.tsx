@@ -56,7 +56,53 @@ const SectionPartsPage = () => {
       setLoading(true)
       const response = await testManagementApi.getAllParts(sectionId)
       const partsData = response.data || response || []
-      setParts(partsData)
+      
+      const isWriting = sectionType.toLowerCase() === 'writing'
+      
+      // Fetch content and calculate question count for each part
+      const partsWithCount = await Promise.all(
+        partsData.map(async (part: Part) => {
+          let questionCount = 0
+          
+          try {
+            // Fetch part content separately
+            const contentResponse = await testManagementApi.getPartQuestionContent(part.id)
+            const content = contentResponse?.data?.content || contentResponse?.content
+            
+            if (content) {
+              const parsed = typeof content === 'string' ? JSON.parse(content) : content
+              const contentData = parsed?.user || parsed?.admin || parsed
+              
+              // For Writing: count as 1 if there's any content (instruction, passage, or imageId)
+              if (isWriting) {
+                const hasContent = contentData?.instruction || contentData?.passage || contentData?.imageId
+                questionCount = hasContent ? 1 : 0
+              }
+              // For Reading/Listening: Count questions from question groups
+              else if (contentData?.questionGroups && Array.isArray(contentData.questionGroups)) {
+                contentData.questionGroups.forEach((group: any) => {
+                  if (group.questions && Array.isArray(group.questions)) {
+                    questionCount += group.questions.length
+                  }
+                })
+              }
+              // Fallback: count from questions array if no question groups
+              else if (contentData?.questions && Array.isArray(contentData.questions)) {
+                questionCount = contentData.questions.length
+              }
+            }
+          } catch (e) {
+            console.error(`Error fetching content for part ${part.id}:`, e)
+          }
+          
+          return {
+            ...part,
+            questionCount
+          }
+        })
+      )
+      
+      setParts(partsWithCount)
     } catch (error) {
       console.error('Error fetching parts:', error)
       message.error('Failed to load parts')

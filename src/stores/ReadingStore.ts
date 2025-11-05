@@ -14,6 +14,13 @@ export interface Question {
   text: string
   options?: string[]
   maxAnswers?: number
+  imageUrl?: string
+}
+
+export interface QuestionGroup {
+  instruction?: string
+  imageUrl?: string
+  questions: Question[]
 }
 
 export interface Section {
@@ -26,7 +33,9 @@ export interface Part {
   title: string
   instruction: string
   passage: string
+  imageUrl?: string
   sections?: Section[]
+  questionGroups?: QuestionGroup[]
   questions: Question[]
   questionRange: [number, number]
 }

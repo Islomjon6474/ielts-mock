@@ -8,6 +8,7 @@ import FillInBlankQuestion from './questions/FillInBlankQuestion'
 import MatchHeadingQuestion from './questions/MatchHeadingQuestion'
 import MultipleChoiceQuestion from './questions/MultipleChoiceQuestion'
 import { Question } from '@/stores/ReadingStore'
+import { Image } from 'antd'
 
 const QuestionPanel = observer(() => {
   const { readingStore } = useStore()
@@ -195,6 +196,27 @@ const QuestionPanel = observer(() => {
             })}
           </div>
         </div>
+      )}
+
+      {/* Display images from questionGroups if available */}
+      {currentPart.questionGroups && currentPart.questionGroups.length > 0 && (
+        currentPart.questionGroups.map((group, groupIndex) => (
+          group.imageUrl && (
+            <div key={`group-img-${groupIndex}`} className="mb-6">
+              {group.instruction && (
+                <p className="text-sm text-gray-600 mb-3">{group.instruction}</p>
+              )}
+              <div className="border rounded-lg p-4 bg-gray-50">
+                <Image
+                  src={group.imageUrl}
+                  alt={`Question group ${groupIndex + 1} illustration`}
+                  style={{ maxWidth: '100%', maxHeight: '500px', objectFit: 'contain' }}
+                  preview={true}
+                />
+              </div>
+            </div>
+          )
+        ))
       )}
 
       {questionGroups.map((group, groupIndex) => {

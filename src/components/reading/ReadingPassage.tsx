@@ -2,18 +2,19 @@
 
 import { useState } from 'react'
 import { observer } from 'mobx-react-lite'
-import { Button, Card } from 'antd'
+import { Button, Card, Image } from 'antd'
 import { CloseOutlined } from '@ant-design/icons'
 import { Section } from '@/stores/ReadingStore'
 
 interface ReadingPassageProps {
   passage: string
+  imageUrl?: string
   sections?: Section[]
   onHeadingDrop?: (sectionNumber: number, heading: string) => void
   getHeadingForSection?: (sectionNumber: number) => string | undefined
 }
 
-const ReadingPassage = observer(({ passage, sections, onHeadingDrop, getHeadingForSection }: ReadingPassageProps) => {
+const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, getHeadingForSection }: ReadingPassageProps) => {
   const [dragOverSection, setDragOverSection] = useState<number | null>(null)
 
   const handleDragOver = (e: React.DragEvent, sectionNumber: number) => {
@@ -42,6 +43,21 @@ const ReadingPassage = observer(({ passage, sections, onHeadingDrop, getHeadingF
     return (
       <div className="p-6">
         <h2 className="text-xl font-bold mb-6">{passage}</h2>
+        
+        {/* Display part-level image if available */}
+        {imageUrl && (
+          <div className="mb-6">
+            <div className="border rounded-lg p-4 bg-gray-50">
+              <Image
+                src={imageUrl}
+                alt="Passage illustration"
+                style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }}
+                preview={true}
+              />
+            </div>
+          </div>
+        )}
+        
         <div className="space-y-6">
           {sections.map((section) => {
             const assignedHeading = getHeadingForSection?.(section.number)
@@ -118,6 +134,20 @@ const ReadingPassage = observer(({ passage, sections, onHeadingDrop, getHeadingF
 
   return (
     <div className="p-6">
+      {/* Display part-level image if available */}
+      {imageUrl && (
+        <div className="mb-6">
+          <div className="border rounded-lg p-4 bg-gray-50">
+            <Image
+              src={imageUrl}
+              alt="Passage illustration"
+              style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }}
+              preview={true}
+            />
+          </div>
+        </div>
+      )}
+      
       <div className="prose max-w-none">
         {paragraphs.map((paragraph, index) => {
           const match = paragraph.trim().match(/^(\d+)/)

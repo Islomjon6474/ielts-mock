@@ -135,7 +135,12 @@ const PartEditorPage = () => {
         }
         setQuestionGroupCount(groups.length)
       } else {
-        console.warn('No question groups found in data')
+        // For Writing section or other sections without question groups, load data directly
+        console.warn('No question groups found in data - loading data directly (Writing section)')
+        if (typeof dataToLoad === 'object' && dataToLoad) {
+          form.setFieldsValue(dataToLoad as AdminPartContent)
+          console.log('✅ Form populated directly with data:', dataToLoad)
+        }
       }
       
     } catch (error) {
@@ -212,7 +217,48 @@ const PartEditorPage = () => {
     }
   }
 
+  // Calculate the next question range based on existing groups
+  const getNextQuestionRange = (groupIndex: number): string => {
+    const questionGroups = form.getFieldValue('questionGroups') || []
+    
+    let nextStart = 1
+    
+    // Calculate based on all previous groups
+    for (let i = 0; i < groupIndex; i++) {
+      const group = questionGroups[i]
+      if (group && group.range) {
+        // Parse range like "1-5" to get the end number
+        const match = group.range.match(/^(\d+)-(\d+)$/)
+        if (match) {
+          nextStart = parseInt(match[2]) + 1
+        }
+      } else if (group && group.questions) {
+        // If no range but has questions, count them
+        nextStart += group.questions.length
+      }
+    }
+    
+    // Default to 5 questions per group, can be adjusted
+    const defaultGroupSize = 5
+    return `${nextStart}-${nextStart + defaultGroupSize - 1}`
+  }
+
   const addQuestionGroup = () => {
+    const newIndex = questionGroupCount
+    const nextRange = getNextQuestionRange(newIndex)
+    
+    // Get current question groups
+    const currentGroups = form.getFieldValue('questionGroups') || []
+    
+    // Add new group with calculated range
+    const newGroup = {
+      type: '',
+      range: nextRange,
+      instruction: '',
+      questions: []
+    }
+    
+    form.setFieldValue('questionGroups', [...currentGroups, newGroup])
     setQuestionGroupCount(prev => prev + 1)
   }
 
@@ -234,12 +280,20 @@ const PartEditorPage = () => {
             >
               <Form.Item
                 name="passage"
-                style={{ flex: 1, marginBottom: 0 }}
+                style={{ flex: 1, marginBottom: 16 }}
               >
                 <TextArea
                   placeholder="Enter the reading passage..."
-                  style={{ height: '100%', minHeight: '500px', fontFamily: 'serif' }}
+                  style={{ height: '100%', minHeight: '400px', fontFamily: 'serif' }}
                 />
+              </Form.Item>
+              
+              <Form.Item
+                label="Passage Image (Optional)"
+                name="imageId"
+                help="Upload an image/diagram that accompanies the entire passage"
+              >
+                <ImageUpload label="Upload Passage Image" />
               </Form.Item>
             </Card>
           </div>
@@ -263,7 +317,8 @@ const PartEditorPage = () => {
                     groupPath={['questionGroups', index]}
                     groupLabel={`Question Group ${index + 1}`}
                     form={form}
-                    showImageUpload={false}
+                    defaultQuestionRange={getNextQuestionRange(index)}
+                    showImageUpload={true}
                     onAnswerChange={handleAnswerChange}
                   />
                 ))}
@@ -340,6 +395,7 @@ const PartEditorPage = () => {
                 groupPath={['questionGroups', index]}
                 groupLabel={`Question Group ${index + 1}`}
                 form={form}
+                defaultQuestionRange={getNextQuestionRange(index)}
                 showImageUpload={isListening}
                 onAnswerChange={handleAnswerChange}
               />
