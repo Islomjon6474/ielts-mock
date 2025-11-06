@@ -239,32 +239,39 @@ const QuestionPanel = observer(() => {
         }
 
         return (
-          <div key={groupIndex} className="space-y-4">
-            {/* Group Header */}
-            <div className="mb-4">
-              <h3 className="font-bold text-lg mb-2">
-                Questions {group.startNumber}
-                {group.endNumber !== group.startNumber && `–${group.endNumber}`}
-              </h3>
-              {getInstructionText(group.type)}
+          <div key={groupIndex} className="mb-8">
+            {/* Divider between groups (except for first group) */}
+            {groupIndex > 0 && (
+              <div className="border-t-2 border-gray-300 my-6"></div>
+            )}
+            
+            <div className="space-y-4">
+              {/* Group Header */}
+              <div className="mb-4 bg-gray-50 p-4 rounded-lg border-l-4 border-blue-500">
+                <h3 className="font-bold text-lg mb-2">
+                  Questions {group.startNumber}
+                  {group.endNumber !== group.startNumber && `–${group.endNumber}`}
+                </h3>
+                {getInstructionText(group.type)}
+              </div>
+
+              {/* Questions in Group */}
+              {questionsToRender.map(({ question, index, questionNumber }) => {
+                const isCurrent = index === readingStore.currentQuestionIndex
+
+                return (
+                  <div
+                    key={question.id}
+                    ref={(el) => {
+                      questionRefs.current[questionNumber] = el
+                    }}
+                    className={`transition-all ${isCurrent ? 'ring-2 ring-blue-400 rounded-lg' : ''}`}
+                  >
+                    {renderQuestion(question, questionNumber)}
+                  </div>
+                )
+              })}
             </div>
-
-            {/* Questions in Group */}
-            {questionsToRender.map(({ question, index, questionNumber }) => {
-              const isCurrent = index === readingStore.currentQuestionIndex
-
-              return (
-                <div
-                  key={question.id}
-                  ref={(el) => {
-                    questionRefs.current[questionNumber] = el
-                  }}
-                  className={`transition-all ${isCurrent ? 'ring-2 ring-blue-400 rounded-lg' : ''}`}
-                >
-                  {renderQuestion(question, questionNumber)}
-                </div>
-              )
-            })}
           </div>
         )
       })}

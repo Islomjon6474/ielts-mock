@@ -78,17 +78,17 @@ const SectionPartsPage = () => {
                 const hasContent = contentData?.instruction || contentData?.passage || contentData?.imageId
                 questionCount = hasContent ? 1 : 0
               }
-              // For Reading/Listening: Count questions from question groups
+              // For Reading/Listening: Count from flat questions array (properly expanded)
+              else if (contentData?.questions && Array.isArray(contentData.questions)) {
+                questionCount = contentData.questions.length
+              }
+              // Fallback: count from question groups
               else if (contentData?.questionGroups && Array.isArray(contentData.questionGroups)) {
                 contentData.questionGroups.forEach((group: any) => {
                   if (group.questions && Array.isArray(group.questions)) {
                     questionCount += group.questions.length
                   }
                 })
-              }
-              // Fallback: count from questions array if no question groups
-              else if (contentData?.questions && Array.isArray(contentData.questions)) {
-                questionCount = contentData.questions.length
               }
             }
           } catch (e) {

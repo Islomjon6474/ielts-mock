@@ -138,7 +138,7 @@ const HomePage = observer(() => {
               <Col xs={24} sm={12} lg={8} key={`skeleton-${index}`}>
                 <Card style={{ 
                   borderRadius: '12px',
-                  height: '280px',
+                  height: '180px',
                   border: '1px solid #e8e8e8',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
                 }}>
@@ -168,7 +168,7 @@ const HomePage = observer(() => {
             </Paragraph>
           </Card>
         ) : (
-          <Row gutter={[24, 24]}>
+          <Row gutter={[12, 12]}>
             {tests.map((t) => (
               <Col xs={24} sm={12} lg={8} key={t.id || t.testId}>
                 <Card
@@ -178,7 +178,7 @@ const HomePage = observer(() => {
                     borderRadius: '12px',
                     border: '1px solid #e8e8e8',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                    height: '100%',
+                    height: '70%',
                     display: 'flex',
                     flexDirection: 'column'
                   }}
@@ -205,7 +205,7 @@ const HomePage = observer(() => {
                   </div>
 
                   {/* Metadata */}
-                  <Space direction="vertical" size={10} style={{ width: '100%', marginBottom: '20px', flex: 1 }}>
+                  <Space direction="vertical" size={10} style={{ width: '100%', marginBottom: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <FileTextOutlined style={{ color: '#8c8c8c', fontSize: '14px' }} />
                       <span style={{ fontSize: '14px', color: '#595959' }}>

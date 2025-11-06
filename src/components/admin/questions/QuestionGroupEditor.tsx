@@ -18,7 +18,7 @@ interface QuestionGroupEditorProps {
   form: any
   defaultQuestionRange?: string
   showImageUpload?: boolean
-  onAnswerChange?: (questionNumber: number, answer: string) => void
+  onAnswerChange?: (questionNumber: number, answer: string | string[]) => void
 }
 
 export const QuestionGroupEditor = ({ 
@@ -42,9 +42,15 @@ export const QuestionGroupEditor = ({
     if (type && type !== selectedType) {
       setSelectedType(type)
     }
-    if (range && range !== questionRange) {
+    
+    // For SHORT_ANSWER, always ensure there's 1 question
+    if (type === 'SHORT_ANSWER' && questions.length === 0) {
+      form.setFieldValue([...groupPath, 'questions'], [{ text: '' }])
+      setQuestionCount(1)
+    } else if (range && range !== questionRange) {
       setQuestionRange(range)
     }
+    
     if (Array.isArray(questions) && questions.length !== questionCount) {
       setQuestionCount(questions.length)
     }
@@ -77,14 +83,10 @@ export const QuestionGroupEditor = ({
     
     switch (selectedType) {
       case 'MULTIPLE_CHOICE':
-        newQuestion = { text: '', options: ['', '', '', ''], answer: '' }
+        newQuestion = { text: '', options: ['', '', ''], answer: '' }
         break
       case 'TRUE_FALSE_NOT_GIVEN':
       case 'YES_NO_NOT_GIVEN':
-        newQuestion = { text: '', answer: '' }
-        break
-      case 'SENTENCE_COMPLETION':
-      case 'SUMMARY_COMPLETION':
         newQuestion = { text: '', answer: '' }
         break
       case 'MATCH_HEADING':
@@ -141,9 +143,16 @@ export const QuestionGroupEditor = ({
 
   const handleQuestionTypeChange = (value: string) => {
     setSelectedType(value)
-    // Reset questions when type changes
-    form.setFieldValue([...groupPath, 'questions'], [])
-    setQuestionCount(0)
+    
+    // For SHORT_ANSWER, immediately create 1 question with empty text
+    if (value === 'SHORT_ANSWER') {
+      form.setFieldValue([...groupPath, 'questions'], [{ text: '' }])
+      setQuestionCount(1)
+    } else {
+      // Reset questions when type changes for other types
+      form.setFieldValue([...groupPath, 'questions'], [])
+      setQuestionCount(0)
+    }
   }
 
   const getQuestionNumber = (index: number): number => {
@@ -163,17 +172,14 @@ export const QuestionGroupEditor = ({
     
     switch (selectedType) {
       case 'MULTIPLE_CHOICE':
-        return <MultipleChoiceQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} />
+        return <MultipleChoiceQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
       case 'TRUE_FALSE_NOT_GIVEN':
       case 'YES_NO_NOT_GIVEN':
         return <TrueFalseQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} type={selectedType} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} />
-      case 'SENTENCE_COMPLETION':
-      case 'SUMMARY_COMPLETION':
-        return <SentenceCompletionQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} />
       case 'MATCH_HEADING':
         return <MatchHeadingQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} />
       case 'SHORT_ANSWER':
-        return <ShortAnswerQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} />
+        return <ShortAnswerQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
       case 'IMAGE_INPUTS':
         return <ImageInputsQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} />
       default:
@@ -248,7 +254,7 @@ v. Conclusion and summary`}
         </>
       )}
       
-      {selectedType && (
+      {selectedType && selectedType !== 'SHORT_ANSWER' && (
         <Button 
           type="dashed" 
           block 

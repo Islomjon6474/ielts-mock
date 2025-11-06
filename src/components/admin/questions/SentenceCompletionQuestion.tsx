@@ -8,7 +8,7 @@ interface SentenceCompletionQuestionProps {
   questionIndex: number
   questionNumber: number
   onRemove: () => void
-  onAnswerChange?: (questionNumber: number, answer: string) => void
+  onAnswerChange?: (questionNumber: number, answer: string | string[]) => void
 }
 
 export const SentenceCompletionQuestion = ({ 

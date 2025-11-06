@@ -118,10 +118,11 @@ export const testManagementApi = {
   },
 
   // Save question answers
-  saveQuestion: async (sectionId: string, partId: string, answers: string[]) => {
+  saveQuestion: async (sectionId: string, partId: string, ord: number, answers: string[]) => {
     const response = await api.post('/test-management/save-question', {
       sectionId,
       partId,
+      ord,
       answers,
     })
     return response.data

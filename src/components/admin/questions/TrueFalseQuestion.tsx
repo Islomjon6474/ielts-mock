@@ -9,7 +9,7 @@ interface TrueFalseQuestionProps {
   questionNumber: number
   onRemove: () => void
   type: 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN'
-  onAnswerChange?: (questionNumber: number, answer: string) => void
+  onAnswerChange?: (questionNumber: number, answer: string | string[]) => void
 }
 
 export const TrueFalseQuestion = ({ 

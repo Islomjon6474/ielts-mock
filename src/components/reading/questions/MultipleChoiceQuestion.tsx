@@ -39,17 +39,21 @@ const MultipleChoiceQuestion = observer(({ question, questionNumber }: MultipleC
             disabled={readingStore.isPreviewMode}
           >
             <div className="space-y-3">
-              {question.options?.map((option, index) => (
-                <div key={index} className="block">
-                  <Checkbox
-                    value={option}
-                    disabled={readingStore.isPreviewMode || (!answer.includes(option) && answer.length >= maxAnswers)}
-                    className="whitespace-normal"
-                  >
-                    <span className="ml-2">{option}</span>
-                  </Checkbox>
-                </div>
-              ))}
+              {question.options?.map((option, index) => {
+                const optionLabel = String.fromCharCode(65 + index) // A, B, C, D...
+                return (
+                  <div key={index} className="block">
+                    <Checkbox
+                      value={option}
+                      disabled={readingStore.isPreviewMode || (!answer.includes(option) && answer.length >= maxAnswers)}
+                      className="whitespace-normal"
+                    >
+                      <span className="font-semibold mr-2">{optionLabel}.</span>
+                      <span>{option}</span>
+                    </Checkbox>
+                  </div>
+                )
+              })}
             </div>
           </Checkbox.Group>
 

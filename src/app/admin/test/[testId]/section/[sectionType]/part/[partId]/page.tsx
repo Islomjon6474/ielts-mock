@@ -156,12 +156,19 @@ const PartEditorPage = () => {
       setSaving(true)
       const values = await form.validateFields()
       
-      // Save BOTH formats:
-      // 1. Admin format (with answers) for re-editing
-      // 2. User format (without answers) for preview/testing
+      console.log('📝 Form values before save:', values)
+      
+      // Remove answers from both admin and user formats
+      // Answers are stored separately via saveQuestion API (with ord parameter)
+      const cleanedContent = removeAnswersFromContent(values)
+      
+      console.log('✅ Cleaned content (no answers):', cleanedContent)
+      console.log('📖 Passage field:', cleanedContent.passage)
+      console.log('❓ Questions array:', cleanedContent.questions)
+      
       const contentToSave = {
-        admin: values,  // Keep everything including answers for editing
-        user: removeAnswersFromContent(values)  // Without answers for user-side
+        admin: cleanedContent,  // Without answers - for re-editing structure only
+        user: cleanedContent    // Without answers - for user-side rendering
       }
       
       // Note: API function already does JSON.stringify, so pass the object directly
@@ -180,17 +187,80 @@ const PartEditorPage = () => {
     }
   }
 
-  // Remove answers from content (they're already saved via handleAnswerChange)
+  // Remove answers from content (they're saved separately via saveQuestion API)
+  // Also prepares flat questions array for user-side rendering
   const removeAnswersFromContent = (formData: any) => {
     const contentWithoutAnswers = { ...formData }
+    const flatQuestions: any[] = []
 
     // Process question groups to remove answers
     if (contentWithoutAnswers.questionGroups) {
       contentWithoutAnswers.questionGroups = contentWithoutAnswers.questionGroups.map((group: any) => {
+        // Parse the range to get starting question number
+        let startNumber = 1
+        if (group.range) {
+          const rangeMatch = group.range.match(/(\d+)-(\d+)/)
+          if (rangeMatch) {
+            startNumber = parseInt(rangeMatch[1])
+          }
+        }
+        
+        // For MATCH_HEADING, parse headingOptions into an array
+        let headingOptionsArray: string[] = []
+        if (group.type === 'MATCH_HEADING' && group.headingOptions) {
+          headingOptionsArray = group.headingOptions
+            .split('\n')
+            .map((h: string) => h.trim())
+            .filter((h: string) => h.length > 0)
+        }
+
         if (group.questions) {
-          const cleanQuestions = group.questions.map((question: any) => {
-            // Remove answer field
-            const { correctAnswer, ...questionWithoutAnswer } = question
+          const cleanQuestions = group.questions.map((question: any, index: number) => {
+            // Remove both correctAnswer and answers fields
+            const { correctAnswer, answers, ...questionWithoutAnswer } = question
+            
+            // For SHORT_ANSWER type, expand ONLY the flat questions array (user-side)
+            // Keep single question object in questionGroups (admin-side)
+            if (group.type === 'SHORT_ANSWER') {
+              // Extract all placeholders [1], [2], [3] from the text
+              const matches = (questionWithoutAnswer.text || '').match(/\[(\d+)\]/g) || []
+              const placeholderNumbers = matches.map((m: string) => {
+                const num = m.match(/\[(\d+)\]/)
+                return num ? parseInt(num[1]) : 0
+              }).filter((n: number) => n > 0)
+              
+              // Create separate flat question objects for user-side (1 per placeholder)
+              placeholderNumbers.forEach((placeholderNum: number) => {
+                flatQuestions.push({
+                  id: placeholderNum,
+                  type: 'FILL_IN_BLANK',
+                  text: questionWithoutAnswer.text || '',
+                })
+              })
+            } else {
+              // For other types, one question object = one flat question
+              const questionType = group.type
+              const questionId = startNumber + index
+              
+              const flatQuestion: any = {
+                id: questionId,
+                type: questionType,
+                text: questionWithoutAnswer.text || '',
+              }
+              
+              // Add type-specific fields
+              if (questionType === 'MULTIPLE_CHOICE') {
+                flatQuestion.options = questionWithoutAnswer.options
+                flatQuestion.maxAnswers = questionWithoutAnswer.maxAnswers
+              } else if (questionType === 'MATCH_HEADING') {
+                flatQuestion.sectionId = questionWithoutAnswer.sectionId
+                flatQuestion.options = headingOptionsArray // Add heading options to each question
+              }
+              
+              flatQuestions.push(flatQuestion)
+            }
+            
+            // Return single question object (keeps admin UI clean)
             return questionWithoutAnswer
           })
           
@@ -200,17 +270,33 @@ const PartEditorPage = () => {
       })
     }
 
+    // Add flat questions array for user-side rendering
+    contentWithoutAnswers.questions = flatQuestions
+    
+    // Set questionRange based on all questions
+    if (flatQuestions.length > 0) {
+      const allIds = flatQuestions.map(q => q.id)
+      contentWithoutAnswers.questionRange = [Math.min(...allIds), Math.max(...allIds)]
+    }
+
     return contentWithoutAnswers
   }
 
   // Handle real-time answer saving
-  const handleAnswerChange = async (questionNumber: number, answer: string) => {
+  const handleAnswerChange = async (questionNumber: number, answer: string | string[]) => {
     if (!answer || !sectionId) return
     
+    // Convert to array if it's a string
+    const answers = Array.isArray(answer) ? answer : [answer]
+    
+    // Filter out empty answers
+    const validAnswers = answers.filter(a => a && a.trim().length > 0)
+    if (validAnswers.length === 0) return
+    
     try {
-      // Save this single answer immediately
-      await testManagementApi.saveQuestion(sectionId, partId, [answer])
-      console.log(`Answer for question ${questionNumber} saved:`, answer)
+      // Save with ord parameter (question number)
+      await testManagementApi.saveQuestion(sectionId, partId, questionNumber, validAnswers)
+      console.log(`Answer for question ${questionNumber} saved:`, validAnswers)
     } catch (error) {
       console.error('Error saving answer:', error)
       message.error(`Failed to save answer for question ${questionNumber}`)
@@ -233,8 +319,18 @@ const PartEditorPage = () => {
           nextStart = parseInt(match[2]) + 1
         }
       } else if (group && group.questions) {
-        // If no range but has questions, count them
-        nextStart += group.questions.length
+        // For SHORT_ANSWER, count placeholders, not question objects
+        if (group.type === 'SHORT_ANSWER') {
+          group.questions.forEach((question: any) => {
+            if (question.text) {
+              const matches = question.text.match(/\[(\d+)\]/g) || []
+              nextStart += matches.length
+            }
+          })
+        } else {
+          // For other types, count question objects
+          nextStart += group.questions.length
+        }
       }
     }
     
@@ -496,7 +592,10 @@ const PartEditorPage = () => {
         alignItems: 'center',
         justifyContent: 'space-between',
         height: 'auto',
-        lineHeight: 'normal'
+        lineHeight: 'normal',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
           <Button

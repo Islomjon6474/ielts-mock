@@ -10,8 +10,6 @@ export const questionTypes = [
   { value: 'TRUE_FALSE_NOT_GIVEN', label: 'True/False/Not Given' },
   { value: 'YES_NO_NOT_GIVEN', label: 'Yes/No/Not Given' },
   { value: 'MATCH_HEADING', label: 'Match Headings' },
-  { value: 'SENTENCE_COMPLETION', label: 'Sentence Completion' },
-  { value: 'SUMMARY_COMPLETION', label: 'Summary Completion' },
-  { value: 'SHORT_ANSWER', label: 'Short Answer Questions' },
+  { value: 'SHORT_ANSWER', label: 'Fill in the Blanks (Inline Placeholders)' },
   { value: 'IMAGE_INPUTS', label: 'Image with Inputs (Listening)' },
 ]
