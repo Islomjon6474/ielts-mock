@@ -9,13 +9,33 @@ export function transformAdminToListeningPart(
   partNumber: number,
   audioUrl?: string
 ): ListeningPart {
-  const questionGroups = adminData.questionGroups || []
+  // Use the flat questions array if available (new format)
+  // Otherwise fall back to flattening questionGroups (old format)
+  let questions: any[]
+  let questionRange: [number, number]
   
-  // Calculate question range from all question groups
-  const questionRange = calculateQuestionRange(questionGroups)
-  
-  // Flatten question groups into single questions array
-  const questions = flattenQuestionGroups(questionGroups)
+  if (adminData.questions && Array.isArray(adminData.questions) && adminData.questions.length > 0) {
+    // New format: use pre-flattened questions array
+    questions = adminData.questions.map((q: any) => ({
+      ...q,
+      // Convert FILL_IN_BLANK back to the type expected by listening components
+      type: q.type
+    }))
+    
+    // Use questionRange from admin data if available
+    if (adminData.questionRange && Array.isArray(adminData.questionRange)) {
+      questionRange = adminData.questionRange as [number, number]
+    } else {
+      // Calculate from questions
+      const ids = questions.map(q => q.id).filter(id => typeof id === 'number')
+      questionRange = ids.length > 0 ? [Math.min(...ids), Math.max(...ids)] : [1, 10]
+    }
+  } else {
+    // Old format: flatten question groups
+    const questionGroups = adminData.questionGroups || []
+    questionRange = calculateQuestionRange(questionGroups)
+    questions = flattenQuestionGroups(questionGroups)
+  }
   
   return {
     id: partNumber,

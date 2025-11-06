@@ -42,7 +42,7 @@ const TableQuestion = observer(({ headers, rows, instruction }: TableQuestionPro
           {headers && headers.length > 0 && (
             <thead>
               <tr className="bg-gray-100">
-                {headers.map((header, index) => (
+                {headers.map((header: string, index: number) => (
                   <th
                     key={index}
                     className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800"
@@ -54,9 +54,9 @@ const TableQuestion = observer(({ headers, rows, instruction }: TableQuestionPro
             </thead>
           )}
           <tbody>
-            {rows.map((row, rowIndex) => (
+            {rows.map((row: TableRow, rowIndex: number) => (
               <tr key={rowIndex} className="hover:bg-gray-50">
-                {row.cells.map((cell, cellIndex) => {
+                {row.cells.map((cell: TableCell, cellIndex: number) => {
                   const cellClass = `border border-gray-300 px-4 py-2 ${cell.className || ''}`
                   
                   if (cell.type === 'input' && cell.questionId !== undefined) {

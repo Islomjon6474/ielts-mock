@@ -46,9 +46,9 @@ const FlowChartQuestion = observer(({
   }
 
   // Get used options
-  const questionIds = Array.from({ length: questionEnd - questionStart + 1 }, (_, i) => questionStart + i)
+  const questionIds = Array.from({ length: questionEnd - questionStart + 1 }, (_: unknown, i: number) => questionStart + i)
   const usedOptions = questionIds
-    .map(id => listeningStore.getAnswer(id) as string)
+    .map((id: number) => listeningStore.getAnswer(id) as string)
     .filter(Boolean)
 
   const DropZone = ({ questionId }: { questionId: number }) => {
@@ -177,7 +177,7 @@ const FlowChartQuestion = observer(({
         {/* Right side - Options */}
         <div className="w-48">
           <div className="space-y-2">
-            {options.map((option, index) => {
+            {options.map((option: string, index: number) => {
               const isUsed = usedOptions.includes(option)
               
               return (

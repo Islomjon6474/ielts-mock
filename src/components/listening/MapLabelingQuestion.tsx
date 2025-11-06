@@ -114,7 +114,7 @@ const MapLabelingQuestion = observer(({
 
   // Get used options
   const usedOptions = positions
-    .map(pos => listeningStore.getAnswer(pos.id) as string)
+    .map((pos: MapPosition) => listeningStore.getAnswer(pos.id) as string)
     .filter(Boolean)
 
   return (
@@ -134,7 +134,7 @@ const MapLabelingQuestion = observer(({
             />
             
             {/* Drop zones on map */}
-            {positions.map((pos) => {
+            {positions.map((pos: MapPosition) => {
               const answer = listeningStore.getAnswer(pos.id) as string || ''
               const svgPos = svgPositions.get(pos.id)
               
@@ -187,7 +187,7 @@ const MapLabelingQuestion = observer(({
         {/* Right side - Options */}
         <div className="w-64">
           <div className="space-y-2">
-            {options.map((option, index) => {
+            {options.map((option: string, index: number) => {
               const isUsed = usedOptions.includes(option)
               
               return (

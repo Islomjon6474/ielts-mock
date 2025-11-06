@@ -14,6 +14,9 @@ import TableQuestion from './TableQuestion'
 import MatchingQuestion from './MatchingQuestion'
 import MapLabelingQuestion from './MapLabelingQuestion'
 import FlowChartQuestion from './FlowChartQuestion'
+import FillInBlankQuestion from './FillInBlankQuestion'
+import MultipleChoiceQuestion from './MultipleChoiceQuestion'
+import TrueFalseQuestion from './TrueFalseQuestion'
 import SubmitModal from '@/components/common/SubmitModal'
 
 const { Content } = Layout
@@ -185,89 +188,125 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                         
                         {/* Questions on the right */}
                         <div className="flex-1 space-y-4">
-                          {group.questions.map((q: ListeningQuestion) => (
-                            <div key={q.id} className="border-b pb-4">
-                              <div className="text-sm text-gray-700 whitespace-pre-wrap mb-2">{q.text}</div>
-                              {q.type === 'IMAGE_INPUTS' ? (
-                                <div>
-                                  <Input
-                                    value={(listeningStore.getAnswer(q.id) as string) || ''}
-                                    onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
-                                    placeholder={`${q.id}`}
-                                    className="inline-block"
-                                    style={{ width: '240px' }}
-                                  />
-                                </div>
-                              ) : q.options && Array.isArray(q.options) && q.options.length > 0 ? (
-                                <div className="ml-2 space-y-1">
-                                  {q.options.map((opt: string, idx: number) => (
-                                    <label key={idx} className="flex items-center gap-2 text-sm">
-                                      <input
-                                        type="radio"
-                                        name={`q-${q.id}`}
-                                        value={opt}
-                                        checked={listeningStore.getAnswer(q.id) === opt}
+                          {(() => {
+                            // For FILL_IN_BLANK, deduplicate questions with same text
+                            let questionsToRender = group.questions
+                            if (group.questions.length > 0 && group.questions[0].type === 'FILL_IN_BLANK') {
+                              const seenTexts = new Set<string>()
+                              questionsToRender = group.questions.filter((q: ListeningQuestion) => {
+                                if (seenTexts.has(q.text)) {
+                                  return false
+                                }
+                                seenTexts.add(q.text)
+                                return true
+                              })
+                            }
+                            
+                            return questionsToRender.map((q: ListeningQuestion) => {
+                              switch (q.type) {
+                                case 'MULTIPLE_CHOICE':
+                                  return <MultipleChoiceQuestion key={q.id} question={q} questionNumber={q.id} />
+                                
+                                case 'TRUE_FALSE_NOT_GIVEN':
+                                case 'YES_NO_NOT_GIVEN':
+                                  return <TrueFalseQuestion key={q.id} question={q} questionNumber={q.id} type={q.type as 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN'} />
+                                
+                                case 'FILL_IN_BLANK':
+                                  return <FillInBlankQuestion key={q.id} question={q} questionNumber={q.id} />
+                                
+                                case 'IMAGE_INPUTS':
+                                  return (
+                                    <div key={q.id} className="border-b pb-4">
+                                      <div className="text-sm text-gray-700 whitespace-pre-wrap mb-2">{q.text}</div>
+                                      <Input
+                                        value={(listeningStore.getAnswer(q.id) as string) || ''}
                                         onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
+                                        placeholder={`${q.id}`}
+                                        className="inline-block"
+                                        style={{ width: '240px' }}
                                       />
-                                      {opt}
-                                    </label>
-                                  ))}
-                                </div>
-                              ) : (
-                                <Input
-                                  value={(listeningStore.getAnswer(q.id) as string) || ''}
-                                  onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
-                                  placeholder={`${q.id}`}
-                                  className="inline-block text-center"
-                                  style={{ width: '200px' }}
-                                />
-                              )}
-                            </div>
-                          ))}
+                                    </div>
+                                  )
+                                
+                                default:
+                                  return (
+                                    <div key={q.id} className="border-b pb-4">
+                                      <div className="text-sm text-gray-700 whitespace-pre-wrap mb-2">{q.text}</div>
+                                      <Input
+                                        value={(listeningStore.getAnswer(q.id) as string) || ''}
+                                        onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
+                                        placeholder={`${q.id}`}
+                                        className="inline-block text-center"
+                                        style={{ width: '200px' }}
+                                      />
+                                    </div>
+                                  )
+                              }
+                            })
+                          })()}
                         </div>
                       </div>
                     ) : (
                       // No image - render questions normally
                       <div className="space-y-4">
-                        {group.questions.map((q: ListeningQuestion) => (
-                          <div key={q.id} className="border-b pb-4">
-                            <div className="text-sm text-gray-700 whitespace-pre-wrap mb-2">{q.text}</div>
-                            {q.type === 'IMAGE_INPUTS' ? (
-                              <div>
-                                <Input
-                                  value={(listeningStore.getAnswer(q.id) as string) || ''}
-                                  onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
-                                  placeholder={`${q.id}`}
-                                  className="inline-block"
-                                  style={{ width: '240px' }}
-                                />
-                              </div>
-                            ) : q.options && Array.isArray(q.options) && q.options.length > 0 ? (
-                              <div className="ml-2 space-y-1">
-                                {q.options.map((opt: string, idx: number) => (
-                                  <label key={idx} className="flex items-center gap-2 text-sm">
-                                    <input
-                                      type="radio"
-                                      name={`q-${q.id}`}
-                                      value={opt}
-                                      checked={listeningStore.getAnswer(q.id) === opt}
+                        {(() => {
+                          // For FILL_IN_BLANK, deduplicate questions with same text
+                          let questionsToRender = group.questions
+                          if (group.questions.length > 0 && group.questions[0].type === 'FILL_IN_BLANK') {
+                            const seenTexts = new Set<string>()
+                            questionsToRender = group.questions.filter((q: ListeningQuestion) => {
+                              if (seenTexts.has(q.text)) {
+                                return false
+                              }
+                              seenTexts.add(q.text)
+                              return true
+                            })
+                          }
+                          
+                          return questionsToRender.map((q: ListeningQuestion) => {
+                            // Render based on question type
+                            switch (q.type) {
+                              case 'MULTIPLE_CHOICE':
+                                return <MultipleChoiceQuestion key={q.id} question={q} questionNumber={q.id} />
+                              
+                              case 'TRUE_FALSE_NOT_GIVEN':
+                              case 'YES_NO_NOT_GIVEN':
+                                return <TrueFalseQuestion key={q.id} question={q} questionNumber={q.id} type={q.type as 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN'} />
+                              
+                              case 'FILL_IN_BLANK':
+                                return <FillInBlankQuestion key={q.id} question={q} questionNumber={q.id} />
+                              
+                              case 'IMAGE_INPUTS':
+                                return (
+                                  <div key={q.id} className="border-b pb-4">
+                                    <div className="text-sm text-gray-700 whitespace-pre-wrap mb-2">{q.text}</div>
+                                    <Input
+                                      value={(listeningStore.getAnswer(q.id) as string) || ''}
                                       onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
+                                      placeholder={`${q.id}`}
+                                      className="inline-block"
+                                      style={{ width: '240px' }}
                                     />
-                                    {opt}
-                                  </label>
-                                ))}
-                              </div>
-                            ) : (
-                              <Input
-                                value={(listeningStore.getAnswer(q.id) as string) || ''}
-                                onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
-                                placeholder={`${q.id}`}
-                                className="inline-block text-center"
-                                style={{ width: '200px' }}
-                              />
-                            )}
-                          </div>
-                        ))}
+                                  </div>
+                                )
+                              
+                              default:
+                                // Fallback: basic input
+                                return (
+                                  <div key={q.id} className="border-b pb-4">
+                                    <div className="text-sm text-gray-700 whitespace-pre-wrap mb-2">{q.text}</div>
+                                    <Input
+                                      value={(listeningStore.getAnswer(q.id) as string) || ''}
+                                      onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
+                                      placeholder={`${q.id}`}
+                                      className="inline-block text-center"
+                                      style={{ width: '200px' }}
+                                    />
+                                  </div>
+                                )
+                            }
+                          })
+                        })()}
                       </div>
                     )}
                   </div>

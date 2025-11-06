@@ -54,7 +54,7 @@ const MatchingQuestion = observer(({
 
   // Get used options
   const usedOptions = leftItems
-    .map(item => listeningStore.getAnswer(item.id) as string)
+    .map((item: MatchingItem) => listeningStore.getAnswer(item.id) as string)
     .filter(Boolean)
 
   return (
@@ -67,7 +67,7 @@ const MatchingQuestion = observer(({
         <div className="flex-1">
           <h4 className="font-semibold text-sm mb-3">People</h4>
           <div className="space-y-3">
-            {leftItems.map((item) => {
+            {leftItems.map((item: MatchingItem) => {
               const answer = listeningStore.getAnswer(item.id) as string || ''
               
               return (
@@ -104,7 +104,7 @@ const MatchingQuestion = observer(({
         <div className="flex-1">
           <h4 className="font-semibold text-sm mb-3">Staff Responsibilities</h4>
           <div className="space-y-2">
-            {rightOptions.map((option, index) => {
+            {rightOptions.map((option: string, index: number) => {
               const isUsed = usedOptions.includes(option)
               
               return (

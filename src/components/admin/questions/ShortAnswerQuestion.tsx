@@ -1,6 +1,6 @@
 import { Card, Button, Form, Input, Alert } from 'antd'
 import { DeleteOutlined, InfoCircleOutlined } from '@ant-design/icons'
-import { PlaceholderTextArea } from '../PlaceholderTextArea_v2'
+import { RichTextEditor } from '../RichTextEditor'
 import { useState, useEffect } from 'react'
 
 interface ShortAnswerQuestionProps {
@@ -28,16 +28,30 @@ export const ShortAnswerQuestion = ({
     if (form) {
       const questionText = form.getFieldValue([...groupPath, 'questions', questionIndex, 'text'])
       if (questionText) {
-        // Extract [number] patterns from loaded text
-        const matches = questionText.match(/\[(\d+)\]/g) || []
-        const numbers = matches.map((m: string) => {
+        // Extract placeholders from HTML or plain text format
+        // HTML format: <span data-number="1">...</span>
+        // Plain text format: [1]
+        const htmlMatches = questionText.match(/data-number="(\d+)"/g) || []
+        const plainMatches = questionText.match(/\[(\d+)\]/g) || []
+        
+        const numbers: number[] = []
+        
+        // Extract from HTML
+        htmlMatches.forEach((m: string) => {
+          const num = m.match(/data-number="(\d+)"/)
+          if (num) numbers.push(parseInt(num[1]))
+        })
+        
+        // Extract from plain text
+        plainMatches.forEach((m: string) => {
           const num = m.match(/\[(\d+)\]/)
-          return num ? parseInt(num[1]) : 0
-        }).filter((n: number) => n > 0)
-        const uniqueNumbers = [...new Set(numbers)].sort((a, b) => Number(a) - Number(b))
+          if (num) numbers.push(parseInt(num[1]))
+        })
+        
+        const uniqueNumbers = [...new Set(numbers)].sort((a, b) => a - b)
         
         if (uniqueNumbers.length > 0) {
-          setExtractedPlaceholders(uniqueNumbers as number[])
+          setExtractedPlaceholders(uniqueNumbers)
         }
       }
     }
@@ -100,12 +114,13 @@ export const ShortAnswerQuestion = ({
       extra={null}
     >
       <Alert
-        message="Inline Placeholder Mode"
+        message="Rich Text with Inline Placeholders"
         description={
           <div className="text-xs">
-            <p>• Use the "Insert Placeholder" button or type <code className="bg-gray-100 px-1">{'{{number}}'}</code> directly in the text</p>
-            <p>• Example: "Card number: 6992 1 {'{{1}}'} 1147 8921" → user will see an input at that position</p>
-            <p>• Each placeholder number (e.g., {'{{1}}'}, {'{{2}}'}) represents a question number</p>
+            <p>• Use the toolbar to format text (bold, italic, lists, alignment)</p>
+            <p>• Click "Insert Placeholder" button to add input fields for students</p>
+            <p>• Example: <strong>Card number:</strong> 6992 1 [1] 1147 8921 → user will see a styled input field</p>
+            <p>• Formatting, indentation, and placeholders are all preserved</p>
           </div>
         }
         type="info"
@@ -115,15 +130,17 @@ export const ShortAnswerQuestion = ({
       />
 
       <Form.Item
-        label="Question Text with Inline Placeholders"
+        label="Question Text with Rich Formatting"
         name={[...groupPath, 'questions', questionIndex, 'text']}
         rules={[
           { required: true, message: 'Please enter the question text' },
           {
             validator: (_, value) => {
-              const placeholderMatches = (value || '').match(/\[(\d+)\]/g)
-              if (!placeholderMatches || placeholderMatches.length === 0) {
-                return Promise.reject('Please insert at least one placeholder using {{number}} syntax')
+              // Check for HTML placeholder format or plain text format
+              const htmlPlaceholders = (value || '').match(/data-number="\d+"/g)
+              const plainPlaceholders = (value || '').match(/\[(\d+)\]/g)
+              if ((!htmlPlaceholders || htmlPlaceholders.length === 0) && (!plainPlaceholders || plainPlaceholders.length === 0)) {
+                return Promise.reject('Please insert at least one placeholder using the "Insert Placeholder" button')
               }
               return Promise.resolve()
             }
@@ -147,9 +164,8 @@ export const ShortAnswerQuestion = ({
           )
         }
       >
-        <PlaceholderTextArea
-          rows={3}
-          placeholder="Enter question text and use {{number}} for input placeholders, e.g., 'Card number: {{1}}'"
+        <RichTextEditor
+          placeholder="Enter question text with formatting and placeholders..."
           questionNumber={questionNumber}
           onPlaceholdersChange={handlePlaceholdersChange}
         />

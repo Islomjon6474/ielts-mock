@@ -47,7 +47,7 @@ const BottomNavigation = observer(({
       <div className="flex items-center justify-between px-6 py-3">
         {/* Part Navigation with Question Numbers */}
         <div className="flex items-center gap-3 flex-1">
-          {parts && parts.length > 0 ? parts.map((part) => {
+          {parts && parts.length > 0 ? parts.map((part: Part) => {
             const [start, end] = part.questionRange
             const answeredCount = R.range(start, end + 1).filter(qNum =>
               isQuestionAnswered(qNum)
@@ -79,7 +79,7 @@ const BottomNavigation = observer(({
                 {/* Show question numbers only for current part */}
                 {isCurrentPart && (
                   <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
-                    {R.range(start, end + 1).map((questionNum) => {
+                    {R.range(start, end + 1).map((questionNum: number) => {
                       const isAnswered = isQuestionAnswered(questionNum)
                       const isCurrent = questionNum === currentQuestionNumber
 

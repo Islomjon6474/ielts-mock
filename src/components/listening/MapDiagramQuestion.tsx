@@ -42,7 +42,7 @@ const MapDiagramQuestion = observer(({ mapUrl, inputPositions, instruction }: Ma
         />
         
         {/* Positioned Input Fields */}
-        {inputPositions.map((position) => {
+        {inputPositions.map((position: MapInputPosition) => {
           const answer = listeningStore.getAnswer(position.questionId) as string || ''
           
           return (
