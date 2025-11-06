@@ -1,0 +1,66 @@
+'use client'
+
+import { Checkbox } from 'antd'
+import { observer } from 'mobx-react-lite'
+import { useStore } from '@/stores/StoreContext'
+
+interface MultipleChoiceQuestionProps {
+  question: any
+  questionNumber: number
+}
+
+const MultipleChoiceQuestion = observer(({ question, questionNumber }: MultipleChoiceQuestionProps) => {
+  const { listeningStore } = useStore()
+  const answer = (listeningStore.getAnswer(question.id) as string[]) || []
+  const maxAnswers = question.maxAnswers || 2
+
+  const handleChange = (checkedValues: string[]) => {
+    if (checkedValues.length <= maxAnswers) {
+      listeningStore.setAnswer(question.id, checkedValues)
+    }
+  }
+
+  return (
+    <div className="border-b pb-4">
+      <div className="flex items-start gap-4">
+        <div className="flex-shrink-0 w-8 h-8 border-2 border-gray-800 rounded flex items-center justify-center font-bold text-sm">
+          {questionNumber}
+        </div>
+        
+        <div className="flex-1">
+          <p className="mb-3 font-medium text-sm">{question.text}</p>
+          
+          <Checkbox.Group
+            value={answer}
+            onChange={(checkedValues) => handleChange(checkedValues as string[])}
+            className="w-full"
+          >
+            <div className="space-y-2">
+              {question.options?.map((option: string, index: number) => {
+                const optionLabel = String.fromCharCode(65 + index) // A, B, C, D...
+                return (
+                  <div key={index} className="block">
+                    <Checkbox
+                      value={option}
+                      disabled={!answer.includes(option) && answer.length >= maxAnswers}
+                      className="whitespace-normal"
+                    >
+                      <span className="font-semibold mr-2">{optionLabel}.</span>
+                      <span className="text-sm">{option}</span>
+                    </Checkbox>
+                  </div>
+                )
+              })}
+            </div>
+          </Checkbox.Group>
+
+          <div className="mt-2 text-xs text-gray-500">
+            Selected: {answer.length} / {maxAnswers}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+})
+
+export default MultipleChoiceQuestion
