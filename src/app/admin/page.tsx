@@ -316,7 +316,7 @@ const AdminPage = () => {
                     borderTop: '1px solid #f0f0f0'
                   }}>
                     <Button 
-                      onClick={() => router.push(`/admin/reading/preview/${test.id}`)}
+                      onClick={() => window.open(`/admin/reading/preview/${test.id}`, '_blank')}
                       style={{
                         flex: 1,
                         borderRadius: '6px',
@@ -328,7 +328,7 @@ const AdminPage = () => {
                     </Button>
                     <Button 
                       type="primary"
-                      onClick={() => handleTestClick(test.id)}
+                      onClick={() => window.open(`/admin/test/${test.id}`, '_blank')}
                       style={{
                         flex: 1,
                         borderRadius: '6px',
