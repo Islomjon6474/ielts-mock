@@ -75,16 +75,9 @@ export const ShortAnswerQuestion = ({
     const updatedAnswers = { ...answers, [placeholderNum]: value }
     setAnswers(updatedAnswers)
     
-    // Convert to ordered array based on placeholder numbers
-    const orderedAnswers = extractedPlaceholders
-      .map(num => updatedAnswers[num] || '')
-      .filter(ans => ans.trim().length > 0)
-    
-    // Save all answers as an array if we have at least one
-    if (orderedAnswers.length > 0 && onAnswerChange) {
-      // Use the first placeholder number as the primary question number
-      // Pass array of answers in correct order
-      onAnswerChange(extractedPlaceholders[0] || questionNumber, orderedAnswers)
+    // Notify parent component about the answer change for this specific placeholder
+    if (onAnswerChange) {
+      onAnswerChange(placeholderNum, value)
     }
   }
 
@@ -191,7 +184,7 @@ export const ShortAnswerQuestion = ({
             >
               <Input 
                 placeholder={`Enter correct answer for question ${placeholderNum}`}
-                onBlur={(e) => handleAnswerInput(placeholderNum, e.target.value)}
+                onChange={(e) => handleAnswerInput(placeholderNum, e.target.value)}
               />
             </Form.Item>
           ))}

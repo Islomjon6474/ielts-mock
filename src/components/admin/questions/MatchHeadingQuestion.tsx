@@ -43,7 +43,7 @@ export const MatchHeadingQuestion = ({
         <Input 
           placeholder="e.g., i, ii, iii, iv" 
           style={{ width: 100 }} 
-          onBlur={(e) => onAnswerChange?.(questionNumber, e.target.value)}
+          onChange={(e) => onAnswerChange?.(questionNumber, e.target.value)}
         />
       </Form.Item>
     </Card>

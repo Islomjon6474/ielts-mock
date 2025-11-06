@@ -31,12 +31,14 @@ const PartEditorPage = () => {
   const [activeTab, setActiveTab] = useState('content')
   const [questionGroupCount, setQuestionGroupCount] = useState(0)
   const [loadedData, setLoadedData] = useState<AdminPartContent | null>(null)
+  const [pendingAnswers, setPendingAnswers] = useState<Map<number, string[]>>(new Map())
 
   useEffect(() => {
-    if (partId) {
+    if (partId && sectionId) {
       fetchPartContent()
+      fetchCorrectAnswers()
     }
-  }, [partId])
+  }, [partId, sectionId])
 
   // Effect to set form values after question groups are rendered
   useEffect(() => {
@@ -47,6 +49,71 @@ const PartEditorPage = () => {
       setLoadedData(null) // Clear to prevent re-setting
     }
   }, [questionGroupCount, loadedData, form])
+
+  const fetchCorrectAnswers = async () => {
+    try {
+      console.log('📥 Fetching correct answers for section:', sectionId)
+      const response = await testManagementApi.getAllQuestions(sectionId)
+      console.log('✅ Correct answers response:', response)
+      
+      // Response format: { success: true, data: [{ id, partId, ord, answers: [...] }] }
+      const questions = response.data || response || []
+      
+      // Build a map of question number (ord) to answers
+      const answersMap = new Map<number, string[]>()
+      questions.forEach((q: any) => {
+        if (q.ord && q.answers && Array.isArray(q.answers)) {
+          answersMap.set(q.ord, q.answers)
+          console.log(`📝 Loaded answer for Q${q.ord}:`, q.answers)
+        }
+      })
+      
+      // Set answers in form for each question
+      if (answersMap.size > 0) {
+        const questionGroups = form.getFieldValue('questionGroups') || []
+        questionGroups.forEach((group: any, groupIndex: number) => {
+          if (group.questions) {
+            group.questions.forEach((question: any, questionIndex: number) => {
+              // For SHORT_ANSWER with placeholders
+              if (group.type === 'SHORT_ANSWER') {
+                const matches = (question.text || '').match(/\[(\d+)\]/g) || []
+                const placeholderNumbers = matches.map((m: string) => {
+                  const num = m.match(/\[(\d+)\]/)
+                  return num ? parseInt(num[1]) : 0
+                }).filter((n: number) => n > 0)
+                
+                placeholderNumbers.forEach((placeholderNum: number) => {
+                  const answers = answersMap.get(placeholderNum)
+                  if (answers && answers.length > 0) {
+                    form.setFieldValue(
+                      ['questionGroups', groupIndex, 'questions', questionIndex, 'answers', placeholderNum],
+                      answers[0] // First answer for this placeholder
+                    )
+                  }
+                })
+              } else {
+                // For other question types
+                const rangeMatch = group.range?.match(/(\d+)-(\d+)/)
+                if (rangeMatch) {
+                  const startNum = parseInt(rangeMatch[1])
+                  const questionNum = startNum + questionIndex
+                  const answers = answersMap.get(questionNum)
+                  if (answers) {
+                    form.setFieldValue(
+                      ['questionGroups', groupIndex, 'questions', questionIndex, 'correctAnswer'],
+                      answers.join(', ')
+                    )
+                  }
+                }
+              }
+            })
+          }
+        })
+      }
+    } catch (error) {
+      console.error('❌ Error fetching correct answers:', error)
+    }
+  }
 
   const fetchPartContent = async () => {
     try {
@@ -134,6 +201,8 @@ const PartEditorPage = () => {
           console.warn('Normalized groups exist but dataToLoad is not an object; skipping setLoadedData')
         }
         setQuestionGroupCount(groups.length)
+        // Fetch correct answers after content is loaded
+        setTimeout(() => fetchCorrectAnswers(), 500)
       } else {
         // For Writing section or other sections without question groups, load data directly
         console.warn('No question groups found in data - loading data directly (Writing section)')
@@ -174,7 +243,10 @@ const PartEditorPage = () => {
       // Note: API function already does JSON.stringify, so pass the object directly
       await testManagementApi.savePartQuestionContent(partId, contentToSave)
       
-      message.success('Content saved successfully!')
+      // Save all pending answers
+      await savePendingAnswers()
+      
+      message.success('Content and answers saved successfully!')
     } catch (error: any) {
       console.error('Error saving content:', error)
       if (error.errorFields) {
@@ -185,6 +257,29 @@ const PartEditorPage = () => {
     } finally {
       setSaving(false)
     }
+  }
+
+  const savePendingAnswers = async () => {
+    if (pendingAnswers.size === 0) {
+      console.log('No pending answers to save')
+      return
+    }
+    
+    console.log('💾 Saving pending answers:', Array.from(pendingAnswers.entries()))
+    
+    const savePromises: Promise<any>[] = []
+    pendingAnswers.forEach((answers, questionNumber) => {
+      if (answers.length > 0) {
+        savePromises.push(
+          testManagementApi.saveQuestion(sectionId, partId, questionNumber, answers)
+            .then(() => console.log(`✅ Saved answer for Q${questionNumber}:`, answers))
+            .catch((error) => console.error(`❌ Failed to save answer for Q${questionNumber}:`, error))
+        )
+      }
+    })
+    
+    await Promise.all(savePromises)
+    setPendingAnswers(new Map()) // Clear pending answers after save
   }
 
   // Remove answers from content (they're saved separately via saveQuestion API)
@@ -282,9 +377,9 @@ const PartEditorPage = () => {
     return contentWithoutAnswers
   }
 
-  // Handle real-time answer saving
-  const handleAnswerChange = async (questionNumber: number, answer: string | string[]) => {
-    if (!answer || !sectionId) return
+  // Handle answer change - store in pending state instead of saving immediately
+  const handleAnswerChange = (questionNumber: number, answer: string | string[]) => {
+    if (!answer) return
     
     // Convert to array if it's a string
     const answers = Array.isArray(answer) ? answer : [answer]
@@ -293,14 +388,13 @@ const PartEditorPage = () => {
     const validAnswers = answers.filter(a => a && a.trim().length > 0)
     if (validAnswers.length === 0) return
     
-    try {
-      // Save with ord parameter (question number)
-      await testManagementApi.saveQuestion(sectionId, partId, questionNumber, validAnswers)
-      console.log(`Answer for question ${questionNumber} saved:`, validAnswers)
-    } catch (error) {
-      console.error('Error saving answer:', error)
-      message.error(`Failed to save answer for question ${questionNumber}`)
-    }
+    // Store in pending answers map
+    setPendingAnswers(prev => {
+      const newMap = new Map(prev)
+      newMap.set(questionNumber, validAnswers)
+      console.log(`📝 Pending answer for Q${questionNumber}:`, validAnswers)
+      return newMap
+    })
   }
 
   // Calculate the next question range based on existing groups

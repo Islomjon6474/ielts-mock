@@ -36,7 +36,7 @@ export const SentenceCompletionQuestion = ({
       >
         <Input 
           placeholder="Enter the correct word(s)" 
-          onBlur={(e) => onAnswerChange?.(questionNumber, e.target.value)}
+          onChange={(e) => onAnswerChange?.(questionNumber, e.target.value)}
         />
       </Form.Item>
       <Form.Item
