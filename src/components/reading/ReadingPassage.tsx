@@ -130,6 +130,93 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
     )
   }
 
+  // Check if passage is HTML (contains HTML tags) or plain text
+  const isHtml = /<[^>]+>/.test(passage)
+
+  // If it's HTML, render it directly with dangerouslySetInnerHTML
+  if (isHtml) {
+    return (
+      <div className="p-6">
+        {/* Display part-level image if available */}
+        {imageUrl && (
+          <div className="mb-6">
+            <div className="border rounded-lg p-4 bg-gray-50">
+              <Image
+                src={imageUrl}
+                alt="Passage illustration"
+                style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }}
+                preview={true}
+              />
+            </div>
+          </div>
+        )}
+        
+        <div 
+          className="prose max-w-none passage-content"
+          dangerouslySetInnerHTML={{ __html: passage }}
+        />
+
+        <style jsx>{`
+          .passage-content {
+            font-family: serif;
+            font-size: 15px;
+            line-height: 1.7;
+            color: #1f2937;
+          }
+          
+          .passage-content :global(p) {
+            margin: 0.75em 0;
+          }
+          
+          .passage-content :global(h2) {
+            font-size: 1.5em;
+            font-weight: 700;
+            margin: 1em 0 0.5em 0;
+            line-height: 1.3;
+          }
+          
+          .passage-content :global(h3) {
+            font-size: 1.25em;
+            font-weight: 600;
+            margin: 0.9em 0 0.4em 0;
+            line-height: 1.4;
+          }
+          
+          .passage-content :global(ul),
+          .passage-content :global(ol) {
+            padding-left: 1.5em;
+            margin: 0.75em 0;
+          }
+          
+          .passage-content :global(li) {
+            margin: 0.25em 0;
+          }
+          
+          .passage-content :global(strong) {
+            font-weight: 700;
+          }
+          
+          .passage-content :global(em) {
+            font-style: italic;
+          }
+          
+          .passage-content :global([style*="text-align: center"]) {
+            text-align: center;
+          }
+          
+          .passage-content :global([style*="text-align: right"]) {
+            text-align: right;
+          }
+          
+          .passage-content :global([style*="text-align: left"]) {
+            text-align: left;
+          }
+        `}</style>
+      </div>
+    )
+  }
+
+  // Plain text rendering (legacy format)
   const paragraphs = passage.split('\n\n').filter(p => p.trim())
 
   return (

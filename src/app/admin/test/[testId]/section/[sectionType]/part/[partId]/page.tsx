@@ -10,6 +10,7 @@ import { AdminPartContent, AdminQuestionGroup, AdminQuestion, PersistedPartConte
 import { QuestionGroupEditor } from '@/components/admin/questions'
 import { ImageUpload } from '@/components/admin/ImageUpload'
 import { AudioUpload } from '@/components/admin/AudioUpload'
+import { PassageRichTextEditor } from '@/components/admin/PassageRichTextEditor'
 
 const { Header, Content } = Layout
 const { Title, Text } = Typography
@@ -460,31 +461,34 @@ const PartEditorPage = () => {
     if (isReading) {
       // Split view (side-by-side) for Reading ONLY
       return (
-        <div style={{ display: 'flex', gap: '24px', minHeight: '600px' }}>
+        <div style={{ display: 'flex', gap: '24px', minHeight: '700px' }}>
           {/* Left Side - Passage */}
-          <div style={{ flex: '0 0 45%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ flex: '0 0 45%', display: 'flex', flexDirection: 'column' }}>
             <Card 
-              title="Passage"
-              style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
-              bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+              title="Passage (Rich Text)"
+              style={{ display: 'flex', flexDirection: 'column', minHeight: '700px' }}
+              bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 0 }}
             >
               <Form.Item
                 name="passage"
-                style={{ flex: 1, marginBottom: 16 }}
+                style={{ flex: 1, margin: 0, display: 'flex', flexDirection: 'column' }}
               >
-                <TextArea
-                  placeholder="Enter the reading passage..."
-                  style={{ height: '100%', minHeight: '400px', fontFamily: 'serif' }}
+                <PassageRichTextEditor
+                  placeholder="Enter the reading passage with formatting..."
+                  minHeight="600px"
                 />
               </Form.Item>
               
-              <Form.Item
-                label="Passage Image (Optional)"
-                name="imageId"
-                help="Upload an image/diagram that accompanies the entire passage"
-              >
-                <ImageUpload label="Upload Passage Image" />
-              </Form.Item>
+              <div style={{ padding: '16px', borderTop: '1px solid #f0f0f0' }}>
+                <Form.Item
+                  label="Passage Image (Optional)"
+                  name="imageId"
+                  help="Upload an image/diagram that accompanies the entire passage"
+                  style={{ marginBottom: 0 }}
+                >
+                  <ImageUpload label="Upload Passage Image" />
+                </Form.Item>
+              </div>
             </Card>
           </div>
 

@@ -252,7 +252,12 @@ const QuestionPanel = observer(() => {
                   Questions {group.startNumber}
                   {group.endNumber !== group.startNumber && `–${group.endNumber}`}
                 </h3>
-                {getInstructionText(group.type)}
+                {/* Use instruction from questionGroups if available, otherwise use default */}
+                {currentPart.questionGroups && currentPart.questionGroups[groupIndex]?.instruction ? (
+                  <p className="text-sm text-gray-600 mb-4">{currentPart.questionGroups[groupIndex].instruction}</p>
+                ) : (
+                  getInstructionText(group.type)
+                )}
               </div>
 
               {/* Questions in Group */}
