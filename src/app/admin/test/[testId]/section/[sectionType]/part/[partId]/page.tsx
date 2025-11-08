@@ -725,12 +725,12 @@ const PartEditorPage = () => {
     if (isReading) {
       // Split view (side-by-side) for Reading ONLY
       return (
-        <div style={{ display: 'flex', gap: '24px', minHeight: '700px' }}>
+        <div style={{ display: 'flex', gap: '24px', alignItems: 'stretch' }}>
           {/* Left Side - Passage */}
           <div style={{ flex: '0 0 45%', display: 'flex', flexDirection: 'column' }}>
             <Card
               title="Passage (Rich Text)"
-              style={{ display: 'flex', flexDirection: 'column', minHeight: '700px' }}
+              style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
               bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 0 }}
               extra={
                 <Space>
