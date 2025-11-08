@@ -291,7 +291,7 @@ const PartEditorPage = () => {
 
     // Process question groups to remove answers
     if (contentWithoutAnswers.questionGroups) {
-      contentWithoutAnswers.questionGroups = contentWithoutAnswers.questionGroups.map((group: any) => {
+      contentWithoutAnswers.questionGroups = contentWithoutAnswers.questionGroups.map((group: any, groupIndex: number) => {
         // Parse the range to get starting question number
         let startNumber = 1
         if (group.range) {
@@ -301,13 +301,13 @@ const PartEditorPage = () => {
           }
         }
         
-        // For MATCH_HEADING, parse headingOptions into an array
+        // For MATCH_HEADING, headingOptions is already an array from Form.List
         let headingOptionsArray: string[] = []
         if (group.type === 'MATCH_HEADING' && group.headingOptions) {
-          headingOptionsArray = group.headingOptions
-            .split('\n')
-            .map((h: string) => h.trim())
-            .filter((h: string) => h.length > 0)
+          // headingOptions is now an array, not a string
+          headingOptionsArray = Array.isArray(group.headingOptions) 
+            ? group.headingOptions 
+            : []
         }
 
         if (group.questions) {
@@ -345,12 +345,24 @@ const PartEditorPage = () => {
               }
               
               // Add type-specific fields
-              if (questionType === 'MULTIPLE_CHOICE') {
+              if (questionType === 'MULTIPLE_CHOICE' || questionType === 'MULTIPLE_CHOICE_SINGLE') {
                 flatQuestion.options = questionWithoutAnswer.options
-                flatQuestion.maxAnswers = questionWithoutAnswer.maxAnswers
+                if (questionType === 'MULTIPLE_CHOICE') {
+                  flatQuestion.maxAnswers = questionWithoutAnswer.maxAnswers
+                }
               } else if (questionType === 'MATCH_HEADING') {
-                flatQuestion.sectionId = questionWithoutAnswer.sectionId
-                flatQuestion.options = headingOptionsArray // Add heading options to each question
+                // Heading options are now an array from Form.List (like SENTENCE_COMPLETION)
+                const groupHeadings = group.headingOptions || []
+                flatQuestion.options = Array.isArray(groupHeadings) ? groupHeadings : []
+              } else if (questionType === 'SENTENCE_COMPLETION') {
+                // Options are already an array from Form.List
+                const groupOptions = group.options || []
+                flatQuestion.options = Array.isArray(groupOptions) ? groupOptions : []
+              } else if (questionType === 'IMAGE_INPUTS') {
+                // For IMAGE_INPUTS, add imageUrl from group's imageId
+                if (group.imageId) {
+                  flatQuestion.imageUrl = `/api/file/download/${group.imageId}`
+                }
               }
               
               flatQuestions.push(flatQuestion)
@@ -464,17 +476,61 @@ const PartEditorPage = () => {
         <div style={{ display: 'flex', gap: '24px', minHeight: '700px' }}>
           {/* Left Side - Passage */}
           <div style={{ flex: '0 0 45%', display: 'flex', flexDirection: 'column' }}>
-            <Card 
+            <Card
               title="Passage (Rich Text)"
               style={{ display: 'flex', flexDirection: 'column', minHeight: '700px' }}
               bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 0 }}
+              extra={
+                <Space>
+                  {/* Add placeholder buttons for MATCH_HEADING questions */}
+                  {form.getFieldValue('questionGroups')?.some((g: any) => g?.type === 'MATCH_HEADING') && (
+                    <Space.Compact>
+                      {(() => {
+                        const questionGroups = form.getFieldValue('questionGroups') || []
+                        const buttons: JSX.Element[] = []
+                        
+                        questionGroups.forEach((group: any) => {
+                          if (group?.type === 'MATCH_HEADING' && group?.range) {
+                            // Parse the range like "10-11"
+                            const rangeMatch = group.range.match(/^(\d+)-(\d+)$/)
+                            if (rangeMatch) {
+                              const startNum = parseInt(rangeMatch[1])
+                              const endNum = parseInt(rangeMatch[2])
+                              
+                              // Create a button for each question in the range
+                              for (let qNum = startNum; qNum <= endNum; qNum++) {
+                                buttons.push(
+                                  <Button
+                                    key={qNum}
+                                    size="small"
+                                    type="dashed"
+                                    onClick={() => {
+                                      const currentPassage = form.getFieldValue('passage') || ''
+                                      const placeholder = `[${qNum}]`
+                                      form.setFieldValue('passage', currentPassage + placeholder)
+                                    }}
+                                  >
+                                    [{qNum}]
+                                  </Button>
+                                )
+                              }
+                            }
+                          }
+                        })
+                        
+                        return buttons
+                      })()}
+                    </Space.Compact>
+                  )}
+                </Space>
+              }
             >
               <Form.Item
                 name="passage"
                 style={{ flex: 1, margin: 0, display: 'flex', flexDirection: 'column' }}
               >
                 <PassageRichTextEditor
-                  placeholder="Enter the reading passage with formatting..."
+                  placeholder="Enter the reading passage with formatting... Use buttons above to insert placeholders for Match Heading questions."
                   minHeight="600px"
                 />
               </Form.Item>
@@ -499,7 +555,10 @@ const PartEditorPage = () => {
                 label="Instructions"
                 name="instruction"
               >
-                <Input placeholder="General instructions for this part" />
+                <PassageRichTextEditor
+                  placeholder="General instructions for this part..."
+                  minHeight="120px"
+                />
               </Form.Item>
 
               <Divider />
@@ -540,7 +599,10 @@ const PartEditorPage = () => {
             label="Instructions"
             name="instruction"
           >
-            <Input placeholder="General instructions for this writing task" size="large" />
+            <PassageRichTextEditor
+              placeholder="General instructions for this writing task..."
+              minHeight="120px"
+            />
           </Form.Item>
 
           <Divider />
@@ -577,7 +639,10 @@ const PartEditorPage = () => {
             label="Instructions"
             name="instruction"
           >
-            <Input placeholder="General instructions for this part" size="large" />
+            <PassageRichTextEditor
+              placeholder="General instructions for this part..."
+              minHeight="120px"
+            />
           </Form.Item>
 
           <Divider />

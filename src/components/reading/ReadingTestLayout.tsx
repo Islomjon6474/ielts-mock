@@ -121,22 +121,27 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
       {/* Part Title - Compact */}
       <div className="bg-gray-50 px-4 py-1.5 border-b">
         <h2 className="font-semibold text-sm text-black inline-block mr-4">{currentPart.title}</h2>
-        <span className="text-xs text-gray-600">{currentPart.instruction}</span>
+        <span 
+          className="text-xs text-gray-600 prose prose-xs max-w-none inline"
+          dangerouslySetInnerHTML={{ __html: currentPart.instruction }}
+        />
       </div>
 
       {/* Main Content Area with Resizable Panes */}
-      <Content ref={containerRef} className="flex-1 flex relative overflow-hidden">
+      <Content className="flex-1 flex overflow-hidden relative" ref={containerRef}>
         {/* Left Pane - Reading Passage */}
         <div
           className="overflow-y-auto bg-white"
           style={{ width: `${leftWidth}%` }}
         >
-          <ReadingPassage 
+          <ReadingPassage
             passage={currentPart.passage}
             imageUrl={currentPart.imageUrl}
             sections={currentPart.sections}
             onHeadingDrop={handleHeadingDrop}
             getHeadingForSection={getHeadingForSection}
+            hasMatchHeading={currentPart.questions.some(q => q.type === 'MATCH_HEADING')}
+            matchHeadingQuestions={currentPart.questions.filter(q => q.type === 'MATCH_HEADING')}
           />
         </div>
 

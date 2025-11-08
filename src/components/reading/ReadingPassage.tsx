@@ -5,6 +5,7 @@ import { observer } from 'mobx-react-lite'
 import { Button, Card, Image } from 'antd'
 import { CloseOutlined } from '@ant-design/icons'
 import { Section } from '@/stores/ReadingStore'
+import { useStore } from '@/stores/StoreContext'
 
 interface ReadingPassageProps {
   passage: string
@@ -12,14 +13,125 @@ interface ReadingPassageProps {
   sections?: Section[]
   onHeadingDrop?: (sectionNumber: number, heading: string) => void
   getHeadingForSection?: (sectionNumber: number) => string | undefined
+  hasMatchHeading?: boolean
+  matchHeadingQuestions?: any[]
 }
 
-const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, getHeadingForSection }: ReadingPassageProps) => {
+const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, getHeadingForSection, hasMatchHeading, matchHeadingQuestions }: ReadingPassageProps) => {
   const [dragOverSection, setDragOverSection] = useState<number | null>(null)
+  const { readingStore } = useStore()
+  const [draggedHeading, setDraggedHeading] = useState<string | null>(null)
 
   const handleDragOver = (e: React.DragEvent, sectionNumber: number) => {
     e.preventDefault()
     setDragOverSection(sectionNumber)
+  }
+
+  const handleHeadingDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleHeadingDrop = (e: React.DragEvent, questionId: number) => {
+    e.preventDefault()
+    const heading = e.dataTransfer.getData('heading')
+    if (heading) {
+      readingStore.setAnswer(questionId, heading)
+    }
+    setDraggedHeading(null)
+  }
+
+  const handleRemoveHeading = (questionId: number) => {
+    readingStore.setAnswer(questionId, '')
+  }
+
+  // Strip HTML tags
+  const stripHtml = (html: string) => {
+    const tmp = document.createElement('DIV')
+    tmp.innerHTML = html
+    return tmp.textContent || tmp.innerText || ''
+  }
+
+  // Render passage with inline drop zones for MATCH_HEADING
+  const renderPassageWithDropZones = () => {
+    if (!hasMatchHeading || !matchHeadingQuestions) {
+      return <div className="prose max-w-none passage-content" dangerouslySetInnerHTML={{ __html: passage }} />
+    }
+
+    // Parse passage and replace placeholders with drop zones
+    let processedPassage = passage
+    const placeholderRegex = /\[(\d+)\]/g
+    const matches = [...passage.matchAll(placeholderRegex)]
+    
+    if (matches.length === 0) {
+      return <div className="prose max-w-none passage-content" dangerouslySetInnerHTML={{ __html: passage }} />
+    }
+
+    // Get the actual question IDs from matchHeadingQuestions in order
+    const actualQuestionIds = matchHeadingQuestions
+      .map(q => q.id)
+      .sort((a, b) => a - b)
+
+    // Split passage by placeholders and create elements
+    const parts: JSX.Element[] = []
+    let lastIndex = 0
+
+    matches.forEach((match, idx) => {
+      // Use the actual question ID from the sorted list instead of the placeholder number
+      const questionNum = actualQuestionIds[idx] || parseInt(match[1])
+      const matchIndex = match.index!
+      
+      // Add text before placeholder
+      if (matchIndex > lastIndex) {
+        const textBefore = passage.substring(lastIndex, matchIndex)
+        parts.push(
+          <span key={`text-${idx}`} dangerouslySetInnerHTML={{ __html: textBefore }} />
+        )
+      }
+
+      // Add drop zone
+      const answer = readingStore.getAnswer(questionNum) as string || ''
+      const cleanAnswer = answer ? stripHtml(answer) : ''
+
+      parts.push(
+        <span
+          key={`drop-${idx}`}
+          onDragOver={handleHeadingDragOver}
+          onDrop={(e) => handleHeadingDrop(e, questionNum)}
+          className={`inline-flex items-center border-2 border-dashed rounded px-3 py-1 mx-1 min-w-[120px] ${
+            answer ? 'border-blue-400 bg-blue-50' : 'border-gray-400'
+          }`}
+          style={{ verticalAlign: 'middle' }}
+        >
+          {answer ? (
+            <span className="flex items-center gap-2">
+              <strong className="text-sm">{questionNum}.</strong>
+              <span className="text-sm font-medium">{cleanAnswer}</span>
+              <button
+                onClick={() => handleRemoveHeading(questionNum)}
+                className="text-gray-400 hover:text-gray-600 text-xs font-bold"
+              >
+                ✕
+              </button>
+            </span>
+          ) : (
+            <span className="text-gray-400 text-xs">{questionNum}. Drag heading here</span>
+          )}
+        </span>
+      )
+
+      lastIndex = matchIndex + match[0].length
+    })
+
+    // Add remaining text
+    if (lastIndex < passage.length) {
+      const textAfter = passage.substring(lastIndex)
+      parts.push(
+        <span key="text-end" dangerouslySetInnerHTML={{ __html: textAfter }} />
+      )
+    }
+
+    return <div className="prose max-w-none passage-content">{parts}</div>
   }
 
   const handleDragLeave = () => {
@@ -133,7 +245,7 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
   // Check if passage is HTML (contains HTML tags) or plain text
   const isHtml = /<[^>]+>/.test(passage)
 
-  // If it's HTML, render it directly with dangerouslySetInnerHTML
+  // If it's HTML, render it directly with dangerouslySetInnerHTML or with drop zones
   if (isHtml) {
     return (
       <div className="p-6">
@@ -151,10 +263,7 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
           </div>
         )}
         
-        <div 
-          className="prose max-w-none passage-content"
-          dangerouslySetInnerHTML={{ __html: passage }}
-        />
+        {renderPassageWithDropZones()}
 
         <style jsx>{`
           .passage-content {
@@ -259,5 +368,4 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
     </div>
   )
 })
-
 export default ReadingPassage

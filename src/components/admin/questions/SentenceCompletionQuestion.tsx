@@ -1,7 +1,7 @@
-import { Card, Button, Form, Input, Select } from 'antd'
-import { DeleteOutlined } from '@ant-design/icons'
-
-const { TextArea } = Input
+import { Card, Button, Form, Select } from 'antd'
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
+import { PassageRichTextEditor } from '../PassageRichTextEditor'
+import { useEffect, useState } from 'react'
 
 interface SentenceCompletionQuestionProps {
   groupPath: (string | number)[]
@@ -9,6 +9,7 @@ interface SentenceCompletionQuestionProps {
   questionNumber: number
   onRemove: () => void
   onAnswerChange?: (questionNumber: number, answer: string | string[]) => void
+  form: any
 }
 
 export const SentenceCompletionQuestion = ({ 
@@ -16,38 +17,88 @@ export const SentenceCompletionQuestion = ({
   questionIndex, 
   questionNumber,
   onRemove,
-  onAnswerChange 
+  onAnswerChange,
+  form
 }: SentenceCompletionQuestionProps) => {
+  const [options, setOptions] = useState<string[]>([])
+
+  // Load options from group level
+  useEffect(() => {  
+    const groupOptions = form.getFieldValue([...groupPath, 'options']) || []
+    setOptions(Array.isArray(groupOptions) ? groupOptions : [])
+  }, [form, groupPath])
+
+  // Watch for changes in group options
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const groupOptions = form.getFieldValue([...groupPath, 'options']) || []
+      const newOptions = Array.isArray(groupOptions) ? groupOptions : []
+      if (JSON.stringify(newOptions) !== JSON.stringify(options)) {
+        setOptions(newOptions)
+      }
+    }, 500)
+    return () => clearInterval(interval)
+  }, [form, groupPath, options])
+
+  const handleInsertPlaceholder = () => {
+    const currentText = form.getFieldValue([...groupPath, 'questions', questionIndex, 'text']) || ''
+    const placeholder = `[${questionNumber}]`
+    const newText = currentText + placeholder
+    form.setFieldValue([...groupPath, 'questions', questionIndex, 'text'], newText)
+  }
+
   return (
-    <Card size="small" className="mb-3" title={`Question ${questionIndex + 1}`} extra={
+    <Card size="small" className="mb-3" title={`Question ${questionNumber}`} extra={
       <Button type="text" danger icon={<DeleteOutlined />} onClick={onRemove} />
     }>
       <Form.Item
-        label="Sentence (use ___ for blank)"
+        label={
+          <div className="flex items-center justify-between w-full">
+            <span>Sentence</span>
+            <Button 
+              size="small" 
+              icon={<PlusOutlined />}
+              onClick={handleInsertPlaceholder}
+              type="dashed"
+            >
+              Insert [{questionNumber}]
+            </Button>
+          </div>
+        }
         name={[...groupPath, 'questions', questionIndex, 'text']}
         rules={[{ required: true, message: 'Please enter sentence' }]}
       >
-        <TextArea rows={2} placeholder="e.g., The building was constructed in ___" />
+        <PassageRichTextEditor
+          placeholder={`e.g., Impression fossils are [${questionNumber}]`}
+          minHeight="100px"
+        />
       </Form.Item>
+      
       <Form.Item
         label="Correct Answer"
         name={[...groupPath, 'questions', questionIndex, 'correctAnswer']}
-        rules={[{ required: true }]}
+        rules={[{ required: true, message: 'Please select correct answer' }]}
       >
-        <Input 
-          placeholder="Enter the correct word(s)" 
-          onChange={(e) => onAnswerChange?.(questionNumber, e.target.value)}
-        />
-      </Form.Item>
-      <Form.Item
-        label="Word Limit"
-        name={[...groupPath, 'questions', questionIndex, 'wordLimit']}
-        initialValue="THREE"
-      >
-        <Select>
-          <Select.Option value="ONE">ONE WORD ONLY</Select.Option>
-          <Select.Option value="TWO">NO MORE THAN TWO WORDS</Select.Option>
-          <Select.Option value="THREE">NO MORE THAN THREE WORDS</Select.Option>
+        <Select
+          placeholder="Select the correct option"
+          onChange={(value) => onAnswerChange?.(questionNumber, value)}
+        >
+          {options.map((opt, idx) => {
+            // Strip HTML tags for display
+            const stripHtml = (html: string) => {
+              const tmp = document.createElement('DIV')
+              tmp.innerHTML = html
+              return tmp.textContent || tmp.innerText || ''
+            }
+            const cleanText = stripHtml(opt)
+            const displayText = cleanText.length > 60 ? cleanText.substring(0, 60) + '...' : cleanText
+            
+            return (
+              <Select.Option key={idx} value={opt}>
+                Option {idx + 1}: {displayText}
+              </Select.Option>
+            )
+          })}
         </Select>
       </Form.Item>
     </Card>

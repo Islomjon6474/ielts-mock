@@ -120,11 +120,16 @@ const BottomNavigation = observer(({
                   </div>
                 )}
                 
-                {/* Show count for non-current parts */}
+                {/* Show count and range for non-current parts */}
                 {!isCurrentPart && (
-                  <span className="text-sm text-gray-500 whitespace-nowrap">
-                    {answeredCount} of {totalCount}
-                  </span>
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs text-gray-400 whitespace-nowrap">
+                      {start}-{end}
+                    </span>
+                    <span className="text-sm text-gray-500 whitespace-nowrap">
+                      {answeredCount}/{totalCount}
+                    </span>
+                  </div>
                 )}
               </div>
             )

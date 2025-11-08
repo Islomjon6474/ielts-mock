@@ -11,7 +11,7 @@ interface Props {
 export const ImageInputsQuestion = ({ groupPath, questionIndex, questionNumber, onRemove }: Props) => {
   const base = [...groupPath, 'questions', questionIndex]
   return (
-    <div className="rounded border p-3">
+    <div className="rounded border">
       <div className="flex items-center justify-between mb-2">
         <div className="font-semibold">Question {questionNumber}</div>
         <Button size="small" danger icon={<DeleteOutlined />} onClick={onRemove}>
@@ -23,7 +23,7 @@ export const ImageInputsQuestion = ({ groupPath, questionIndex, questionNumber, 
         <Input />
       </Form.Item>
 
-      <Form.Item label="Prompt" name={[...base, 'text']} rules={[{ required: true, message: 'Enter question text' }]}>
+      <Form.Item name={[...base, 'text']} rules={[{ required: true, message: 'Enter question text' }]} style={{ marginBottom: 0 }}>
         <Input placeholder="Enter label text for this input (e.g., Label A)" />
       </Form.Item>
       {/* No coordinates; imageUrl will be injected from group.imageId by the parent editor */}

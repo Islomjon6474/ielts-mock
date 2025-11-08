@@ -23,12 +23,8 @@ const MultipleChoiceQuestion = observer(({ question, questionNumber }: MultipleC
   return (
     <div className="border-b pb-4">
       <div className="flex items-start gap-4">
-        <div className="flex-shrink-0 w-8 h-8 border-2 border-gray-800 rounded flex items-center justify-center font-bold text-sm">
-          {questionNumber}
-        </div>
-        
         <div className="flex-1">
-          <p className="mb-3 font-medium text-sm">{question.text}</p>
+          <p className="mb-3 font-medium text-sm"><strong>{questionNumber}</strong> {question.text}</p>
           
           <Checkbox.Group
             value={answer}

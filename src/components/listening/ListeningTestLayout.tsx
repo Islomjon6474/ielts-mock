@@ -38,33 +38,61 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
   const [showModal, setShowModal] = useState(true)
   const [showSubmitModal, setShowSubmitModal] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
+  const [currentAudioIndex, setCurrentAudioIndex] = useState(0)
+  const [allAudioUrls, setAllAudioUrls] = useState<string[]>([])
 
   const currentPart = listeningStore.currentPartData
 
-  // Play/pause audio based on isPlaying state
+  // Collect all audio URLs on mount
+  useEffect(() => {
+    const urls = listeningStore.parts
+      .filter(part => part.audioUrl)
+      .map(part => part.audioUrl!)
+    setAllAudioUrls(urls)
+  }, [listeningStore.parts])
+
+  // Set initial audio source and auto-play when index changes
+  useEffect(() => {
+    if (audioRef.current && allAudioUrls.length > 0 && currentAudioIndex < allAudioUrls.length) {
+      audioRef.current.src = allAudioUrls[currentAudioIndex]
+      // Auto-play next audio if already playing
+      if (listeningStore.isPlaying && listeningStore.hasStarted) {
+        audioRef.current.play().catch(err => {
+          console.error('Failed to play next audio:', err)
+        })
+      }
+    }
+  }, [allAudioUrls, currentAudioIndex, listeningStore.isPlaying, listeningStore.hasStarted])
+
+  // Handle audio ended - play next audio automatically
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    const handleEnded = () => {
+      if (currentAudioIndex < allAudioUrls.length - 1) {
+        setCurrentAudioIndex(prev => prev + 1)
+      } else {
+        listeningStore.setIsPlaying(false)
+      }
+    }
+
+    audio.addEventListener('ended', handleEnded)
+    return () => audio.removeEventListener('ended', handleEnded)
+  }, [currentAudioIndex, allAudioUrls.length, listeningStore])
+
+  // Play/pause audio based on isPlaying state (without changing source)
   useEffect(() => {
     if (listeningStore.hasStarted && listeningStore.allAudioReady && audioRef.current) {
       if (listeningStore.isPlaying) {
-        audioRef.current.play()
+        audioRef.current.play().catch(err => {
+          console.error('Failed to play audio:', err)
+        })
       } else {
         audioRef.current.pause()
       }
     }
   }, [listeningStore.isPlaying, listeningStore.hasStarted, listeningStore.allAudioReady])
-
-  // Update audio source when part changes
-  useEffect(() => {
-    if (audioRef.current && currentPart?.audioUrl) {
-      audioRef.current.src = currentPart.audioUrl
-      // Only auto-play if user has explicitly started AND is currently playing
-      // This prevents auto-play on initial load
-      if (listeningStore.hasStarted && listeningStore.isPlaying && listeningStore.allAudioReady) {
-        audioRef.current.play().catch(err => {
-          console.error('Failed to play audio:', err)
-        })
-      }
-    }
-  }, [currentPart?.audioUrl, listeningStore.hasStarted, listeningStore.isPlaying, listeningStore.allAudioReady])
 
   // Handler functions - defined before conditional returns
   const handleStart = () => {
@@ -123,7 +151,7 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
       <div className="bg-gray-50 px-4 py-1.5 border-b flex items-center justify-between">
         <div className="flex items-center gap-4">
           <h2 className="font-semibold text-sm text-black">{currentPart.title}</h2>
-          <p className="text-xs text-gray-600">{currentPart.instruction}</p>
+          <span className="text-xs text-gray-600" dangerouslySetInnerHTML={{ __html: currentPart.instruction || '' }} />
         </div>
         {listeningStore.isPlaying && (
           <div className="flex items-center gap-1.5">
@@ -164,14 +192,23 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                 })
                 
                 return grouped.map((group: QuestionGroup, groupIdx: number) => {
+                  // Calculate question range for this group
+                  const questionIds = group.questions.map(q => q.id).filter(id => typeof id === 'number')
+                  const startNum = questionIds.length > 0 ? Math.min(...questionIds) : 1
+                  const endNum = questionIds.length > 0 ? Math.max(...questionIds) : 1
+                  
                   return (
                   <div key={`group-${groupIdx}`} className="mb-6">
-                    {/* Show instruction above questions/image if available */}
-                    {group.instruction && (
-                      <div className="text-sm text-gray-700 mb-4 font-semibold">
-                        {group.instruction}
-                      </div>
-                    )}
+                    {/* Question range header - like in reading */}
+                    <div className="bg-gray-50 rounded-lg border-l-4 border-blue-500 p-4 mb-4">
+                      <h3 className="font-bold text-lg mb-2">
+                        Questions {startNum}{endNum !== startNum && `–${endNum}`}
+                      </h3>
+                      {/* Show instruction if available */}
+                      {group.instruction && (
+                        <div className="text-sm text-gray-600 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: group.instruction }} />
+                      )}
+                    </div>
                     
                     {/* Image and questions side by side */}
                     {group.imageUrl ? (

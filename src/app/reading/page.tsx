@@ -115,8 +115,28 @@ const ReadingPageContent = observer(() => {
             questionGroups = dataToUse.questionGroups.map((group: any) => ({
               instruction: group.instruction,
               imageUrl: fileApi.getImageUrl(group.imageId),
-              questions: group.questions || []
+              questions: (group.questions || []).map((q: any) => ({
+                ...q,
+                options: q.options || []
+              }))
             }))
+          }
+          
+          // Map questions with options
+          const mappedQuestions = (dataToUse.questions || []).map((q: any) => ({
+            ...q,
+            options: q.options || []
+          }))
+          
+          // Calculate questionRange from actual question IDs
+          let questionRange: [number, number] = [1, 13]
+          if (dataToUse.questionRange) {
+            questionRange = dataToUse.questionRange
+          } else if (mappedQuestions.length > 0) {
+            const questionIds = mappedQuestions.map((q: any) => q.id).filter((id: any) => typeof id === 'number')
+            if (questionIds.length > 0) {
+              questionRange = [Math.min(...questionIds), Math.max(...questionIds)]
+            }
           }
           
           const validated = {
@@ -125,8 +145,8 @@ const ReadingPageContent = observer(() => {
             instruction: dataToUse.instruction || '',
             passage: dataToUse.passage || '',
             imageUrl: fileApi.getImageUrl(dataToUse.imageId),
-            questions: dataToUse.questions || [],
-            questionRange: dataToUse.questionRange || [1, (dataToUse.questions?.length || 13)],
+            questions: mappedQuestions,
+            questionRange: questionRange,
             sections: dataToUse.sections || undefined,
             questionGroups: questionGroups,
           }

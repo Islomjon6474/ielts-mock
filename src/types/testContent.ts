@@ -2,6 +2,7 @@
 
 export type QuestionType =
   | 'MULTIPLE_CHOICE'
+  | 'MULTIPLE_CHOICE_SINGLE'
   | 'TRUE_FALSE_NOT_GIVEN'
   | 'YES_NO_NOT_GIVEN'
   | 'SENTENCE_COMPLETION'

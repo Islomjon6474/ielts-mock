@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Card, Button, Select, Form, Input, Divider } from 'antd'
-import { PlusOutlined } from '@ant-design/icons'
+import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
 import { MultipleChoiceQuestion } from './MultipleChoiceQuestion'
+import { MultipleChoiceSingleQuestion } from './MultipleChoiceSingleQuestion'
 import { TrueFalseQuestion } from './TrueFalseQuestion'
 import { SentenceCompletionQuestion } from './SentenceCompletionQuestion'
 import { MatchHeadingQuestion } from './MatchHeadingQuestion'
@@ -9,6 +10,7 @@ import { ShortAnswerQuestion } from './ShortAnswerQuestion'
 import { questionTypes } from './index'
 import { ImageInputsQuestion } from './ImageInputsQuestion'
 import { ImageUpload } from '../ImageUpload'
+import { PassageRichTextEditor } from '../PassageRichTextEditor'
 
 const { TextArea } = Input
 
@@ -83,6 +85,9 @@ export const QuestionGroupEditor = ({
     
     switch (selectedType) {
       case 'MULTIPLE_CHOICE':
+        newQuestion = { text: '', options: ['', '', ''], answer: [] }
+        break
+      case 'MULTIPLE_CHOICE_SINGLE':
         newQuestion = { text: '', options: ['', '', ''], answer: '' }
         break
       case 'TRUE_FALSE_NOT_GIVEN':
@@ -103,6 +108,9 @@ export const QuestionGroupEditor = ({
           answer: '',
           imageUrl: imageId ? `/api/file/download/${imageId}` : undefined
         }
+        break
+      case 'SENTENCE_COMPLETION':
+        newQuestion = { text: '', correctAnswer: '', wordLimit: 'THREE' }
         break
       default:
         newQuestion = { text: '', answer: '' }
@@ -173,15 +181,19 @@ export const QuestionGroupEditor = ({
     switch (selectedType) {
       case 'MULTIPLE_CHOICE':
         return <MultipleChoiceQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
+      case 'MULTIPLE_CHOICE_SINGLE':
+        return <MultipleChoiceSingleQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
       case 'TRUE_FALSE_NOT_GIVEN':
       case 'YES_NO_NOT_GIVEN':
         return <TrueFalseQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} type={selectedType} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} />
       case 'MATCH_HEADING':
-        return <MatchHeadingQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} />
+        return <MatchHeadingQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
       case 'SHORT_ANSWER':
         return <ShortAnswerQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
       case 'IMAGE_INPUTS':
         return <ImageInputsQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} />
+      case 'SENTENCE_COMPLETION':
+        return <SentenceCompletionQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
       default:
         return null
     }
@@ -213,26 +225,102 @@ export const QuestionGroupEditor = ({
         label="Instructions"
         name={[...groupPath, 'instruction']}
       >
-        <TextArea rows={2} placeholder="Instructions for this group" />
+        <PassageRichTextEditor
+          placeholder="Instructions for this question group..."
+          minHeight="100px"
+        />
       </Form.Item>
 
       {/* Heading options for Match Heading question type */}
       {selectedType === 'MATCH_HEADING' && (
-        <Form.Item
-          label="Available Headings"
-          name={[...groupPath, 'headingOptions']}
-          help="Enter all available headings (one per line). Format: 'i. Heading text'"
-          rules={[{ required: true, message: 'Please enter the list of headings' }]}
-        >
-          <TextArea 
-            rows={6} 
-            placeholder={`i. Introduction to the topic
-ii. Historical background
-iii. Current developments
-iv. Future predictions
-v. Conclusion and summary`}
-          />
-        </Form.Item>
+        <div>
+          <Form.List name={[...groupPath, 'headingOptions']}>
+            {(fields, { add, remove }) => (
+              <>
+                <div className="mb-2 font-medium">Available Headings *</div>
+                <div className="text-xs text-gray-500 mb-3">
+                  Add headings that students can drag to match with sections
+                </div>
+                {fields.map((field, index) => (
+                  <div key={field.key} className="mb-3 flex gap-2 items-start">
+                    <div className="flex-1">
+                      <Form.Item
+                        {...field}
+                        rules={[{ required: true, message: 'Please enter heading text' }]}
+                        className="mb-0"
+                      >
+                        <PassageRichTextEditor
+                          placeholder={`Heading ${index + 1}: e.g., Introduction to the topic`}
+                          minHeight="80px"
+                        />
+                      </Form.Item>
+                    </div>
+                    <Button
+                      type="text"
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={() => remove(field.name)}
+                    />
+                  </div>
+                ))}
+                <Button
+                  type="dashed"
+                  onClick={() => add()}
+                  block
+                  icon={<PlusOutlined />}
+                >
+                  Add Heading
+                </Button>
+              </>
+            )}
+          </Form.List>
+        </div>
+      )}
+
+      {/* Options for Sentence Completion question type */}
+      {selectedType === 'SENTENCE_COMPLETION' && (
+        <div>
+          <Form.List name={[...groupPath, 'options']}>
+            {(fields, { add, remove }) => (
+              <>
+                <div className="mb-2 font-medium">Available Options *</div>
+                <div className="text-xs text-gray-500 mb-3">
+                  Add options that students can drag to complete sentences
+                </div>
+                {fields.map((field, index) => (
+                  <div key={field.key} className="mb-3 flex gap-2 items-start">
+                    <div className="flex-1">
+                      <Form.Item
+                        {...field}
+                        rules={[{ required: true, message: 'Please enter option text' }]}
+                        className="mb-0"
+                      >
+                        <PassageRichTextEditor
+                          placeholder={`Option ${index + 1}: e.g., They are a very rare type of plant fossil.`}
+                          minHeight="80px"
+                        />
+                      </Form.Item>
+                    </div>
+                    <Button
+                      type="text"
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={() => remove(field.name)}
+                    />
+                  </div>
+                ))}
+                <Button
+                  type="dashed"
+                  onClick={() => add()}
+                  block
+                  icon={<PlusOutlined />}
+                >
+                  Add Option
+                </Button>
+              </>
+            )}
+          </Form.List>
+        </div>
       )}
 
       {showImageUpload && (

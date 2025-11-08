@@ -25,12 +25,8 @@ const MultipleChoiceQuestion = observer(({ question, questionNumber }: MultipleC
   return (
     <Card className="mb-4">
       <div className="flex items-start gap-4">
-        <div className="flex-shrink-0 w-10 h-10 border-2 border-gray-800 rounded flex items-center justify-center font-bold">
-          {questionNumber}
-        </div>
-        
         <div className="flex-1">
-          <p className="mb-4 font-medium">{question.text}</p>
+          <p className="mb-4 font-medium"><strong>{questionNumber}</strong> {question.text}</p>
           
           <Checkbox.Group
             value={answer}

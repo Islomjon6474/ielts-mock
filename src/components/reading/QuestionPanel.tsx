@@ -7,6 +7,9 @@ import TrueFalseQuestion from './questions/TrueFalseQuestion'
 import FillInBlankQuestion from './questions/FillInBlankQuestion'
 import MatchHeadingQuestion from './questions/MatchHeadingQuestion'
 import MultipleChoiceQuestion from './questions/MultipleChoiceQuestion'
+import MultipleChoiceSingleQuestion from './questions/MultipleChoiceSingleQuestion'
+import ImageInputsQuestion from './questions/ImageInputsQuestion'
+import SentenceCompletionQuestion from './questions/SentenceCompletionQuestion'
 import { Question } from '@/stores/ReadingStore'
 import { Image } from 'antd'
 
@@ -36,10 +39,12 @@ const QuestionPanel = observer(() => {
   const renderQuestion = (question: Question, questionNumber: number) => {
     switch (question.type) {
       case 'TRUE_FALSE_NOT_GIVEN':
+      case 'YES_NO_NOT_GIVEN':
         return (
           <TrueFalseQuestion
             question={question}
             questionNumber={questionNumber}
+            type={question.type as 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN'}
           />
         )
       case 'FILL_IN_BLANK':
@@ -52,9 +57,26 @@ const QuestionPanel = observer(() => {
       case 'MATCH_HEADING':
         // Don't render individual match heading questions - they're handled by drag and drop
         return null
+      case 'SENTENCE_COMPLETION':
+        // Don't render individual sentence completion questions - they're handled by drag and drop
+        return null
       case 'MULTIPLE_CHOICE':
         return (
           <MultipleChoiceQuestion
+            question={question}
+            questionNumber={questionNumber}
+          />
+        )
+      case 'MULTIPLE_CHOICE_SINGLE':
+        return (
+          <MultipleChoiceSingleQuestion
+            question={question}
+            questionNumber={questionNumber}
+          />
+        )
+      case 'IMAGE_INPUTS':
+        return (
+          <ImageInputsQuestion
             question={question}
             questionNumber={questionNumber}
           />
@@ -128,101 +150,133 @@ const QuestionPanel = observer(() => {
 
   const questionGroups = groupQuestions()
 
-  // Get all heading options from match heading questions
-  const getAllHeadingOptions = () => {
-    const matchHeadingQuestions = currentPart.questions.filter(q => q.type === 'MATCH_HEADING')
-    if (matchHeadingQuestions.length > 0) {
-      return matchHeadingQuestions[0].options || []
-    }
-    return []
-  }
-
-  const headingOptions = getAllHeadingOptions()
-  const hasMatchHeadingQuestions = questionGroups.some(g => g.type === 'MATCH_HEADING')
-
-  // Get all used headings
-  const getUsedHeadings = () => {
-    const used: string[] = []
-    const matchHeadingQuestions = currentPart.questions.filter(q => q.type === 'MATCH_HEADING')
-    matchHeadingQuestions.forEach(q => {
-      const answer = readingStore.getAnswer(q.id) as string | undefined
-      if (answer) {
-        used.push(answer)
-      }
-    })
-    return used
-  }
-
-  const usedHeadings = getUsedHeadings()
-
-  const handleDragStart = (e: React.DragEvent, heading: string) => {
-    // Don't allow dragging if heading is already used
-    if (usedHeadings.includes(heading)) {
-      e.preventDefault()
-      return
-    }
-    e.dataTransfer.setData('heading', heading)
-    e.dataTransfer.effectAllowed = 'move'
-  }
-
   return (
     <div className="p-6 space-y-6">
-      {/* Shared List of Headings for Match Heading Questions */}
-      {hasMatchHeadingQuestions && headingOptions.length > 0 && (
-        <div className="bg-white border-b pb-4 mb-4">
-          <h4 className="font-semibold mb-2">List of Headings</h4>
-          <p className="text-xs text-gray-500 mb-3">Drag headings to the passage sections on the left. Click ✕ to remove a heading.</p>
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            {headingOptions.map((heading, index) => {
-              const isUsed = usedHeadings.includes(heading)
+      {questionGroups.map((group, groupIndex) => {
+        // Render MATCH_HEADING - only show available headings (drop zones are in passage)
+        if (group.type === 'MATCH_HEADING') {
+          const questionGroupData = currentPart.questionGroups?.[groupIndex]
+          // Try to get headings from questionGroups first, then from the first question
+          let headings = questionGroupData?.headingOptions || []
+          if (!headings || headings.length === 0) {
+            // Fallback: get headings from first question in the group
+            headings = group.questions[0]?.question?.options || []
+          }
+          const parsedHeadings = Array.isArray(headings) ? headings : []
+          
+          // Get all used headings
+          const usedHeadings = group.questions
+            .map(q => readingStore.getAnswer(q.questionNumber) as string)
+            .filter(Boolean)
+          
+          // Strip HTML tags
+          const stripHtml = (html: string) => {
+            const tmp = document.createElement('DIV')
+            tmp.innerHTML = html
+            return tmp.textContent || tmp.innerText || ''
+          }
+          
+          const handleDragStart = (e: React.DragEvent, heading: string) => {
+            const isUsed = usedHeadings.includes(heading)
+            if (isUsed) {
+              e.preventDefault()
+              return
+            }
+            e.dataTransfer.setData('heading', heading)
+            e.dataTransfer.effectAllowed = 'move'
+          }
+          
+          return (
+            <div key={groupIndex} className="mb-8">
+              {groupIndex > 0 && (
+                <div className="border-t-2 border-gray-300 my-6"></div>
+              )}
               
-              return (
-                <div
-                  key={index}
-                  draggable={!isUsed}
-                  onDragStart={(e) => handleDragStart(e, heading)}
-                  className={`p-3 border rounded transition-colors ${
-                    isUsed 
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-50' 
-                      : 'bg-white cursor-move hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-400">{isUsed ? '✓' : '⋮⋮'}</span>
-                    <span className="text-sm">{heading}</span>
+              <div className="space-y-4">
+                <div className="bg-gray-50 rounded-lg border-l-4 border-green-500 p-4 mb-4">
+                  <h3 className="font-bold text-lg mb-2">
+                    Questions {group.startNumber}–{group.endNumber}
+                  </h3>
+                  {questionGroupData?.instruction && (
+                    <div 
+                      className="text-sm text-gray-600 prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ __html: questionGroupData.instruction }}
+                    />
+                  )}
+                </div>
+                
+                {/* Only show available headings - drop zones are in the passage on the left */}
+                <div>
+                  <h4 className="font-semibold text-sm mb-3">Available Headings</h4>
+                  <div className="space-y-2">
+                    {parsedHeadings.map((heading, index) => {
+                      const isUsed = usedHeadings.includes(heading)
+                      const cleanHeading = stripHtml(heading)
+                      
+                      return (
+                        <div
+                          key={index}
+                          draggable={!isUsed}
+                          onDragStart={(e) => handleDragStart(e, heading)}
+                          className={`px-4 py-3 border-2 rounded-md text-sm transition-all shadow-sm ${
+                            isUsed
+                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed line-through border-gray-500'
+                              : 'bg-gray-200 border-gray-700 cursor-move hover:bg-blue-50 hover:border-blue-500 hover:shadow-md'
+                          }`}
+                        >
+                          <span className="font-medium mr-2">{String.fromCharCode(105 + index)}.</span>
+                          {cleanHeading}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
+              </div>
+            </div>
+          )
+        }
 
-      {/* Display images from questionGroups if available */}
-      {currentPart.questionGroups && currentPart.questionGroups.length > 0 && (
-        currentPart.questionGroups.map((group, groupIndex) => (
-          group.imageUrl && (
-            <div key={`group-img-${groupIndex}`} className="mb-6">
-              {group.instruction && (
-                <p className="text-sm text-gray-600 mb-3">{group.instruction}</p>
+        // Render SENTENCE_COMPLETION as a special group with drag and drop
+        if (group.type === 'SENTENCE_COMPLETION') {
+          const questionGroupData = currentPart.questionGroups?.[groupIndex]
+          // Try to get options from questionGroups first, then from the first question
+          let options = questionGroupData?.options || []
+          if (!options || options.length === 0) {
+            // Fallback: get options from first question in the group
+            options = group.questions[0]?.question?.options || []
+          }
+          // Options are already an array of rich text strings
+          const parsedOptions = Array.isArray(options) ? options : []
+          
+          console.log('SENTENCE_COMPLETION options:', parsedOptions)
+          
+          return (
+            <div key={groupIndex} className="mb-8">
+              {groupIndex > 0 && (
+                <div className="border-t-2 border-gray-300 my-6"></div>
               )}
-              <div className="border rounded-lg p-4 bg-gray-50">
-                <Image
-                  src={group.imageUrl}
-                  alt={`Question group ${groupIndex + 1} illustration`}
-                  style={{ maxWidth: '100%', maxHeight: '500px', objectFit: 'contain' }}
-                  preview={true}
+              
+              <div className="space-y-4">
+                <div className="bg-gray-50 rounded-lg border-l-4 border-blue-500 p-4 mb-4">
+                  <h3 className="font-bold text-lg mb-2">
+                    Questions {group.startNumber}–{group.endNumber}
+                  </h3>
+                  {questionGroupData?.instruction && (
+                    <div 
+                      className="text-sm text-gray-600 prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ __html: questionGroupData.instruction }}
+                    />
+                  )}
+                </div>
+                
+                <SentenceCompletionQuestion
+                  questions={group.questions.map(q => q.question)}
+                  questionNumbers={group.questions.map(q => q.questionNumber)}
+                  options={parsedOptions}
                 />
               </div>
             </div>
           )
-        ))
-      )}
-
-      {questionGroups.map((group, groupIndex) => {
-        // Skip rendering individual cards for Match Heading groups
-        if (group.type === 'MATCH_HEADING') {
-          return null
         }
 
         // For FILL_IN_BLANK, deduplicate questions with same text
@@ -247,18 +301,35 @@ const QuestionPanel = observer(() => {
             
             <div className="space-y-4">
               {/* Group Header */}
-              <div className="mb-4 bg-gray-50 p-4 rounded-lg border-l-4 border-blue-500">
+              <div className="bg-gray-50 rounded-lg border-l-4 border-blue-500">
                 <h3 className="font-bold text-lg mb-2">
                   Questions {group.startNumber}
                   {group.endNumber !== group.startNumber && `–${group.endNumber}`}
                 </h3>
                 {/* Use instruction from questionGroups if available, otherwise use default */}
                 {currentPart.questionGroups && currentPart.questionGroups[groupIndex]?.instruction ? (
-                  <p className="text-sm text-gray-600 mb-4">{currentPart.questionGroups[groupIndex].instruction}</p>
+                  <div 
+                    className="text-sm text-gray-600 mb-4 prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: currentPart.questionGroups[groupIndex].instruction }}
+                  />
                 ) : (
                   getInstructionText(group.type)
                 )}
               </div>
+
+              {/* Display image for this question group if available */}
+              {currentPart.questionGroups && currentPart.questionGroups[groupIndex]?.imageUrl && (
+                <div className="mb-6">
+                  <div className="border rounded-lg p-1 bg-gray-50">
+                    <Image
+                      src={currentPart.questionGroups[groupIndex].imageUrl}
+                      alt={`Question group ${groupIndex + 1} illustration`}
+                      style={{ maxWidth: '100%', maxHeight: '500px', objectFit: 'contain' }}
+                      preview={true}
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Questions in Group */}
               {questionsToRender.map(({ question, index, questionNumber }) => {

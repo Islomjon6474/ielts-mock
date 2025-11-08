@@ -16,20 +16,42 @@ export function transformAdminToListeningPart(
   
   if (adminData.questions && Array.isArray(adminData.questions) && adminData.questions.length > 0) {
     // New format: use pre-flattened questions array
-    questions = adminData.questions.map((q: any) => ({
-      ...q,
-      // Convert FILL_IN_BLANK back to the type expected by listening components
-      type: q.type
-    }))
-    
-    // Use questionRange from admin data if available
-    if (adminData.questionRange && Array.isArray(adminData.questionRange)) {
+    // First, calculate the question range from questionGroups if available
+    if (adminData.questionGroups && Array.isArray(adminData.questionGroups)) {
+      questionRange = calculateQuestionRange(adminData.questionGroups)
+    } else if (adminData.questionRange && Array.isArray(adminData.questionRange)) {
       questionRange = adminData.questionRange as [number, number]
     } else {
       // Calculate from questions
-      const ids = questions.map(q => q.id).filter(id => typeof id === 'number')
+      const ids = adminData.questions.map((q: any) => q.id).filter((id: number) => typeof id === 'number')
       questionRange = ids.length > 0 ? [Math.min(...ids), Math.max(...ids)] : [1, 10]
     }
+    
+    questions = adminData.questions.map((q: any) => {
+      // Fix imageUrl if it contains localhost or is a relative path
+      let imageUrl = q.imageUrl
+      if (imageUrl) {
+        // If it's a relative path starting with /api/file/download, convert to full URL
+        if (imageUrl.startsWith('/api/file/download/')) {
+          const fileId = imageUrl.replace('/api/file/download/', '')
+          imageUrl = fileApi.getImageUrl(fileId)
+        }
+        // If it contains localhost, replace with production URL
+        else if (imageUrl.includes('localhost')) {
+          const fileIdMatch = imageUrl.match(/\/file\/download\/([^/?]+)/)
+          if (fileIdMatch) {
+            imageUrl = fileApi.getImageUrl(fileIdMatch[1])
+          }
+        }
+      }
+      
+      return {
+        ...q,
+        imageUrl,
+        // Convert FILL_IN_BLANK back to the type expected by listening components
+        type: q.type
+      }
+    })
   } else {
     // Old format: flatten question groups
     const questionGroups = adminData.questionGroups || []

@@ -1,5 +1,5 @@
-import { Card, Button, Form, Input, Radio, Space } from 'antd'
-import { DeleteOutlined, PlusOutlined, MinusCircleOutlined } from '@ant-design/icons'
+import { Card, Button, Form, Input, Checkbox, Space, Alert } from 'antd'
+import { DeleteOutlined, PlusOutlined, MinusCircleOutlined, InfoCircleOutlined } from '@ant-design/icons'
 import { useState, useEffect } from 'react'
 
 const { TextArea } = Input
@@ -100,16 +100,39 @@ export const MultipleChoiceQuestion = ({
         </Space>
       </Form.Item>
 
+      <Alert
+        message="Multiple Correct Answers"
+        description="Select ALL correct answers for this question. Users will need to select all of them."
+        type="info"
+        icon={<InfoCircleOutlined />}
+        showIcon
+        className="mb-3"
+      />
+
       <Form.Item
-        label="Correct Answer"
+        label="Correct Answers (Select Multiple)"
         name={[...groupPath, 'questions', questionIndex, 'correctAnswer']}
-        rules={[{ required: true }]}
+        rules={[
+          { required: true, message: 'Please select at least one correct answer' },
+          {
+            validator: (_, value) => {
+              if (!value || value.length === 0) {
+                return Promise.reject('Please select at least one correct answer')
+              }
+              return Promise.resolve()
+            }
+          }
+        ]}
       >
-        <Radio.Group onChange={(e) => onAnswerChange?.(questionNumber, e.target.value)}>
-          {Array.from({ length: optionCount }).map((_, index) => (
-            <Radio key={index} value={OPTION_LABELS[index]}>{OPTION_LABELS[index]}</Radio>
-          ))}
-        </Radio.Group>
+        <Checkbox.Group onChange={(values) => onAnswerChange?.(questionNumber, values)}>
+          <Space direction="vertical">
+            {Array.from({ length: optionCount }).map((_, index) => (
+              <Checkbox key={index} value={OPTION_LABELS[index]}>
+                {OPTION_LABELS[index]}
+              </Checkbox>
+            ))}
+          </Space>
+        </Checkbox.Group>
       </Form.Item>
     </Card>
   )
