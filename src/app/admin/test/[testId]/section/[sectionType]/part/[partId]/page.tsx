@@ -33,13 +33,100 @@ const PartEditorPage = () => {
   const [questionGroupCount, setQuestionGroupCount] = useState(0)
   const [loadedData, setLoadedData] = useState<AdminPartContent | null>(null)
   const [pendingAnswers, setPendingAnswers] = useState<Map<number, string[]>>(new Map())
+  const [questionOffset, setQuestionOffset] = useState(0) // Offset based on previous parts
 
   useEffect(() => {
     if (partId && sectionId) {
+      calculateQuestionOffset()
       fetchPartContent()
       fetchCorrectAnswers()
     }
   }, [partId, sectionId])
+
+  // Calculate question offset based on previous parts
+  const calculateQuestionOffset = async () => {
+    try {
+      console.log('🔢 Calculating question offset for part:', partId)
+      
+      // Get all parts in this section
+      const partsResponse = await testManagementApi.getAllParts(sectionId)
+      const allParts = partsResponse?.data || partsResponse || []
+      
+      // Find current part's index
+      const currentPartIndex = allParts.findIndex((p: any) => p.id === partId)
+      
+      if (currentPartIndex === -1) {
+        console.log('⚠️ Current part not found in parts list')
+        setQuestionOffset(0)
+        return
+      }
+      
+      // Calculate total questions from all previous parts
+      let totalQuestions = 0
+      
+      for (let i = 0; i < currentPartIndex; i++) {
+        const part = allParts[i]
+        try {
+          // Fetch content for this part
+          const contentResponse = await testManagementApi.getPartQuestionContent(part.id)
+          const contentString = contentResponse.data?.content || contentResponse.content
+          
+          if (!contentString) continue
+          
+          const parsedContent = safeMultiParseJson<PersistedPartContentEnvelope>(contentString, 10)
+          
+          // Extract admin content
+          let adminContent: any = null
+          if (parsedContent && parsedContent.admin) {
+            adminContent = safeMultiParseJson(parsedContent.admin, 10)
+          } else if (parsedContent && parsedContent.questionGroups) {
+            adminContent = parsedContent
+          }
+          
+          if (!adminContent || !adminContent.questionGroups) continue
+          
+          // Count questions in this part
+          const questionGroups = normalizeArrayMaybeStringOrObject(adminContent.questionGroups)
+          
+          questionGroups.forEach((group: any) => {
+            if (group.range) {
+              // Parse range like "1-5" to get count
+              const match = group.range.match(/^(\d+)-(\d+)$/)
+              if (match) {
+                const start = parseInt(match[1])
+                const end = parseInt(match[2])
+                const count = end - start + 1
+                totalQuestions += count
+              }
+            } else if (group.questions) {
+              // For SHORT_ANSWER, count placeholders
+              if (group.type === 'SHORT_ANSWER') {
+                group.questions.forEach((q: any) => {
+                  if (q.text) {
+                    const matches = q.text.match(/\[(\d+)\]/g) || []
+                    totalQuestions += matches.length
+                  }
+                })
+              } else {
+                // For other types, count question objects
+                const questions = normalizeArrayMaybeStringOrObject(group.questions)
+                totalQuestions += questions.length
+              }
+            }
+          })
+        } catch (error) {
+          console.error(`Error processing part ${i}:`, error)
+        }
+      }
+      
+      console.log(`✅ Question offset calculated: ${totalQuestions} (from ${currentPartIndex} previous parts)`)
+      setQuestionOffset(totalQuestions)
+      
+    } catch (error) {
+      console.error('❌ Error calculating question offset:', error)
+      setQuestionOffset(0)
+    }
+  }
 
   // Effect to set form values after question groups are rendered
   useEffect(() => {
@@ -50,6 +137,64 @@ const PartEditorPage = () => {
       setLoadedData(null) // Clear to prevent re-setting
     }
   }, [questionGroupCount, loadedData, form])
+
+  // Recalculate all ranges when question groups change
+  const recalculateAllRanges = () => {
+    const questionGroups = form.getFieldValue('questionGroups') || []
+    if (questionGroups.length === 0) return
+
+    console.log('🔄 Recalculating ranges for all question groups...')
+    
+    let currentStart = questionOffset + 1
+    const updatedGroups = questionGroups.map((group: any, index: number) => {
+      if (!group) return group
+
+      // Calculate question count for this group
+      let questionCount = 0
+      
+      if (group.range) {
+        // Parse existing range to get count
+        const match = group.range.match(/^(\d+)-(\d+)$/)
+        if (match) {
+          const start = parseInt(match[1])
+          const end = parseInt(match[2])
+          questionCount = end - start + 1
+        }
+      } else if (group.questions && group.questions.length > 0) {
+        // Count based on question type
+        if (group.type === 'SHORT_ANSWER') {
+          group.questions.forEach((q: any) => {
+            if (q.text) {
+              const matches = q.text.match(/\[(\d+)\]/g) || []
+              questionCount += matches.length
+            }
+          })
+        } else {
+          questionCount = group.questions.length
+        }
+      }
+
+      // Default to 5 if no questions yet
+      if (questionCount === 0) {
+        questionCount = 5
+      }
+
+      // Calculate new range
+      const newRange = `${currentStart}-${currentStart + questionCount - 1}`
+      console.log(`  Group ${index + 1}: ${group.range || 'no range'} → ${newRange}`)
+      
+      // Update for next group
+      currentStart += questionCount
+
+      return {
+        ...group,
+        range: newRange
+      }
+    })
+
+    form.setFieldValue('questionGroups', updatedGroups)
+    console.log('✅ All ranges recalculated')
+  }
 
   const fetchCorrectAnswers = async () => {
     try {
@@ -224,6 +369,13 @@ const PartEditorPage = () => {
   const handleSave = async () => {
     try {
       setSaving(true)
+      
+      // Recalculate all ranges before saving
+      recalculateAllRanges()
+      
+      // Wait a bit for the recalculation to apply
+      await new Promise(resolve => setTimeout(resolve, 200))
+      
       const values = await form.validateFields()
       
       console.log('📝 Form values before save:', values)
@@ -247,6 +399,9 @@ const PartEditorPage = () => {
       // Save all pending answers
       await savePendingAnswers()
       
+      // Recalculate and update ranges for ALL parts in the section
+      await recalculateAndUpdateAllParts()
+      
       message.success('Content and answers saved successfully!')
     } catch (error: any) {
       console.error('Error saving content:', error)
@@ -257,6 +412,99 @@ const PartEditorPage = () => {
       message.error('Failed to save content')
     } finally {
       setSaving(false)
+    }
+  }
+
+  // Recalculate and update ranges for all parts in the section
+  const recalculateAndUpdateAllParts = async () => {
+    try {
+      console.log('🔄 Recalculating ranges for all parts in section...')
+      
+      const partsResponse = await testManagementApi.getAllParts(sectionId)
+      const allParts = partsResponse?.data || partsResponse || []
+      
+      let cumulativeQuestions = 0
+      
+      for (const part of allParts) {
+        try {
+          const contentResponse = await testManagementApi.getPartQuestionContent(part.id)
+          const contentString = contentResponse.data?.content || contentResponse.content
+          
+          if (!contentString) continue
+          
+          const parsedContent = safeMultiParseJson<PersistedPartContentEnvelope>(contentString, 10)
+          
+          let adminContent: any = null
+          if (parsedContent && parsedContent.admin) {
+            adminContent = safeMultiParseJson(parsedContent.admin, 10)
+          } else if (parsedContent && parsedContent.questionGroups) {
+            adminContent = parsedContent
+          }
+          
+          if (!adminContent || !adminContent.questionGroups) continue
+          
+          const questionGroups = normalizeArrayMaybeStringOrObject(adminContent.questionGroups)
+          let currentStart = cumulativeQuestions + 1
+          let partUpdated = false
+          
+          const updatedGroups = questionGroups.map((group: any) => {
+            if (!group) return group
+            
+            let questionCount = 0
+            
+            if (group.range) {
+              const match = group.range.match(/^(\d+)-(\d+)$/)
+              if (match) {
+                questionCount = parseInt(match[2]) - parseInt(match[1]) + 1
+              }
+            } else if (group.questions) {
+              if (group.type === 'SHORT_ANSWER') {
+                group.questions.forEach((q: any) => {
+                  if (q.text) {
+                    const matches = q.text.match(/\[(\d+)\]/g) || []
+                    questionCount += matches.length
+                  }
+                })
+              } else {
+                const questions = normalizeArrayMaybeStringOrObject(group.questions)
+                questionCount = questions.length
+              }
+            }
+            
+            if (questionCount === 0) questionCount = 5
+            
+            const newRange = `${currentStart}-${currentStart + questionCount - 1}`
+            
+            if (group.range !== newRange) {
+              partUpdated = true
+              console.log(`  Part ${part.id}: ${group.range || 'no range'} → ${newRange}`)
+            }
+            
+            currentStart += questionCount
+            
+            return { ...group, range: newRange }
+          })
+          
+          cumulativeQuestions = currentStart - 1
+          
+          if (partUpdated) {
+            const updatedContent = { ...adminContent, questionGroups: updatedGroups }
+            await testManagementApi.savePartQuestionContent(part.id, {
+              admin: updatedContent,
+              user: updatedContent
+            })
+            console.log(`✅ Updated part ${part.id}`)
+          }
+          
+        } catch (error) {
+          console.error(`Error processing part ${part.id}:`, error)
+        }
+      }
+      
+      console.log('✅ All parts updated')
+      
+    } catch (error) {
+      console.error('❌ Error recalculating all parts:', error)
     }
   }
 
@@ -410,13 +658,14 @@ const PartEditorPage = () => {
     })
   }
 
-  // Calculate the next question range based on existing groups
+  // Calculate the next question range based on existing groups AND previous parts
   const getNextQuestionRange = (groupIndex: number): string => {
     const questionGroups = form.getFieldValue('questionGroups') || []
     
-    let nextStart = 1
+    // Start from the question offset (questions from previous parts)
+    let nextStart = questionOffset + 1
     
-    // Calculate based on all previous groups
+    // Calculate based on all previous groups in THIS part
     for (let i = 0; i < groupIndex; i++) {
       const group = questionGroups[i]
       if (group && group.range) {
@@ -463,6 +712,9 @@ const PartEditorPage = () => {
     
     form.setFieldValue('questionGroups', [...currentGroups, newGroup])
     setQuestionGroupCount(prev => prev + 1)
+    
+    // Recalculate all ranges after adding
+    setTimeout(() => recalculateAllRanges(), 100)
   }
 
   const isReading = sectionType.toLowerCase() === 'reading'
@@ -550,7 +802,13 @@ const PartEditorPage = () => {
 
           {/* Right Side - Questions Section */}
           <div style={{ flex: 1 }}>
-            <Card title="Question Groups">
+            <Card title="Question Groups" extra={
+              questionOffset > 0 && (
+                <Text type="secondary" style={{ fontSize: '14px' }}>
+                  📊 Questions start from: <strong>{questionOffset + 1}</strong> (previous parts have {questionOffset} questions)
+                </Text>
+              )
+            }>
               <Form.Item
                 label="Instructions"
                 name="instruction"
@@ -573,6 +831,7 @@ const PartEditorPage = () => {
                     defaultQuestionRange={getNextQuestionRange(index)}
                     showImageUpload={true}
                     onAnswerChange={handleAnswerChange}
+                    onRecalculateRanges={recalculateAllRanges}
                   />
                 ))}
               </Space>
@@ -635,6 +894,15 @@ const PartEditorPage = () => {
       // Full width for Listening
       return (
         <div>
+          {questionOffset > 0 && (
+            <Card size="small" style={{ marginBottom: '16px', background: '#e6f7ff', borderColor: '#91d5ff' }}>
+              <Text>
+                📊 <strong>Question Numbering:</strong> This part starts from question <strong>{questionOffset + 1}</strong> 
+                {' '}(previous parts have {questionOffset} questions)
+              </Text>
+            </Card>
+          )}
+          
           <Form.Item
             label="Instructions"
             name="instruction"
@@ -657,6 +925,7 @@ const PartEditorPage = () => {
                 defaultQuestionRange={getNextQuestionRange(index)}
                 showImageUpload={isListening}
                 onAnswerChange={handleAnswerChange}
+                onRecalculateRanges={recalculateAllRanges}
               />
             ))}
           </Space>

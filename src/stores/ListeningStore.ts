@@ -24,6 +24,7 @@ export class ListeningStore {
   currentQuestionIndex: number = 0
   answers: Map<number, string | string[]> = new Map()
   parts: ListeningPart[] = []
+  audioUrls: string[] = []  // All audio URLs independent from parts
   isPlaying: boolean = false
   hasStarted: boolean = false
   audioProgress: number = 0
@@ -39,10 +40,15 @@ export class ListeningStore {
     this.parts = parts
   }
 
+  setAudioUrls(urls: string[]) {
+    this.audioUrls = urls
+  }
+
   reset() {
     this.currentPart = 1
     this.currentQuestionIndex = 0
     this.answers.clear()
+    this.audioUrls = []
     this.isPlaying = false
     this.hasStarted = false
     this.audioProgress = 0

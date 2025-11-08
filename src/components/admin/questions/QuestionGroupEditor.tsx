@@ -21,6 +21,7 @@ interface QuestionGroupEditorProps {
   defaultQuestionRange?: string
   showImageUpload?: boolean
   onAnswerChange?: (questionNumber: number, answer: string | string[]) => void
+  onRecalculateRanges?: () => void
 }
 
 export const QuestionGroupEditor = ({ 
@@ -29,7 +30,8 @@ export const QuestionGroupEditor = ({
   form,
   defaultQuestionRange,
   showImageUpload = false,
-  onAnswerChange
+  onAnswerChange,
+  onRecalculateRanges
 }: QuestionGroupEditorProps) => {
   const [questionCount, setQuestionCount] = useState(0)
   const [selectedType, setSelectedType] = useState<string>('')
@@ -134,6 +136,11 @@ export const QuestionGroupEditor = ({
       const startNum = parseInt(match[1])
       const newEndNum = startNum + questionCount - 1
       form.setFieldValue([...groupPath, 'range'], `${startNum}-${newEndNum}`)
+      
+      // Trigger recalculation of all ranges
+      if (onRecalculateRanges) {
+        setTimeout(() => onRecalculateRanges(), 100)
+      }
     }
   }
 

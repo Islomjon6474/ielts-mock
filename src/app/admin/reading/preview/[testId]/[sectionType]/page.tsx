@@ -98,8 +98,9 @@ const SectionPreviewPage = observer(() => {
         // Reset listening store to prevent auto-play from previous state
         listeningStore.reset()
         
-        // Fetch audio files for the test and preload them
-        let audioUrls: { [partId: string]: string } = {}
+        let listeningParts: any[] = []  // Declare outside try block
+        
+        // Fetch audio files for the test and preload them (independent of parts)
         try {
           listeningStore.setAudioLoading(true)
           listeningStore.setAllAudioReady(false)
@@ -107,19 +108,29 @@ const SectionPreviewPage = observer(() => {
 
           const audioResponse = await listeningAudioApi.getAllListeningAudio(testId)
           const audioFiles = audioResponse?.data || []
-          console.log('Audio files:', audioFiles)
+          
+          // Sort audio files by ord field to ensure correct order
+          const sortedAudioFiles = [...audioFiles].sort((a, b) => (a.ord || 0) - (b.ord || 0))
+          console.log(`🎵 Preview: Found ${sortedAudioFiles.length} audio files for listening test`)
 
           const preloadPromises: Promise<void>[] = []
-          audioFiles.forEach((audio: any, index: number) => {
-            if (index >= partsWithContent.length) return
-            const partId = partsWithContent[index].id
+          const audioUrls: string[] = []
+          
+          sortedAudioFiles.forEach((audio: any, index: number) => {
             const fileId = audio.fileId
-            if (!fileId) return
+            if (!fileId) {
+              console.warn(`Audio at index ${index} has no fileId`)
+              return
+            }
 
             const fileUrl = fileApi.getFileUrl(fileId)
-            if (!fileUrl) return
+            if (!fileUrl) {
+              console.warn(`Could not generate URL for fileId: ${fileId}`)
+              return
+            }
             
-            audioUrls[partId] = fileUrl
+            console.log(`🎵 Preview: Audio ${index + 1} (ord: ${audio.ord || 'N/A'}): ${audio.name || 'unnamed'}`, fileUrl)
+            audioUrls.push(fileUrl)
 
             // Preload via Audio object and canplaythrough
             const p = new Promise<void>((resolve) => {
@@ -129,12 +140,13 @@ const SectionPreviewPage = observer(() => {
               const done = () => {
                 a.removeEventListener('canplaythrough', done)
                 a.removeEventListener('error', onErr)
+                console.log(`✅ Preview: Audio ${index + 1} preloaded successfully`)
                 resolve()
               }
               const onErr = () => {
                 a.removeEventListener('canplaythrough', done)
                 a.removeEventListener('error', onErr)
-                // resolve anyway; we will still allow UI to start even if a file fails
+                console.error(`❌ Preview: Failed to preload audio ${index + 1}:`, fileUrl)
                 resolve()
               }
               a.addEventListener('canplaythrough', done, { once: true })
@@ -144,7 +156,25 @@ const SectionPreviewPage = observer(() => {
           })
 
           await Promise.all(preloadPromises)
+          console.log(`✅ Preview: All ${audioUrls.length} audio files preloaded`)
           listeningStore.setAllAudioReady(true)
+          
+          // Store ALL audio URLs in the listening store for sequential playback
+          listeningStore.setAudioUrls(audioUrls)
+          console.log(`📦 Preview: Stored ${audioUrls.length} audio URLs in listening store`)
+          
+          // Also map to parts for compatibility with existing code
+          const audioUrlsMap: { [partId: string]: string } = {}
+          partsWithContent.forEach((part, index) => {
+            if (index < audioUrls.length) {
+              audioUrlsMap[part.id] = audioUrls[index]
+            }
+          })
+          
+          // Transform admin format to listening format
+          listeningParts = transformAdminPartsToListening(partsWithContent, audioUrlsMap)
+          console.log('Transformed listening parts:', listeningParts)
+          
         } catch (error: any) {
           console.warn('No audio files found or preload failed:', error)
           listeningStore.setAudioError(error?.message || 'Failed to load audio')
@@ -152,10 +182,6 @@ const SectionPreviewPage = observer(() => {
         } finally {
           listeningStore.setAudioLoading(false)
         }
-
-        // Transform admin format to listening format
-        const listeningParts = transformAdminPartsToListening(partsWithContent, audioUrls)
-        console.log('Transformed listening parts:', listeningParts)
 
         if (listeningParts.length > 0) {
           listeningStore.setParts(listeningParts)

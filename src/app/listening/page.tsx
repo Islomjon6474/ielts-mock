@@ -80,8 +80,7 @@ function ListeningPageContent() {
           partsWithContent.push({ ...p, content: parsed })
         }
 
-        // 4) Get audio files, build audio URLs, and preload them
-        const audioUrls: { [partId: string]: string } = {}
+        // 4) Get audio files and preload them (independent of parts)
         try {
           listeningStore.setAudioLoading(true)
           listeningStore.setAllAudioReady(false)
@@ -91,40 +90,51 @@ function ListeningPageContent() {
           const audioResponse = await mockSubmissionApi.getAllListeningAudio(testIdToUse)
           const audioFiles = audioResponse?.data || []
           
-          const preloadPromises: Promise<void>[] = []
+          // Sort audio files by ord field to ensure correct order
+          const sortedAudioFiles = [...audioFiles].sort((a, b) => (a.ord || 0) - (b.ord || 0))
+          console.log(`🎵 Found ${sortedAudioFiles.length} audio files for listening test`)
           
-          audioFiles.forEach((audio: any, index: number) => {
-            if (index >= partsWithContent.length) return
-            const partId = partsWithContent[index].id
+          const preloadPromises: Promise<void>[] = []
+          const audioUrls: string[] = []
+          
+          sortedAudioFiles.forEach((audio: any, index: number) => {
             const fileId = audio.fileId
-            if (!fileId) return
+            if (!fileId) {
+              console.warn(`Audio at index ${index} has no fileId`)
+              return
+            }
             
             const fileUrl = fileApi.getFileUrl(fileId)
-            if (!fileUrl) return
+            if (!fileUrl) {
+              console.warn(`Could not generate URL for fileId: ${fileId}`)
+              return
+            }
             
-            audioUrls[partId] = fileUrl
+            console.log(`🎵 Audio ${index + 1} (ord: ${audio.ord || 'N/A'}): ${audio.name || 'unnamed'}`, fileUrl)
+            audioUrls.push(fileUrl)
 
             // Preload audio file
             const preloadPromise = new Promise<void>((resolve) => {
-              const audio = new Audio()
-              audio.preload = 'auto'
-              audio.src = fileUrl
+              const audioElement = new Audio()
+              audioElement.preload = 'auto'
+              audioElement.src = fileUrl
               
               const onReady = () => {
-                audio.removeEventListener('canplaythrough', onReady)
-                audio.removeEventListener('error', onError)
+                audioElement.removeEventListener('canplaythrough', onReady)
+                audioElement.removeEventListener('error', onError)
+                console.log(`✅ Audio ${index + 1} preloaded successfully`)
                 resolve()
               }
               
               const onError = () => {
-                audio.removeEventListener('canplaythrough', onReady)
-                audio.removeEventListener('error', onError)
-                console.error('Failed to preload audio:', fileUrl)
+                audioElement.removeEventListener('canplaythrough', onReady)
+                audioElement.removeEventListener('error', onError)
+                console.error(`❌ Failed to preload audio ${index + 1}:`, fileUrl)
                 resolve() // Resolve anyway to not block other files
               }
               
-              audio.addEventListener('canplaythrough', onReady, { once: true })
-              audio.addEventListener('error', onError, { once: true })
+              audioElement.addEventListener('canplaythrough', onReady, { once: true })
+              audioElement.addEventListener('error', onError, { once: true })
             })
             
             preloadPromises.push(preloadPromise)
@@ -132,7 +142,24 @@ function ListeningPageContent() {
 
           // Wait for all audio to preload
           await Promise.all(preloadPromises)
+          console.log(`✅ All ${audioUrls.length} audio files preloaded`)
           listeningStore.setAllAudioReady(true)
+          
+          // Store ALL audio URLs in the listening store for sequential playback
+          listeningStore.setAudioUrls(audioUrls)
+          console.log(`📦 Stored ${audioUrls.length} audio URLs in listening store`)
+          
+          // Also map to parts for compatibility with existing code
+          const audioUrlsMap: { [partId: string]: string } = {}
+          partsWithContent.forEach((part, index) => {
+            if (index < audioUrls.length) {
+              audioUrlsMap[part.id] = audioUrls[index]
+            }
+          })
+          
+          // 5) Transform and set to store
+          const listeningParts = transformAdminPartsToListening(partsWithContent, audioUrlsMap)
+          listeningStore.setParts(listeningParts)
           
         } catch (err) {
           console.error('Failed to fetch audio files:', err)
@@ -142,9 +169,6 @@ function ListeningPageContent() {
           listeningStore.setAudioLoading(false)
         }
 
-        // 5) Transform and set to store
-        const listeningParts = transformAdminPartsToListening(partsWithContent, audioUrls)
-        listeningStore.setParts(listeningParts)
       } catch (error) {
         console.error('❌ Error loading listening test:', error)
         listeningStore.setParts([])

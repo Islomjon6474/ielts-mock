@@ -17,6 +17,7 @@ import FlowChartQuestion from './FlowChartQuestion'
 import FillInBlankQuestion from './FillInBlankQuestion'
 import MultipleChoiceQuestion from './MultipleChoiceQuestion'
 import TrueFalseQuestion from './TrueFalseQuestion'
+import SentenceCompletionQuestion from './SentenceCompletionQuestion'
 import SubmitModal from '@/components/common/SubmitModal'
 
 const { Content } = Layout
@@ -27,9 +28,11 @@ interface ListeningTestLayoutProps {
 }
 
 interface QuestionGroup {
+  type?: string
   imageUrl?: string
   instruction?: string
   questions: ListeningQuestion[]
+  options?: string[]
 }
 
 const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: ListeningTestLayoutProps) => {
@@ -43,13 +46,20 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
 
   const currentPart = listeningStore.currentPartData
 
-  // Collect all audio URLs on mount
+  // Use audio URLs from store (independent from parts)
   useEffect(() => {
-    const urls = listeningStore.parts
-      .filter(part => part.audioUrl)
-      .map(part => part.audioUrl!)
-    setAllAudioUrls(urls)
-  }, [listeningStore.parts])
+    if (listeningStore.audioUrls && listeningStore.audioUrls.length > 0) {
+      setAllAudioUrls(listeningStore.audioUrls)
+      console.log(`🎵 ListeningTestLayout: Using ${listeningStore.audioUrls.length} audio URLs from store`)
+    } else {
+      // Fallback: collect from parts (for backward compatibility)
+      const urls = listeningStore.parts
+        .filter(part => part.audioUrl)
+        .map(part => part.audioUrl!)
+      setAllAudioUrls(urls)
+      console.log(`🎵 ListeningTestLayout: Fallback - collected ${urls.length} audio URLs from parts`)
+    }
+  }, [listeningStore.audioUrls, listeningStore.parts])
 
   // Set initial audio source and auto-play when index changes
   useEffect(() => {
@@ -169,20 +179,28 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
           {Array.isArray(currentPart.questions) && currentPart.questions.length > 0 && (
             <div className="space-y-4">
               {(() => {
-                // Group questions by imageUrl to show image once per group
+                // Group questions by imageUrl and type to show image once per group
                 const grouped: QuestionGroup[] = []
                 let currentGroup: QuestionGroup | null = null
                 
                 currentPart.questions.forEach((q: ListeningQuestion) => {
-                  // Start a new group if imageUrl changes or this is the first question
-                  const shouldStartNewGroup = !currentGroup || q.imageUrl !== currentGroup.imageUrl
+                  // Start a new group if imageUrl or type changes
+                  const shouldStartNewGroup = !currentGroup || 
+                    q.imageUrl !== currentGroup.imageUrl || 
+                    q.type !== currentGroup.type
                   
                   if (shouldStartNewGroup) {
                     // Extract instruction from first question's text (first line)
                     const lines = q.text.split('\n')
                     const instruction = lines.length > 1 && !lines[0].match(/^\d+/) ? lines[0] : ''
                     
-                    currentGroup = { imageUrl: q.imageUrl, instruction, questions: [q] }
+                    currentGroup = { 
+                      type: q.type,
+                      imageUrl: q.imageUrl, 
+                      instruction, 
+                      questions: [q],
+                      options: q.options || []
+                    }
                     grouped.push(currentGroup)
                   } else {
                     if (currentGroup) {
@@ -196,6 +214,31 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                   const questionIds = group.questions.map(q => q.id).filter(id => typeof id === 'number')
                   const startNum = questionIds.length > 0 ? Math.min(...questionIds) : 1
                   const endNum = questionIds.length > 0 ? Math.max(...questionIds) : 1
+                  
+                  // Handle SENTENCE_COMPLETION separately
+                  if (group.type === 'SENTENCE_COMPLETION') {
+                    const questionNumbers = group.questions.map(q => q.id)
+                    const options = group.options || []
+                    
+                    return (
+                      <div key={`group-${groupIdx}`} className="mb-8">
+                        <div className="bg-gray-50 rounded-lg border-l-4 border-blue-500 p-4 mb-4">
+                          <h3 className="font-bold text-lg mb-2">
+                            Questions {startNum}{endNum !== startNum && `–${endNum}`}
+                          </h3>
+                          {group.instruction && (
+                            <div className="text-sm text-gray-600 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: group.instruction }} />
+                          )}
+                        </div>
+                        
+                        <SentenceCompletionQuestion
+                          questions={group.questions}
+                          questionNumbers={questionNumbers}
+                          options={options}
+                        />
+                      </div>
+                    )
+                  }
                   
                   return (
                   <div key={`group-${groupIdx}`} className="mb-6">
