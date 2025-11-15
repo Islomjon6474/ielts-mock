@@ -117,7 +117,18 @@ export const testManagementApi = {
     return response.data
   },
 
-  // Save question answers
+  // Add question (inserts between existing questions, shifts subsequent question numbers)
+  addQuestion: async (sectionId: string, partId: string, ord: number, answers: string[]) => {
+    const response = await api.post('/test-management/add-question', {
+      sectionId,
+      partId,
+      ord,
+      answers,
+    })
+    return response.data
+  },
+
+  // Save question answers (creates new or updates existing at the end)
   saveQuestion: async (sectionId: string, partId: string, ord: number, answers: string[]) => {
     const response = await api.post('/test-management/save-question', {
       sectionId,

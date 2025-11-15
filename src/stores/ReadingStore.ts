@@ -1,5 +1,6 @@
 import { makeAutoObservable } from 'mobx'
 import * as R from 'ramda'
+import { mockSubmissionApi } from '@/services/mockSubmissionApi'
 
 export type QuestionType = 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN' | 'FILL_IN_BLANK' | 'MATCH_HEADING' | 'MULTIPLE_CHOICE' | 'MULTIPLE_CHOICE_SINGLE' | 'IMAGE_INPUTS' | 'SENTENCE_COMPLETION'
 
@@ -48,9 +49,20 @@ export class ReadingStore {
   answers: Map<number, string | string[]> = new Map()
   parts: Part[] = []
   isPreviewMode: boolean = false
+  mockId: string | null = null
+  sectionId: string | null = null
+  isSubmitting: boolean = false
 
   constructor() {
     makeAutoObservable(this)
+  }
+
+  setMockId(mockId: string) {
+    this.mockId = mockId
+  }
+
+  setSectionId(sectionId: string) {
+    this.sectionId = sectionId
   }
 
   setPreviewMode(isPreview: boolean) {
@@ -76,8 +88,19 @@ export class ReadingStore {
     }
   }
 
-  setAnswer(questionId: number, value: string | string[]) {
+  async setAnswer(questionId: number, value: string | string[]) {
     this.answers.set(questionId, value)
+    
+    // Auto-submit answer if not in preview mode
+    if (!this.isPreviewMode && this.mockId && this.sectionId) {
+      try {
+        const answerString = Array.isArray(value) ? value.join(',') : value
+        await mockSubmissionApi.sendAnswer(this.mockId, this.sectionId, questionId, answerString)
+        console.log(`✅ Submitted answer for Q${questionId}:`, answerString)
+      } catch (error) {
+        console.error(`❌ Failed to submit answer for Q${questionId}:`, error)
+      }
+    }
   }
 
   removeAnswer(questionId: number) {
@@ -131,9 +154,31 @@ export class ReadingStore {
     this.parts = parts
   }
 
+  async finishSection() {
+    if (!this.mockId || !this.sectionId || this.isPreviewMode) {
+      console.log('Cannot finish section: missing mockId/sectionId or in preview mode')
+      return
+    }
+
+    try {
+      this.isSubmitting = true
+      await mockSubmissionApi.finishSection(this.mockId, this.sectionId)
+      console.log('✅ Section finished successfully')
+      return true
+    } catch (error) {
+      console.error('❌ Failed to finish section:', error)
+      throw error
+    } finally {
+      this.isSubmitting = false
+    }
+  }
+
   reset() {
     this.currentPart = 1
     this.currentQuestionIndex = 0
     this.answers.clear()
+    this.mockId = null
+    this.sectionId = null
+    this.isSubmitting = false
   }
 }

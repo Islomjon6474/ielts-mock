@@ -133,9 +133,17 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
     setShowSubmitModal(false)
   }
 
-  const handleModalConfirm = () => {
-    setShowSubmitModal(false)
-    router.push('/')
+  const handleModalConfirm = async () => {
+    try {
+      await listeningStore.finishSection()
+      setShowSubmitModal(false)
+      router.push('/')
+    } catch (error) {
+      console.error('Failed to submit test:', error)
+      // Still close modal and redirect even if submission fails
+      setShowSubmitModal(false)
+      router.push('/')
+    }
   }
 
   // Check if parts are loaded - conditional returns at the end

@@ -2,13 +2,15 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import ListeningTestLayout from '@/components/listening/ListeningTestLayout'
-import { mockSubmissionApi, fileApi } from '@/services/testManagementApi'
+import { mockSubmissionApi } from '@/services/mockSubmissionApi'
+import { fileApi } from '@/services/testManagementApi'
 import { safeMultiParseJson } from '@/utils/json'
 import { transformAdminPartsToListening } from '@/utils/transformListeningData'
 
-function ListeningPageContent() {
+const ListeningPageContent = observer(() => {
   const { listeningStore } = useStore()
   const [loading, setLoading] = useState(true)
   const searchParams = useSearchParams()
@@ -30,11 +32,10 @@ function ListeningPageContent() {
         } else {
           // 1) Get active tests and take the first ACTIVE one
           const testsResp = await mockSubmissionApi.getAllTests(0, 100)
-          const tests = testsResp?.data || testsResp?.content || testsResp || []
-          const allTests = Array.isArray(tests) ? tests : (tests?.data || [])
+          const allTests = testsResp?.data || []
           
           // Filter for active tests only (isActive === 1)
-          const activeTests = allTests.filter((t: any) => t.isActive === 1)
+          const activeTests = allTests.filter((t) => t.isActive === 1)
           
           // If no active tests, use first available test
           const test = activeTests.length > 0 ? activeTests[0] : allTests[0]
@@ -46,7 +47,7 @@ function ListeningPageContent() {
             return
           }
           
-          testIdToUse = test.id || test.testId || test?.id
+          testIdToUse = test.id
           console.log('🎧 Loading listening test:', test.name || test.id)
         }
 
@@ -58,9 +59,14 @@ function ListeningPageContent() {
           return
         }
 
-        // 2) Get sections and pick listening
+        // 2) Start mock test
+        const mockResp = await mockSubmissionApi.startMock(testIdToUse)
+        const mockId = mockResp.data
+        console.log('🎯 Started mock test:', mockId)
+
+        // 3) Get sections and pick listening
         const sectionsResp = await mockSubmissionApi.getAllSections(testIdToUse)
-        const sections = sectionsResp?.data || sectionsResp || []
+        const sections = sectionsResp.data || []
         const listeningSection = sections.find((s: any) => `${s.sectionType}`.toLowerCase() === 'listening')
         if (!listeningSection) {
           listeningStore.setParts([])
@@ -68,19 +74,27 @@ function ListeningPageContent() {
           return
         }
 
-        // 3) Get parts and their content
+        // 4) Start listening section
+        await mockSubmissionApi.startSection(mockId, listeningSection.id)
+        console.log('🎧 Started listening section:', listeningSection.id)
+
+        // 5) Set mockId and sectionId in store for submission
+        listeningStore.setMockId(mockId)
+        listeningStore.setSectionId(listeningSection.id)
+
+        // 6) Get parts and their content
         const partsResp = await mockSubmissionApi.getAllParts(listeningSection.id)
-        const parts = partsResp?.data || partsResp || []
+        const parts = partsResp.data || []
         const partsWithContent: any[] = []
         for (const p of parts) {
           const contentResp = await mockSubmissionApi.getPartQuestionContent(p.id)
-          const raw = contentResp?.data?.content ?? contentResp?.content ?? null
+          const raw = contentResp.data?.content
           if (!raw) continue
           const parsed = safeMultiParseJson(raw, 10)
           partsWithContent.push({ ...p, content: parsed })
         }
 
-        // 4) Get audio files and preload them (independent of parts)
+        // 7) Get audio files and preload them (independent of parts)
         try {
           listeningStore.setAudioLoading(true)
           listeningStore.setAllAudioReady(false)
@@ -88,7 +102,7 @@ function ListeningPageContent() {
 
           console.log('🎵 Fetching audio for test ID:', testIdToUse)
           const audioResponse = await mockSubmissionApi.getAllListeningAudio(testIdToUse)
-          const audioFiles = audioResponse?.data || []
+          const audioFiles = audioResponse.data || []
           
           // Sort audio files by ord field to ensure correct order
           const sortedAudioFiles = [...audioFiles].sort((a, b) => (a.ord || 0) - (b.ord || 0))
@@ -181,7 +195,7 @@ function ListeningPageContent() {
 
   if (loading) return null
   return <ListeningTestLayout />
-}
+})
 
 export default function ListeningPage() {
   return (

@@ -5,7 +5,8 @@ import { useSearchParams } from 'next/navigation'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import ReadingTestLayout from '@/components/reading/ReadingTestLayout'
-import { mockSubmissionApi, fileApi } from '@/services/testManagementApi'
+import { mockSubmissionApi } from '@/services/mockSubmissionApi'
+import { fileApi } from '@/services/testManagementApi'
 import { safeMultiParseJson } from '@/utils/json'
 
 const ReadingPageContent = observer(() => {
@@ -30,12 +31,11 @@ const ReadingPageContent = observer(() => {
           const testsResp = await mockSubmissionApi.getAllTests(0, 100)
           console.log('📊 Tests response:', testsResp)
           
-          const tests = testsResp?.data || testsResp?.content || testsResp || []
-          const allTests = Array.isArray(tests) ? tests : (tests?.data || [])
+          const allTests = testsResp?.data || []
           console.log('📋 All tests:', allTests.length, allTests)
           
           // Filter for active tests only (isActive === 1)
-          const activeTests = allTests.filter((t: any) => t.isActive === 1)
+          const activeTests = allTests.filter((t) => t.isActive === 1)
           console.log('✅ Active tests:', activeTests.length, activeTests)
           
           // If no active tests, use first available test
@@ -48,7 +48,7 @@ const ReadingPageContent = observer(() => {
             return
           }
           
-          testIdToUse = test.id || test.testId || test?.id
+          testIdToUse = test.id
           console.log('📖 Loading reading test:', test.name || test.id, 'Active:', test.isActive)
         }
 
@@ -60,18 +60,20 @@ const ReadingPageContent = observer(() => {
           return
         }
 
-        // 2) Get sections and pick reading
+        // 2) Start mock test
+        const mockResp = await mockSubmissionApi.startMock(testIdToUse)
+        const mockId = mockResp.data
+        // 3) Get sections and pick reading
         console.log('🔍 Getting sections for test ID:', testIdToUse)
         
         const sectionsResp = await mockSubmissionApi.getAllSections(testIdToUse)
-        console.log('📑 Sections response:', sectionsResp)
+        console.log('📁 Sections response:', sectionsResp)
         
-        const sections = sectionsResp?.data || sectionsResp || []
-        console.log('📋 All sections:', sections)
+        const sections = sectionsResp.data || []
+        console.log('📋 All sections:', sections.length, sections)
         
         const readingSection = sections.find((s: any) => `${s.sectionType}`.toLowerCase() === 'reading')
-        console.log('📖 Reading section found:', readingSection)
-        
+
         if (!readingSection) {
           console.log('❌ No reading section found for this test')
           readingStore.setParts([])
@@ -79,19 +81,28 @@ const ReadingPageContent = observer(() => {
           return
         }
 
-        // 3) Get parts and their content
+
+        // 4) Start reading section
+        await mockSubmissionApi.startSection(mockId, readingSection.id)
+        console.log('📖 Started reading section:', readingSection.id)
+
+        // 5) Set mockId and sectionId in store for submission
+        readingStore.setMockId(mockId)
+        readingStore.setSectionId(readingSection.id)
+
+        // 6) Get parts and their content
         console.log('🔍 Getting parts for section ID:', readingSection.id)
         const partsResp = await mockSubmissionApi.getAllParts(readingSection.id)
         console.log('📦 Parts response:', partsResp)
         
-        const parts = partsResp?.data || partsResp || []
+        const parts = partsResp.data || []
         console.log('📚 All parts for reading:', parts.length, parts)
         
         const allParts: any[] = []
         
         for (const part of parts) {
           const contentResp = await mockSubmissionApi.getPartQuestionContent(part.id)
-          const raw = contentResp?.data?.content ?? contentResp?.content ?? null
+          const raw = contentResp.data?.content
           if (!raw) continue
           
           const partData: any = safeMultiParseJson(raw, 10)

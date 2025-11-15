@@ -517,16 +517,114 @@ const PartEditorPage = () => {
     
     console.log('💾 Saving pending answers:', Array.from(pendingAnswers.entries()))
     
+    // Fetch existing questions to determine which ones already exist
+    const questionsResponse = await testManagementApi.getAllQuestions(sectionId)
+    const allQuestions = questionsResponse?.data || []
+    
+    // Filter questions for this part
+    const existingQuestionsInPart = allQuestions.filter((q: any) => q.partId === partId)
+    const existingQuestionNumbers = new Set<number>(existingQuestionsInPart.map((q: any) => q.ord as number))
+    const existingCount = existingQuestionsInPart.length
+    
+    console.log('📊 Existing questions in part:', Array.from(existingQuestionNumbers).sort((a, b) => a - b))
+    console.log('📊 Existing question count:', existingCount)
+    
+    // Get all pending question numbers sorted
+    const pendingQuestionNumbers = Array.from(pendingAnswers.keys()).sort((a, b) => a - b)
+    const newQuestionCount = pendingQuestionNumbers.length
+    
+    console.log('📊 Pending question numbers:', pendingQuestionNumbers)
+    console.log('📊 New question count:', newQuestionCount)
+    
+    // Determine if we're adding questions (count increased)
+    const isAddingQuestions = newQuestionCount > existingCount
+    
     const savePromises: Promise<any>[] = []
-    pendingAnswers.forEach((answers, questionNumber) => {
-      if (answers.length > 0) {
-        savePromises.push(
-          testManagementApi.saveQuestion(sectionId, partId, questionNumber, answers)
-            .then(() => console.log(`✅ Saved answer for Q${questionNumber}:`, answers))
-            .catch((error) => console.error(`❌ Failed to save answer for Q${questionNumber}:`, error))
-        )
+    
+    // Sort pending answers by question number to process in order
+    const sortedPendingAnswers = Array.from(pendingAnswers.entries()).sort((a, b) => a[0] - b[0])
+    
+    // When adding questions, we need to find where the insertion happens
+    // Key insight: If we're adding questions and some pending numbers already exist in DB,
+    // those are collision points where we need to insert (shift existing questions)
+    
+    if (isAddingQuestions) {
+      const existingArray = Array.from(existingQuestionNumbers).sort((a, b) => a - b)
+      
+      // Find the first pending question number that:
+      // 1. Already exists in the database (collision)
+      // 2. OR is a new number that falls before the max existing number
+      let insertPosition = -1
+      
+      // Key insight: When adding questions, find the HIGHEST existing question number
+      // that is also in the pending list. This is where we need to insert.
+      // Example: existing=[1,2], pending=[1,2,3]
+      // - We're adding 1 question (3>2)
+      // - The highest existing number in pending is 2
+      // - So we insert at position 2 (which shifts old Q2 to Q3)
+      
+      const maxExisting = existingArray.length > 0 ? Math.max(...existingArray) : 0
+      
+      // Find the highest pending number that exists in DB
+      let highestCollision = -1
+      for (let i = pendingQuestionNumbers.length - 1; i >= 0; i--) {
+        const pendingNum = pendingQuestionNumbers[i]
+        if (existingQuestionNumbers.has(pendingNum) && pendingNum <= maxExisting) {
+          highestCollision = pendingNum
+          break
+        }
       }
-    })
+      
+      if (highestCollision !== -1) {
+        insertPosition = highestCollision
+        console.log(`🎯 Insert position: Q${insertPosition} (highest collision, will shift existing Q${insertPosition} and after)`)
+      } else {
+        console.log(`📝 No collision found - adding to end`)
+      }
+      
+      if (insertPosition !== -1) {
+        // Use addQuestion for the insert position, saveQuestion for others
+        sortedPendingAnswers.forEach(([questionNumber, answers]) => {
+          if (answers.length > 0) {
+            if (questionNumber === insertPosition) {
+              console.log(`🔄 Inserting Q${questionNumber} using addQuestion (will shift subsequent)`)
+              savePromises.push(
+                testManagementApi.addQuestion(sectionId, partId, questionNumber, answers)
+                  .then(() => console.log(`✅ Inserted Q${questionNumber}`))
+                  .catch((error) => console.error(`❌ Failed to insert Q${questionNumber}:`, error))
+              )
+            } else {
+              const reason = existingQuestionNumbers.has(questionNumber) ? 'editing existing' : 'adding to end'
+              console.log(`💾 Saving Q${questionNumber} using saveQuestion (${reason})`)
+              savePromises.push(
+                testManagementApi.saveQuestion(sectionId, partId, questionNumber, answers)
+                  .then(() => console.log(`✅ Saved Q${questionNumber}`))
+                  .catch((error) => console.error(`❌ Failed to save Q${questionNumber}:`, error))
+              )
+            }
+          }
+        })
+        
+        await Promise.all(savePromises)
+        setPendingAnswers(new Map())
+        return
+      }
+    }
+    
+    // If we didn't find an insert position (adding to end or no new questions), use saveQuestion for all
+    if (savePromises.length === 0) {
+      sortedPendingAnswers.forEach(([questionNumber, answers]) => {
+        if (answers.length > 0) {
+          const reason = existingQuestionNumbers.has(questionNumber) ? 'editing existing' : 'adding to end'
+          console.log(`💾 Saving Q${questionNumber} using saveQuestion (${reason})`)
+          savePromises.push(
+            testManagementApi.saveQuestion(sectionId, partId, questionNumber, answers)
+              .then(() => console.log(`✅ Saved Q${questionNumber}`))
+              .catch((error) => console.error(`❌ Failed to save Q${questionNumber}:`, error))
+          )
+        }
+      })
+    }
     
     await Promise.all(savePromises)
     setPendingAnswers(new Map()) // Clear pending answers after save

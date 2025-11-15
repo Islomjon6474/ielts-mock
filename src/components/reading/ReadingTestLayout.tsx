@@ -105,9 +105,17 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
     setShowSubmitModal(false)
   }
 
-  const handleModalConfirm = () => {
-    setShowSubmitModal(false)
-    router.push('/')
+  const handleModalConfirm = async () => {
+    try {
+      await readingStore.finishSection()
+      setShowSubmitModal(false)
+      router.push('/')
+    } catch (error) {
+      console.error('Failed to submit test:', error)
+      // Still close modal and redirect even if submission fails
+      setShowSubmitModal(false)
+      router.push('/')
+    }
   }
 
   return (

@@ -1,4 +1,5 @@
 import { makeAutoObservable } from 'mobx'
+import { mockSubmissionApi } from '@/services/mockSubmissionApi'
 
 export interface ListeningQuestion {
   id: number
@@ -31,9 +32,20 @@ export class ListeningStore {
   audioLoading: boolean = false
   audioError: string | null = null
   allAudioReady: boolean = false
+  mockId: string | null = null
+  sectionId: string | null = null
+  isSubmitting: boolean = false
 
   constructor() {
     makeAutoObservable(this)
+  }
+
+  setMockId(mockId: string) {
+    this.mockId = mockId
+  }
+
+  setSectionId(sectionId: string) {
+    this.sectionId = sectionId
   }
 
   setParts(parts: ListeningPart[]) {
@@ -42,6 +54,25 @@ export class ListeningStore {
 
   setAudioUrls(urls: string[]) {
     this.audioUrls = urls
+  }
+
+  async finishSection() {
+    if (!this.mockId || !this.sectionId) {
+      console.log('Cannot finish section: missing mockId/sectionId')
+      return
+    }
+
+    try {
+      this.isSubmitting = true
+      await mockSubmissionApi.finishSection(this.mockId, this.sectionId)
+      console.log('✅ Section finished successfully')
+      return true
+    } catch (error) {
+      console.error('❌ Failed to finish section:', error)
+      throw error
+    } finally {
+      this.isSubmitting = false
+    }
   }
 
   reset() {
@@ -55,6 +86,9 @@ export class ListeningStore {
     this.audioLoading = false
     this.audioError = null
     this.allAudioReady = false
+    this.mockId = null
+    this.sectionId = null
+    this.isSubmitting = false
   }
 
   setPartAudio(partId: number, url: string) {
@@ -100,8 +134,19 @@ export class ListeningStore {
     this.audioProgress = progress
   }
 
-  setAnswer(questionId: number, value: string | string[]) {
+  async setAnswer(questionId: number, value: string | string[]) {
     this.answers.set(questionId, value)
+    
+    // Auto-submit answer
+    if (this.mockId && this.sectionId) {
+      try {
+        const answerString = Array.isArray(value) ? value.join(',') : value
+        await mockSubmissionApi.sendAnswer(this.mockId, this.sectionId, questionId, answerString)
+        console.log(`✅ Submitted answer for Q${questionId}:`, answerString)
+      } catch (error) {
+        console.error(`❌ Failed to submit answer for Q${questionId}:`, error)
+      }
+    }
   }
 
   getAnswer(questionId: number): string | string[] | undefined {
