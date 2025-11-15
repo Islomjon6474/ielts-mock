@@ -84,7 +84,8 @@ export const ShortAnswerQuestion = ({
   return (
     <Card 
       size="small" 
-      className="mb-3" 
+      className="mb-2"
+      bodyStyle={{ padding: '12px' }} 
       title={
         <div className="flex items-center gap-2 flex-wrap">
           <span>Question {questionIndex + 1}</span>
@@ -118,7 +119,7 @@ export const ShortAnswerQuestion = ({
         }
         type="info"
         icon={<InfoCircleOutlined />}
-        className="mb-4"
+        className="mb-2"
         showIcon
       />
 

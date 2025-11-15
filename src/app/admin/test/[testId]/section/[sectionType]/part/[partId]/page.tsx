@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Layout, Typography, Tabs, Button, Form, Input, message, Spin, Space, Card, Divider } from 'antd'
-import { ArrowLeftOutlined, SaveOutlined, PlusOutlined } from '@ant-design/icons'
+import { useState, useEffect, useRef } from 'react'
+import { Layout, Typography, Tabs, Button, Form, Input, message, Spin, Space, Card, Divider, Modal } from 'antd'
+import { ArrowLeftOutlined, SaveOutlined, PlusOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { testManagementApi } from '@/services/testManagementApi'
 import { safeMultiParseJson, normalizeArrayMaybeStringOrObject } from '@/utils/json'
@@ -10,7 +10,7 @@ import { AdminPartContent, AdminQuestionGroup, AdminQuestion, PersistedPartConte
 import { QuestionGroupEditor } from '@/components/admin/questions'
 import { ImageUpload } from '@/components/admin/ImageUpload'
 import { AudioUpload } from '@/components/admin/AudioUpload'
-import { PassageRichTextEditor } from '@/components/admin/PassageRichTextEditor'
+import { PassageRichTextEditor, PassageRichTextEditorRef } from '@/components/admin/PassageRichTextEditor'
 
 const { Header, Content } = Layout
 const { Title, Text } = Typography
@@ -34,6 +34,7 @@ const PartEditorPage = () => {
   const [loadedData, setLoadedData] = useState<AdminPartContent | null>(null)
   const [pendingAnswers, setPendingAnswers] = useState<Map<number, string[]>>(new Map())
   const [questionOffset, setQuestionOffset] = useState(0) // Offset based on previous parts
+  const passageEditorRef = useRef<PassageRichTextEditorRef>(null)
 
   useEffect(() => {
     if (partId && sectionId) {
@@ -717,6 +718,96 @@ const PartEditorPage = () => {
     setTimeout(() => recalculateAllRanges(), 100)
   }
 
+  const deleteQuestionGroup = async (groupIndex: number) => {
+    const currentGroups = form.getFieldValue('questionGroups') || []
+    const groupToDelete = currentGroups[groupIndex]
+    
+    if (!groupToDelete) {
+      message.error('Question group not found')
+      return
+    }
+
+    // Parse the range to get question numbers
+    const range = groupToDelete.range
+    const match = range?.match(/^(\d+)-(\d+)$/)
+    const questionCount = match ? parseInt(match[2]) - parseInt(match[1]) + 1 : 0
+
+    Modal.confirm({
+      title: 'Delete Question Group?',
+      icon: <ExclamationCircleOutlined />,
+      content: (
+        <div>
+          <p>Are you sure you want to delete <strong>Question Group {groupIndex + 1}</strong>?</p>
+          {range && <p>This will delete questions <strong>{range}</strong> ({questionCount} question{questionCount !== 1 ? 's' : ''}).</p>}
+          <p className="text-red-600">This action cannot be undone!</p>
+        </div>
+      ),
+      okText: 'Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        try {
+          if (match) {
+            const startNum = parseInt(match[1])
+            const endNum = parseInt(match[2])
+            
+            // Fetch all questions to get their IDs
+            console.log('📥 Fetching questions to get IDs for deletion...')
+            const questionsResponse = await testManagementApi.getAllQuestions(sectionId)
+            const allQuestions = questionsResponse?.data || []
+            
+            // Filter questions in this part and range
+            const questionsToDelete = allQuestions.filter((q: any) => 
+              q.partId === partId && 
+              q.ord >= startNum && 
+              q.ord <= endNum
+            )
+            
+            console.log(`🗑️ Found ${questionsToDelete.length} questions to delete in range ${startNum}-${endNum}`)
+            
+            // Delete all questions in this range from the backend
+            const deletePromises = questionsToDelete.map((q: any) => {
+              console.log(`🗑️ Deleting question ${q.ord} (ID: ${q.id}) from backend...`)
+              return testManagementApi.deleteQuestion(q.id)
+                .then(() => console.log(`✅ Deleted question ${q.ord}`))
+                .catch((error) => {
+                  console.error(`❌ Failed to delete question ${q.ord}:`, error)
+                  // Don't throw - continue with other deletions
+                })
+            })
+            
+            // Wait for all deletions to complete
+            await Promise.all(deletePromises)
+          }
+
+          // Remove the group from the form
+          const updatedGroups = currentGroups.filter((_: any, index: number) => index !== groupIndex)
+          form.setFieldValue('questionGroups', updatedGroups)
+          setQuestionGroupCount(prev => Math.max(0, prev - 1))
+          
+          // Remove from pending answers
+          if (match) {
+            const startNum = parseInt(match[1])
+            const endNum = parseInt(match[2])
+            const newPendingAnswers = new Map(pendingAnswers)
+            for (let qNum = startNum; qNum <= endNum; qNum++) {
+              newPendingAnswers.delete(qNum)
+            }
+            setPendingAnswers(newPendingAnswers)
+          }
+          
+          // Recalculate all ranges after deletion
+          setTimeout(() => recalculateAllRanges(), 100)
+          
+          message.success('Question group deleted successfully')
+        } catch (error) {
+          console.error('❌ Error deleting question group:', error)
+          message.error('Failed to delete question group')
+        }
+      }
+    })
+  }
+
   const isReading = sectionType.toLowerCase() === 'reading'
   const isWriting = sectionType.toLowerCase() === 'writing'
   const isListening = sectionType.toLowerCase() === 'listening'
@@ -757,9 +848,8 @@ const PartEditorPage = () => {
                                     size="small"
                                     type="dashed"
                                     onClick={() => {
-                                      const currentPassage = form.getFieldValue('passage') || ''
                                       const placeholder = `[${qNum}]`
-                                      form.setFieldValue('passage', currentPassage + placeholder)
+                                      passageEditorRef.current?.insertText(placeholder)
                                     }}
                                   >
                                     [{qNum}]
@@ -782,6 +872,7 @@ const PartEditorPage = () => {
                 style={{ flex: 1, margin: 0, display: 'flex', flexDirection: 'column' }}
               >
                 <PassageRichTextEditor
+                  ref={passageEditorRef}
                   placeholder="Enter the reading passage with formatting... Use buttons above to insert placeholders for Match Heading questions."
                   minHeight="600px"
                 />
@@ -821,7 +912,7 @@ const PartEditorPage = () => {
 
               <Divider />
 
-              <Space direction="vertical" className="w-full" size="large">
+              <Space direction="vertical" className="w-full" size="small">
                 {Array.from({ length: questionGroupCount }).map((_, index) => (
                   <QuestionGroupEditor
                     key={index}
@@ -832,6 +923,7 @@ const PartEditorPage = () => {
                     showImageUpload={true}
                     onAnswerChange={handleAnswerChange}
                     onRecalculateRanges={recalculateAllRanges}
+                    onDelete={() => deleteQuestionGroup(index)}
                   />
                 ))}
               </Space>
@@ -915,7 +1007,7 @@ const PartEditorPage = () => {
 
           <Divider />
 
-          <Space direction="vertical" className="w-full" size="large">
+          <Space direction="vertical" className="w-full" size="small">
             {Array.from({ length: questionGroupCount }).map((_, index) => (
               <QuestionGroupEditor
                 key={index}
@@ -926,6 +1018,7 @@ const PartEditorPage = () => {
                 showImageUpload={isListening}
                 onAnswerChange={handleAnswerChange}
                 onRecalculateRanges={recalculateAllRanges}
+                onDelete={() => deleteQuestionGroup(index)}
               />
             ))}
           </Space>

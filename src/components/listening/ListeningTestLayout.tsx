@@ -16,6 +16,7 @@ import MapLabelingQuestion from './MapLabelingQuestion'
 import FlowChartQuestion from './FlowChartQuestion'
 import FillInBlankQuestion from './FillInBlankQuestion'
 import MultipleChoiceQuestion from './MultipleChoiceQuestion'
+import MultipleChoiceSingleQuestion from './MultipleChoiceSingleQuestion'
 import TrueFalseQuestion from './TrueFalseQuestion'
 import SentenceCompletionQuestion from './SentenceCompletionQuestion'
 import SubmitModal from '@/components/common/SubmitModal'
@@ -184,15 +185,15 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                 let currentGroup: QuestionGroup | null = null
                 
                 currentPart.questions.forEach((q: ListeningQuestion) => {
-                  // Start a new group if imageUrl or type changes
+                  // Start a new group if imageUrl, type, or groupInstruction changes
                   const shouldStartNewGroup = !currentGroup || 
                     q.imageUrl !== currentGroup.imageUrl || 
-                    q.type !== currentGroup.type
+                    q.type !== currentGroup.type ||
+                    (q as any).groupInstruction !== currentGroup.instruction
                   
                   if (shouldStartNewGroup) {
-                    // Extract instruction from first question's text (first line)
-                    const lines = q.text.split('\n')
-                    const instruction = lines.length > 1 && !lines[0].match(/^\d+/) ? lines[0] : ''
+                    // Use groupInstruction from question data
+                    const instruction = (q as any).groupInstruction || ''
                     
                     currentGroup = { 
                       type: q.type,
@@ -222,8 +223,8 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                     
                     return (
                       <div key={`group-${groupIdx}`} className="mb-8">
-                        <div className="bg-gray-50 rounded-lg border-l-4 border-blue-500 p-4 mb-4">
-                          <h3 className="font-bold text-lg mb-2">
+                        <div className="bg-gray-50 rounded-lg border-l-4 border-blue-500 px-4 py-2 mb-4">
+                          <h3 className="font-bold text-base mb-1">
                             Questions {startNum}{endNum !== startNum && `–${endNum}`}
                           </h3>
                           {group.instruction && (
@@ -243,8 +244,8 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                   return (
                   <div key={`group-${groupIdx}`} className="mb-6">
                     {/* Question range header - like in reading */}
-                    <div className="bg-gray-50 rounded-lg border-l-4 border-blue-500 p-4 mb-4">
-                      <h3 className="font-bold text-lg mb-2">
+                    <div className="bg-gray-50 rounded-lg border-l-4 border-blue-500 px-4 py-2 mb-4">
+                      <h3 className="font-bold text-base mb-1">
                         Questions {startNum}{endNum !== startNum && `–${endNum}`}
                       </h3>
                       {/* Show instruction if available */}
@@ -287,23 +288,27 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                                 case 'MULTIPLE_CHOICE':
                                   return <MultipleChoiceQuestion key={q.id} question={q} questionNumber={q.id} />
                                 
+                                case 'MULTIPLE_CHOICE_SINGLE':
+                                  return <MultipleChoiceSingleQuestion key={q.id} question={q} questionNumber={q.id} />
+                                
                                 case 'TRUE_FALSE_NOT_GIVEN':
                                 case 'YES_NO_NOT_GIVEN':
                                   return <TrueFalseQuestion key={q.id} question={q} questionNumber={q.id} type={q.type as 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN'} />
                                 
                                 case 'FILL_IN_BLANK':
+                                case 'SHORT_ANSWER':
                                   return <FillInBlankQuestion key={q.id} question={q} questionNumber={q.id} />
                                 
                                 case 'IMAGE_INPUTS':
                                   return (
-                                    <div key={q.id} className="border-b pb-4">
-                                      <div className="text-sm text-gray-700 whitespace-pre-wrap mb-2">{q.text}</div>
+                                    <div key={q.id} className="flex items-center gap-2 mb-3">
+                                      <span className="font-semibold text-gray-700">{q.id}.</span>
                                       <Input
                                         value={(listeningStore.getAnswer(q.id) as string) || ''}
                                         onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
-                                        placeholder={`${q.id}`}
+                                        placeholder="Your answer"
                                         className="inline-block"
-                                        style={{ width: '240px' }}
+                                        style={{ width: '200px' }}
                                       />
                                     </div>
                                   )
@@ -311,11 +316,11 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                                 default:
                                   return (
                                     <div key={q.id} className="border-b pb-4">
-                                      <div className="text-sm text-gray-700 whitespace-pre-wrap mb-2">{q.text}</div>
+                                      <p className="mb-2 text-sm"><strong>{q.id}.</strong> {q.text}</p>
                                       <Input
                                         value={(listeningStore.getAnswer(q.id) as string) || ''}
                                         onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
-                                        placeholder={`${q.id}`}
+                                        placeholder="Your answer"
                                         className="inline-block text-center"
                                         style={{ width: '200px' }}
                                       />
@@ -349,36 +354,40 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                               case 'MULTIPLE_CHOICE':
                                 return <MultipleChoiceQuestion key={q.id} question={q} questionNumber={q.id} />
                               
+                              case 'MULTIPLE_CHOICE_SINGLE':
+                                return <MultipleChoiceSingleQuestion key={q.id} question={q} questionNumber={q.id} />
+                              
                               case 'TRUE_FALSE_NOT_GIVEN':
                               case 'YES_NO_NOT_GIVEN':
                                 return <TrueFalseQuestion key={q.id} question={q} questionNumber={q.id} type={q.type as 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN'} />
                               
                               case 'FILL_IN_BLANK':
+                              case 'SHORT_ANSWER':
                                 return <FillInBlankQuestion key={q.id} question={q} questionNumber={q.id} />
                               
                               case 'IMAGE_INPUTS':
                                 return (
-                                  <div key={q.id} className="border-b pb-4">
-                                    <div className="text-sm text-gray-700 whitespace-pre-wrap mb-2">{q.text}</div>
+                                  <div key={q.id} className="flex items-center gap-2 mb-3">
+                                    <span className="font-semibold text-gray-700">{q.id}.</span>
                                     <Input
                                       value={(listeningStore.getAnswer(q.id) as string) || ''}
                                       onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
-                                      placeholder={`${q.id}`}
+                                      placeholder="Your answer"
                                       className="inline-block"
-                                      style={{ width: '240px' }}
+                                      style={{ width: '200px' }}
                                     />
                                   </div>
                                 )
                               
                               default:
-                                // Fallback: basic input
+                                // Fallback: basic input with question number
                                 return (
                                   <div key={q.id} className="border-b pb-4">
-                                    <div className="text-sm text-gray-700 whitespace-pre-wrap mb-2">{q.text}</div>
+                                    <p className="mb-2 text-sm"><strong>{q.id}.</strong> {q.text}</p>
                                     <Input
                                       value={(listeningStore.getAnswer(q.id) as string) || ''}
                                       onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
-                                      placeholder={`${q.id}`}
+                                      placeholder="Your answer"
                                       className="inline-block text-center"
                                       style={{ width: '200px' }}
                                     />

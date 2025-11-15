@@ -25,13 +25,14 @@ export const TrueFalseQuestion = ({
     : [{ value: 'TRUE', label: 'TRUE' }, { value: 'FALSE', label: 'FALSE' }, { value: 'NOT_GIVEN', label: 'NOT GIVEN' }]
 
   return (
-    <Card size="small" className="mb-3" title={`Statement ${questionIndex + 1}`} extra={
-      <Button type="text" danger icon={<DeleteOutlined />} onClick={onRemove} />
+    <Card size="small" className="mb-2" bodyStyle={{ padding: '12px' }} title={<span className="text-sm">Statement {questionIndex + 1}</span>} extra={
+      <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={onRemove} />
     }>
       <Form.Item
-        label="Statement"
+        label={<span className="text-xs">Statement</span>}
         name={[...groupPath, 'questions', questionIndex, 'text']}
         rules={[{ required: true, message: 'Please enter statement' }]}
+        style={{ marginBottom: '8px' }}
       >
         <TextArea rows={2} placeholder="Enter the statement..." />
       </Form.Item>

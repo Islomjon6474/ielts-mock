@@ -50,9 +50,10 @@ export const MatchHeadingQuestion = ({
   return (
     <Card 
       size="small" 
-      className="mb-3" 
-      title={`Question ${questionNumber}`} 
-      extra={<Button type="text" danger icon={<DeleteOutlined />} onClick={onRemove} />}
+      className="mb-2" 
+      bodyStyle={{ padding: '12px' }}
+      title={<span className="text-sm">Question {questionNumber}</span>} 
+      extra={<Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={onRemove} />}
     >
       <Form.Item
         label="Correct Heading"

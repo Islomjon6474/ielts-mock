@@ -6,14 +6,22 @@ interface Props {
   questionIndex: number
   questionNumber: number
   onRemove: () => void
+  onAnswerChange?: (questionNumber: number, answer: string | string[]) => void
 }
 
-export const ImageInputsQuestion = ({ groupPath, questionIndex, questionNumber, onRemove }: Props) => {
+export const ImageInputsQuestion = ({ groupPath, questionIndex, questionNumber, onRemove, onAnswerChange }: Props) => {
   const base = [...groupPath, 'questions', questionIndex]
+  
+  const handleAnswerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (onAnswerChange) {
+      onAnswerChange(questionNumber, e.target.value)
+    }
+  }
+  
   return (
-    <div className="rounded border">
-      <div className="flex items-center justify-between mb-2">
-        <div className="font-semibold">Question {questionNumber}</div>
+    <div className="rounded border p-2 mb-1">
+      <div className="flex items-center justify-between mb-1">
+        <div className="font-semibold text-sm">Question {questionNumber}</div>
         <Button size="small" danger icon={<DeleteOutlined />} onClick={onRemove}>
           Remove
         </Button>
@@ -22,11 +30,19 @@ export const ImageInputsQuestion = ({ groupPath, questionIndex, questionNumber, 
       <Form.Item name={[...base, 'questionNumber']} initialValue={questionNumber} hidden>
         <Input />
       </Form.Item>
-
-      <Form.Item name={[...base, 'text']} rules={[{ required: true, message: 'Enter question text' }]} style={{ marginBottom: 0 }}>
-        <Input placeholder="Enter label text for this input (e.g., Label A)" />
+      
+      <Form.Item 
+        label="Correct Answer" 
+        name={[...base, 'answer']} 
+        rules={[{ required: true, message: 'Enter correct answer' }]}
+        style={{ marginBottom: 0 }}
+      >
+        <Input 
+          placeholder="Enter the correct answer" 
+          onChange={handleAnswerChange}
+        />
       </Form.Item>
-      {/* No coordinates; imageUrl will be injected from group.imageId by the parent editor */}
+      {/* imageUrl will be injected from group.imageId by the parent editor */}
     </div>
   )
 }

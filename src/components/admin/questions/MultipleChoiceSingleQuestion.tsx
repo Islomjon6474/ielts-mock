@@ -52,18 +52,19 @@ export const MultipleChoiceSingleQuestion = ({
   }
 
   return (
-    <Card size="small" className="mb-3" title={`Question ${questionIndex + 1}`} extra={
-      <Button type="text" danger icon={<DeleteOutlined />} onClick={onRemove} />
+    <Card size="small" className="mb-2" bodyStyle={{ padding: '12px' }} title={<span className="text-sm">Question {questionIndex + 1}</span>} extra={
+      <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={onRemove} />
     }>
       <Form.Item
-        label="Question Text"
+        label={<span className="text-xs">Question Text</span>}
         name={[...groupPath, 'questions', questionIndex, 'text']}
         rules={[{ required: true, message: 'Please enter question text' }]}
+        style={{ marginBottom: '8px' }}
       >
         <TextArea rows={2} placeholder="Enter the question..." />
       </Form.Item>
       
-      <Form.Item label="Options">
+      <Form.Item label={<span className="text-xs">Options</span>} style={{ marginBottom: '8px' }}>
         <Space direction="vertical" className="w-full">
           {Array.from({ length: optionCount }).map((_, index) => (
             <Space key={index} className="w-full">

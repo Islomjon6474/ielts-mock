@@ -48,25 +48,14 @@ export const SentenceCompletionQuestion = ({
   }
 
   return (
-    <Card size="small" className="mb-3" title={`Question ${questionNumber}`} extra={
-      <Button type="text" danger icon={<DeleteOutlined />} onClick={onRemove} />
+    <Card size="small" className="mb-2" bodyStyle={{ padding: '12px' }} title={<span className="text-sm">Question {questionNumber}</span>} extra={
+      <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={onRemove} />
     }>
       <Form.Item
-        label={
-          <div className="flex items-center justify-between w-full">
-            <span>Sentence</span>
-            <Button 
-              size="small" 
-              icon={<PlusOutlined />}
-              onClick={handleInsertPlaceholder}
-              type="dashed"
-            >
-              Insert [{questionNumber}]
-            </Button>
-          </div>
-        }
+        label={<span className="text-xs">Sentence with blank</span>}
         name={[...groupPath, 'questions', questionIndex, 'text']}
         rules={[{ required: true, message: 'Please enter sentence' }]}
+        style={{ marginBottom: '8px' }}
       >
         <PassageRichTextEditor
           placeholder={`e.g., Impression fossils are [${questionNumber}]`}

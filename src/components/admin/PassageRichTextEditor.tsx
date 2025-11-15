@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useImperativeHandle, forwardRef } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import TextAlign from '@tiptap/extension-text-align'
@@ -26,17 +26,21 @@ interface PassageRichTextEditorProps {
   minHeight?: string
 }
 
+export interface PassageRichTextEditorRef {
+  insertText: (text: string) => void
+}
+
 /**
  * Rich text editor for reading passages
  * Supports formatting, indentation, lists, and alignment
  * No placeholder functionality - pure content editor
  */
-export const PassageRichTextEditor = ({
+export const PassageRichTextEditor = forwardRef<PassageRichTextEditorRef, PassageRichTextEditorProps>(({
   value = '',
   onChange,
   placeholder = 'Enter the reading passage...',
   minHeight = '400px',
-}: PassageRichTextEditorProps) => {
+}, ref) => {
   const [isFocused, setIsFocused] = useState(false)
   
   const editor = useEditor({
@@ -66,6 +70,15 @@ export const PassageRichTextEditor = ({
       editor.commands.setContent(value)
     }
   }, [value, editor])
+
+  // Expose insertText method via ref
+  useImperativeHandle(ref, () => ({
+    insertText: (text: string) => {
+      if (editor) {
+        editor.chain().focus().insertContent(text).run()
+      }
+    }
+  }), [editor])
 
   if (!editor) {
     return null
@@ -278,4 +291,6 @@ export const PassageRichTextEditor = ({
       `}</style>
     </div>
   )
-}
+})
+
+PassageRichTextEditor.displayName = 'PassageRichTextEditor'

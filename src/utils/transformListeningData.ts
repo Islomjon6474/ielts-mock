@@ -16,15 +16,33 @@ export function transformAdminToListeningPart(
   
   if (adminData.questions && Array.isArray(adminData.questions) && adminData.questions.length > 0) {
     // New format: use pre-flattened questions array
-    // First, calculate the question range from questionGroups if available
-    if (adminData.questionGroups && Array.isArray(adminData.questionGroups)) {
-      questionRange = calculateQuestionRange(adminData.questionGroups)
+    // Calculate question range from actual questions in this part
+    const ids = adminData.questions.map((q: any) => q.id).filter((id: number) => typeof id === 'number')
+    if (ids.length > 0) {
+      questionRange = [Math.min(...ids), Math.max(...ids)]
     } else if (adminData.questionRange && Array.isArray(adminData.questionRange)) {
       questionRange = adminData.questionRange as [number, number]
+    } else if (adminData.questionGroups && Array.isArray(adminData.questionGroups)) {
+      questionRange = calculateQuestionRange(adminData.questionGroups)
     } else {
-      // Calculate from questions
-      const ids = adminData.questions.map((q: any) => q.id).filter((id: number) => typeof id === 'number')
-      questionRange = ids.length > 0 ? [Math.min(...ids), Math.max(...ids)] : [1, 10]
+      questionRange = [1, 10] // Default fallback
+    }
+    
+    // Build a map of question ID to group instruction from questionGroups
+    const questionToGroupInstruction: { [key: number]: string } = {}
+    if (adminData.questionGroups && Array.isArray(adminData.questionGroups)) {
+      adminData.questionGroups.forEach((group: any) => {
+        if (group.range && group.instruction) {
+          const match = group.range.match(/^(\d+)-(\d+)$/)
+          if (match) {
+            const start = parseInt(match[1])
+            const end = parseInt(match[2])
+            for (let i = start; i <= end; i++) {
+              questionToGroupInstruction[i] = group.instruction
+            }
+          }
+        }
+      })
     }
     
     questions = adminData.questions.map((q: any) => {
@@ -48,6 +66,8 @@ export function transformAdminToListeningPart(
       return {
         ...q,
         imageUrl,
+        // Add group instruction if available
+        groupInstruction: questionToGroupInstruction[q.id] || q.groupInstruction || '',
         // Convert FILL_IN_BLANK back to the type expected by listening components
         type: q.type
       }
@@ -139,10 +159,12 @@ function flattenQuestionGroups(questionGroups: any[]): any[] {
         allQuestions.push({
           id: questionNumber,
           type: groupType,
-          text: buildQuestionText(group, question, index),
+          text: question.text || '',
           options: question.options || undefined,
           // Use imageUrl from question if available, otherwise use group's imageUrl
           imageUrl: question.imageUrl || groupImageUrl,
+          // Preserve group instruction for all questions in the group
+          groupInstruction: groupInstruction,
           // Note: correctAnswer is NOT included in user format
         })
       })
@@ -153,6 +175,7 @@ function flattenQuestionGroups(questionGroups: any[]): any[] {
         type: groupType,
         text: groupInstruction,
         imageUrl: groupImageUrl,
+        groupInstruction: groupInstruction,
       })
     }
   })

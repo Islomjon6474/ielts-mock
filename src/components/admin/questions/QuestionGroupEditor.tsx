@@ -22,6 +22,7 @@ interface QuestionGroupEditorProps {
   showImageUpload?: boolean
   onAnswerChange?: (questionNumber: number, answer: string | string[]) => void
   onRecalculateRanges?: () => void
+  onDelete?: () => void
 }
 
 export const QuestionGroupEditor = ({ 
@@ -31,7 +32,8 @@ export const QuestionGroupEditor = ({
   defaultQuestionRange,
   showImageUpload = false,
   onAnswerChange,
-  onRecalculateRanges
+  onRecalculateRanges,
+  onDelete
 }: QuestionGroupEditorProps) => {
   const [questionCount, setQuestionCount] = useState(0)
   const [selectedType, setSelectedType] = useState<string>('')
@@ -198,7 +200,7 @@ export const QuestionGroupEditor = ({
       case 'SHORT_ANSWER':
         return <ShortAnswerQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
       case 'IMAGE_INPUTS':
-        return <ImageInputsQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} />
+        return <ImageInputsQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} />
       case 'SENTENCE_COMPLETION':
         return <SentenceCompletionQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
       default:
@@ -207,10 +209,28 @@ export const QuestionGroupEditor = ({
   }
 
   return (
-    <Card size="small" title={groupLabel}>
+    <Card 
+      size="small" 
+      title={<span className="text-sm font-semibold">{groupLabel}</span>}
+      bodyStyle={{ padding: '12px' }}
+      extra={
+        onDelete && (
+          <Button
+            type="text"
+            danger
+            size="small"
+            icon={<DeleteOutlined />}
+            onClick={onDelete}
+          >
+            Delete Group
+          </Button>
+        )
+      }
+    >
       <Form.Item
-        label="Question Type"
+        label={<span className="text-xs">Question Type</span>}
         name={[...groupPath, 'type']}
+        style={{ marginBottom: '8px' }}
       >
         <Select 
           placeholder="Select question type" 
@@ -219,9 +239,10 @@ export const QuestionGroupEditor = ({
         />
       </Form.Item>
       <Form.Item
-        label="Question Range"
+        label={<span className="text-xs">Question Range</span>}
         name={[...groupPath, 'range']}
         initialValue={defaultQuestionRange}
+        style={{ marginBottom: '8px' }}
       >
         <Input 
           placeholder="e.g., 1-5" 
@@ -229,8 +250,9 @@ export const QuestionGroupEditor = ({
         />
       </Form.Item>
       <Form.Item
-        label="Instructions"
+        label={<span className="text-xs">Instructions</span>}
         name={[...groupPath, 'instruction']}
+        style={{ marginBottom: '8px' }}
       >
         <PassageRichTextEditor
           placeholder="Instructions for this question group..."
