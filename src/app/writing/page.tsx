@@ -157,7 +157,18 @@ const WritingPageContent = observer(() => {
         
         writingStore.setTasks(allTasks)
 
-        // 5) Load previously submitted answers (if any)
+        // 5) Start timer (60 minutes)
+        writingStore.startTimer(async () => {
+          console.log('⏰ Time is up! Auto-submitting...')
+          try {
+            await writingStore.finishSection()
+            window.location.href = '/'
+          } catch (error) {
+            console.error('Failed to auto-submit:', error)
+          }
+        })
+
+        // 6) Load previously submitted answers (if any)
         try {
           console.log('🔄 Loading previously submitted answers...')
           const answersResp = await mockSubmissionApi.getSubmittedAnswers(mockId, writingSection.id)

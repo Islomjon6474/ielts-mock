@@ -18,6 +18,12 @@ export class WritingStore {
   mockId: string | null = null
   sectionId: string | null = null
   isSubmitting: boolean = false
+  
+  // Timer properties
+  timeLimit: number = 60 * 60 // 60 minutes in seconds
+  timeRemaining: number = 60 * 60
+  timerInterval: NodeJS.Timeout | null = null
+  isTimeUp: boolean = false
 
   constructor() {
     makeAutoObservable(this)
@@ -76,12 +82,38 @@ export class WritingStore {
     }
   }
 
+  startTimer(onTimeUp: () => void) {
+    this.stopTimer()
+    this.timeRemaining = this.timeLimit
+    this.isTimeUp = false
+    
+    this.timerInterval = setInterval(() => {
+      if (this.timeRemaining > 0) {
+        this.timeRemaining--
+      } else {
+        this.isTimeUp = true
+        this.stopTimer()
+        onTimeUp()
+      }
+    }, 1000)
+  }
+
+  stopTimer() {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval)
+      this.timerInterval = null
+    }
+  }
+
   reset() {
+    this.stopTimer()
     this.currentTask = 1
     this.answers.clear()
     this.tasks = []
     this.mockId = null
     this.sectionId = null
     this.isSubmitting = false
+    this.timeRemaining = this.timeLimit
+    this.isTimeUp = false
   }
 }

@@ -185,6 +185,19 @@ const ListeningPageContent = observer(() => {
           const listeningParts = transformAdminPartsToListening(partsWithContent, audioUrlsMap)
           listeningStore.setParts(listeningParts)
           
+          // 6) Calculate total audio duration and start timer
+          // Estimate: assume each audio is ~10 minutes (600 seconds)
+          const estimatedAudioDuration = audioUrls.length * 600 // 10 min per audio
+          listeningStore.startTimerAfterAudio(estimatedAudioDuration, async () => {
+            console.log('⏰ Time is up! Auto-submitting...')
+            try {
+              await listeningStore.finishSection()
+              window.location.href = '/'
+            } catch (error) {
+              console.error('Failed to auto-submit:', error)
+            }
+          })
+          
         } catch (err) {
           console.error('Failed to fetch audio files:', err)
           listeningStore.setAudioError('Failed to load audio')

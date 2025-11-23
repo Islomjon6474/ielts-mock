@@ -1,12 +1,12 @@
 'use client'
-
 import { useState, useRef, useEffect } from 'react'
 import { Layout, Input } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useRouter } from 'next/navigation'
 import { useStore } from '@/stores/StoreContext'
-import { ListeningQuestion } from '@/stores/ListeningStore'
 import Header from '@/components/common/Header'
+import Timer from '@/components/common/Timer'
+import { ListeningQuestion } from '@/stores/ListeningStore'
 import BottomNavigationComponent from '@/components/common/BottomNavigation'
 import AudioInstructionModal from './AudioInstructionModal'
 import MapDiagramQuestion from './MapDiagramQuestion'
@@ -239,16 +239,18 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
         isPreviewMode={isPreviewMode}
         previewSectionType="listening"
         onBackClick={onBackClick}
-      />
-
-      {/* Part Info - Compact */}
-      <div className="bg-gray-50 px-4 py-1.5 border-b flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h2 className="font-semibold text-sm text-black">{currentPart.title}</h2>
-          <span className="text-xs text-gray-600" dangerouslySetInnerHTML={{ __html: currentPart.instruction || '' }} />
-        </div>
+      >
+        {!isPreviewMode && listeningStore.hasStarted && (
+          <Timer timeRemaining={listeningStore.timeRemaining} isTimeUp={listeningStore.isTimeUp} />
+        )}
+      </Header>
+      
+      {/* Part Title and Status */}
+      <div className="bg-gray-50 px-4 py-1.5 border-b">
+        <h2 className="font-semibold text-sm text-black inline-block mr-4">{currentPart.title}</h2>
+        <span className="text-xs text-gray-600" dangerouslySetInnerHTML={{ __html: currentPart.instruction || '' }} />
         {listeningStore.isPlaying && (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 inline-flex ml-4">
             <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
             <span className="text-xs text-gray-700">Audio is playing</span>
           </div>

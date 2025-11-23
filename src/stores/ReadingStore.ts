@@ -48,6 +48,12 @@ export class ReadingStore {
   currentQuestionIndex: number = 0
   answers: Map<number, string | string[]> = new Map()
   parts: Part[] = []
+  
+  // Timer properties
+  timeLimit: number = 60 * 60 // 60 minutes in seconds
+  timeRemaining: number = 60 * 60
+  timerInterval: NodeJS.Timeout | null = null
+  isTimeUp: boolean = false
   isPreviewMode: boolean = false
   mockId: string | null = null
   sectionId: string | null = null
@@ -167,18 +173,44 @@ export class ReadingStore {
       return true
     } catch (error) {
       console.error('❌ Failed to finish section:', error)
-      throw error
-    } finally {
-      this.isSubmitting = false
+    }
+  }
+
+  startTimer(onTimeUp: () => void) {
+    if (this.isPreviewMode) return
+    
+    this.stopTimer()
+    this.timeRemaining = this.timeLimit
+    this.isTimeUp = false
+    
+    this.timerInterval = setInterval(() => {
+      if (this.timeRemaining > 0) {
+        this.timeRemaining--
+      } else {
+        this.isTimeUp = true
+        this.stopTimer()
+        onTimeUp()
+      }
+    }, 1000)
+  }
+
+  stopTimer() {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval)
+      this.timerInterval = null
     }
   }
 
   reset() {
+    this.stopTimer()
     this.currentPart = 1
     this.currentQuestionIndex = 0
     this.answers.clear()
+    this.parts = []
     this.mockId = null
     this.sectionId = null
     this.isSubmitting = false
+    this.timeRemaining = this.timeLimit
+    this.isTimeUp = false
   }
 }

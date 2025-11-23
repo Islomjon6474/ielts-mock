@@ -35,6 +35,12 @@ export class ListeningStore {
   mockId: string | null = null
   sectionId: string | null = null
   isSubmitting: boolean = false
+  
+  // Timer properties (audio duration + 10 minutes)
+  audioDuration: number = 0 // Will be set based on actual audio duration
+  timeRemaining: number = 0
+  timerInterval: NodeJS.Timeout | null = null
+  isTimeUp: boolean = false
 
   constructor() {
     makeAutoObservable(this)
@@ -69,32 +75,16 @@ export class ListeningStore {
       return true
     } catch (error) {
       console.error('❌ Failed to finish section:', error)
-      throw error
     } finally {
       this.isSubmitting = false
     }
-  }
-
-  reset() {
-    this.currentPart = 1
-    this.currentQuestionIndex = 0
-    this.answers.clear()
-    this.audioUrls = []
-    this.isPlaying = false
-    this.hasStarted = false
-    this.audioProgress = 0
-    this.audioLoading = false
-    this.audioError = null
-    this.allAudioReady = false
-    this.mockId = null
-    this.sectionId = null
-    this.isSubmitting = false
   }
 
   setPartAudio(partId: number, url: string) {
     const idx = this.parts.findIndex((p) => p.id === partId)
     if (idx >= 0) {
       this.parts[idx] = { ...this.parts[idx], audioUrl: url }
+      this.setAudioUrls(this.parts.map(p => p.audioUrl))
     }
   }
 
@@ -183,5 +173,50 @@ export class ListeningStore {
     const part = this.currentPartData
     if (!part) return 1
     return part.questionRange[0] + this.currentQuestionIndex
+  }
+
+  // Start timer after audio ends (audio duration + 10 minutes)
+  startTimerAfterAudio(audioDurationInSeconds: number, onTimeUp: () => void) {
+    this.audioDuration = audioDurationInSeconds
+    const totalTime = audioDurationInSeconds + (10 * 60) // audio + 10 minutes
+    this.timeRemaining = totalTime
+    this.isTimeUp = false
+    
+    this.stopTimer()
+    
+    this.timerInterval = setInterval(() => {
+      if (this.timeRemaining > 0) {
+        this.timeRemaining--
+      } else {
+        this.isTimeUp = true
+        this.stopTimer()
+        onTimeUp()
+      }
+    }, 1000)
+  }
+
+  stopTimer() {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval)
+      this.timerInterval = null
+    }
+  }
+
+  reset() {
+    this.stopTimer()
+    this.currentPart = 1
+    this.currentQuestionIndex = 0
+    this.answers.clear()
+    this.parts = []
+    this.audioUrls = []
+    this.isPlaying = false
+    this.hasStarted = false
+    this.audioProgress = 0
+    this.mockId = null
+    this.sectionId = null
+    this.isSubmitting = false
+    this.audioDuration = 0
+    this.timeRemaining = 0
+    this.isTimeUp = false
   }
 }

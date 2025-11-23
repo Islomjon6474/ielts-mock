@@ -205,7 +205,18 @@ const ReadingPageContent = observer(() => {
         console.log('📚 Total reading parts loaded:', allParts.length)
         readingStore.setParts(allParts)
 
-        // 7) Load previously submitted answers (if any)
+        // 7) Start timer (60 minutes)
+        readingStore.startTimer(async () => {
+          console.log('⏰ Time is up! Auto-submitting...')
+          try {
+            await readingStore.finishSection()
+            window.location.href = '/'
+          } catch (error) {
+            console.error('Failed to auto-submit:', error)
+          }
+        })
+
+        // 8) Load previously submitted answers (if any)
         try {
           console.log('🔄 Loading previously submitted answers...')
           const answersResp = await mockSubmissionApi.getSubmittedAnswers(mockId, readingSection.id)

@@ -9,13 +9,15 @@ interface HeaderProps {
   isPreviewMode?: boolean
   previewSectionType?: string
   onBackClick?: () => void
+  children?: React.ReactNode
 }
 
 const Header = ({ 
   testTakerId = 'Test taker ID', 
   isPreviewMode = false,
   previewSectionType = '',
-  onBackClick
+  onBackClick,
+  children
 }: HeaderProps) => {
   const router = useRouter()
 
@@ -45,7 +47,8 @@ const Header = ({
           </span>
         )}
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
+        {children}
         <Button type="text" icon={<WifiOutlined />} size="small" className="text-gray-600" />
         <Button type="text" icon={<BellOutlined />} size="small" className="text-gray-600" />
         <Button type="text" icon={<MenuOutlined />} size="small" className="text-gray-600" />

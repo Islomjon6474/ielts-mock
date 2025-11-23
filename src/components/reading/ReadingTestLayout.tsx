@@ -7,6 +7,7 @@ import { observer } from 'mobx-react-lite'
 import { useRouter } from 'next/navigation'
 import { useStore } from '@/stores/StoreContext'
 import Header from '@/components/common/Header'
+import Timer from '@/components/common/Timer'
 import ReadingPassage from './ReadingPassage'
 import QuestionPanel from './QuestionPanel'
 import BottomNavigation from './BottomNavigation'
@@ -124,7 +125,11 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
         isPreviewMode={isPreviewMode}
         previewSectionType="reading"
         onBackClick={onBackClick}
-      />
+      >
+        {!isPreviewMode && (
+          <Timer timeRemaining={readingStore.timeRemaining} isTimeUp={readingStore.isTimeUp} />
+        )}
+      </Header>
 
       {/* Part Title - Compact */}
       <div className="bg-gray-50 px-4 py-1.5 border-b">
