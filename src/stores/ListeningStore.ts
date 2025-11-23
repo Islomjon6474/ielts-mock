@@ -174,4 +174,14 @@ export class ListeningStore {
   get currentPartData(): ListeningPart | undefined {
     return this.parts.find((p) => p.id === this.currentPart)
   }
+
+  get allQuestions(): ListeningQuestion[] {
+    return this.parts.flatMap(part => part.questions)
+  }
+
+  get currentQuestionNumber(): number {
+    const part = this.currentPartData
+    if (!part) return 1
+    return part.questionRange[0] + this.currentQuestionIndex
+  }
 }

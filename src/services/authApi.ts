@@ -13,12 +13,12 @@ const authApi = axios.create({
 // Add request interceptor for authentication token
 authApi.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    
     if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('authToken')
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
+      
       const fullUrl = `${config.baseURL}${config.url || ''}`
       console.log('🔐 Auth API Request:', fullUrl)
     }
@@ -35,10 +35,10 @@ authApi.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid - clear auth state
-      localStorage.removeItem('authToken')
-      localStorage.removeItem('user')
+      // Token expired or invalid - clear auth state (only in browser)
       if (typeof window !== 'undefined') {
+        localStorage.removeItem('authToken')
+        localStorage.removeItem('user')
         window.location.href = '/auth/signin'
       }
     }
@@ -255,33 +255,38 @@ export const auth = {
 
   // Sign out (clear local storage)
   signOut: () => {
-    localStorage.removeItem('authToken')
-    localStorage.removeItem('user')
     if (typeof window !== 'undefined') {
+      localStorage.removeItem('authToken')
+      localStorage.removeItem('user')
       window.location.href = '/auth/signin'
     }
   },
 
   // Check if user is authenticated
   isAuthenticated: (): boolean => {
+    if (typeof window === 'undefined') return false
     return !!localStorage.getItem('authToken')
   },
 
   // Get stored token
   getToken: (): string | null => {
+    if (typeof window === 'undefined') return null
     return localStorage.getItem('authToken')
   },
 
   // Get stored user
   getUser: (): UserDto | null => {
+    if (typeof window === 'undefined') return null
     const userStr = localStorage.getItem('user')
     return userStr ? JSON.parse(userStr) : null
   },
 
   // Store auth data
   storeAuth: (token: string, user: UserDto) => {
-    localStorage.setItem('authToken', token)
-    localStorage.setItem('user', JSON.stringify(user))
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('authToken', token)
+      localStorage.setItem('user', JSON.stringify(user))
+    }
   },
 
   // Check if user has admin role

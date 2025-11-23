@@ -28,10 +28,11 @@ export function transformAdminToListeningPart(
       questionRange = [1, 10] // Default fallback
     }
     
-    // Build a map of question ID to group instruction from questionGroups
+    // Build a map of question ID to group instruction and groupIndex from questionGroups
     const questionToGroupInstruction: { [key: number]: string } = {}
+    const questionToGroupIndex: { [key: number]: number } = {}
     if (adminData.questionGroups && Array.isArray(adminData.questionGroups)) {
-      adminData.questionGroups.forEach((group: any) => {
+      adminData.questionGroups.forEach((group: any, groupIndex: number) => {
         if (group.range && group.instruction) {
           const match = group.range.match(/^(\d+)-(\d+)$/)
           if (match) {
@@ -39,6 +40,7 @@ export function transformAdminToListeningPart(
             const end = parseInt(match[2])
             for (let i = start; i <= end; i++) {
               questionToGroupInstruction[i] = group.instruction
+              questionToGroupIndex[i] = groupIndex
             }
           }
         }
@@ -68,6 +70,8 @@ export function transformAdminToListeningPart(
         imageUrl,
         // Add group instruction if available
         groupInstruction: questionToGroupInstruction[q.id] || q.groupInstruction || '',
+        // Add groupIndex to properly separate different question groups
+        groupIndex: questionToGroupIndex[q.id] !== undefined ? questionToGroupIndex[q.id] : q.groupIndex,
         // Convert FILL_IN_BLANK back to the type expected by listening components
         type: q.type
       }
@@ -136,7 +140,7 @@ function calculateQuestionRange(questionGroups: any[]): [number, number] {
 function flattenQuestionGroups(questionGroups: any[]): any[] {
   const allQuestions: any[] = []
   
-  questionGroups.forEach(group => {
+  questionGroups.forEach((group, groupIndex) => {
     const groupType = group.type
     const groupInstruction = group.instruction || ''
     // Convert imageId to imageUrl at group level with full URL
@@ -165,6 +169,8 @@ function flattenQuestionGroups(questionGroups: any[]): any[] {
           imageUrl: question.imageUrl || groupImageUrl,
           // Preserve group instruction for all questions in the group
           groupInstruction: groupInstruction,
+          // Add groupIndex to properly separate different question groups
+          groupIndex: groupIndex,
           // Note: correctAnswer is NOT included in user format
         })
       })
@@ -176,6 +182,7 @@ function flattenQuestionGroups(questionGroups: any[]): any[] {
         text: groupInstruction,
         imageUrl: groupImageUrl,
         groupInstruction: groupInstruction,
+        groupIndex: groupIndex,
       })
     }
   })

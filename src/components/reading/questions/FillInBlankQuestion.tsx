@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { Input, Card } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
@@ -12,6 +13,44 @@ interface FillInBlankQuestionProps {
 
 const FillInBlankQuestion = observer(({ question, questionNumber }: FillInBlankQuestionProps) => {
   const { readingStore } = useStore()
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    // Only focus if not in preview mode
+    if (readingStore.isPreviewMode) return
+    
+    // Auto-focus when this is the current question
+    const currentQuestionNumber = readingStore.parts[readingStore.currentPart - 1]?.questionRange[0] + readingStore.currentQuestionIndex
+    
+    // For fill-in-blank questions, we need to focus on the specific input for the current question number
+    if (containerRef.current) {
+      // Use longer timeout to ensure inputs are rendered
+      setTimeout(() => {
+        if (!containerRef.current) return
+        
+        // Try to find input with placeholder matching the current question number
+        const inputs = containerRef.current.querySelectorAll('input[type="text"]')
+        
+        if (!inputs || inputs.length === 0) return
+        
+        let focused = false
+        inputs.forEach((input) => {
+          const htmlInput = input as HTMLInputElement
+          const placeholder = htmlInput.placeholder
+          const placeholderNum = parseInt(placeholder)
+          
+          if (placeholderNum === currentQuestionNumber && !focused && !htmlInput.disabled) {
+            htmlInput.focus()
+            htmlInput.select()
+            focused = true
+            
+            // Scroll into view if needed
+            htmlInput.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+        })
+      }, 300)
+    }
+  }, [readingStore.currentQuestionIndex, readingStore.currentPart, questionNumber, readingStore.isPreviewMode])
 
   // Check if text contains HTML (from rich text editor)
   const isHtml = question.text.includes('<') && question.text.includes('>')
@@ -106,7 +145,7 @@ const FillInBlankQuestion = observer(({ question, questionNumber }: FillInBlankQ
   }
 
   return (
-    <Card className="mb-4">
+    <Card className="mb-4" ref={containerRef}>
       <div className="space-y-4">
         {renderWithInputs()}
       </div>

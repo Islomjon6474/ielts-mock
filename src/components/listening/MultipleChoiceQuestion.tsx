@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { Checkbox } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
@@ -13,21 +14,31 @@ const MultipleChoiceQuestion = observer(({ question, questionNumber }: MultipleC
   const { listeningStore } = useStore()
   const answer = (listeningStore.getAnswer(question.id) as string[]) || []
   const maxAnswers = question.maxAnswers || 2
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const currentQuestionNumber = listeningStore.currentQuestionNumber
+    if (currentQuestionNumber === questionNumber && containerRef.current) {
+      setTimeout(() => {
+        const checkbox = containerRef.current?.querySelector('input[type="checkbox"]') as HTMLInputElement
+        if (checkbox) {
+          checkbox.focus()
+        }
+      }, 100)
+    }
+  }, [listeningStore.currentQuestionNumber, questionNumber])
 
   const handleChange = (checkedValues: string[]) => {
-    if (checkedValues.length <= maxAnswers) {
-      listeningStore.setAnswer(question.id, checkedValues)
-    }
+    listeningStore.setAnswer(question.id, checkedValues)
   }
 
   return (
-    <div className="border-b pb-4">
+    <div className="mb-6" data-question-id={questionNumber} ref={containerRef}>
       <div className="flex items-start gap-4">
         <div className="flex-1">
           <p className="mb-3 font-medium text-sm"><strong>{questionNumber}</strong> {question.text}</p>
           
           <Checkbox.Group
-            value={answer}
             onChange={(checkedValues) => handleChange(checkedValues as string[])}
             className="w-full"
           >

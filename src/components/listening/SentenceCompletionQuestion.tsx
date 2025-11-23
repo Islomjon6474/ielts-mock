@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 
@@ -21,6 +21,27 @@ const SentenceCompletionQuestion = observer(({
 }: SentenceCompletionQuestionProps) => {
   const { listeningStore } = useStore()
   const [draggedItem, setDraggedItem] = useState<string | null>(null)
+  const questionRefs = useRef<{ [key: number]: HTMLDivElement | null }>({})
+
+  useEffect(() => {
+    const currentQuestionNumber = listeningStore.currentQuestionNumber
+    
+    // Find if current question is in this group
+    if (questionNumbers.includes(currentQuestionNumber)) {
+      const questionRef = questionRefs.current[currentQuestionNumber]
+      if (questionRef) {
+        setTimeout(() => {
+          questionRef.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          
+          // Focus on the drop zone
+          const dropZone = questionRef.querySelector('[class*="border-dashed"]') as HTMLElement
+          if (dropZone) {
+            dropZone.focus()
+          }
+        }, 100)
+      }
+    }
+  }, [listeningStore.currentQuestionNumber, questionNumbers])
 
   const handleDragStart = (e: React.DragEvent, option: string) => {
     // Check if option is already used
@@ -95,12 +116,18 @@ const SentenceCompletionQuestion = observer(({
               const cleanAnswer = answer ? stripHtml(answer) : ''
               
               return (
-                <div key={question.id} className="flex items-center gap-2 text-sm">
+                <div 
+                  key={question.id} 
+                  className="flex items-center gap-2 text-sm" 
+                  data-question-id={questionNumber}
+                  ref={(el) => { if (el) questionRefs.current[questionNumber] = el }}
+                >
                   <strong className="whitespace-nowrap">{questionNumber}</strong>
                   <span>{parts[0]}</span>
                   <div
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, question.id)}
+                    tabIndex={0}
                     className={`inline-flex items-center border-2 border-dashed rounded px-3 py-1 min-w-[100px] ${
                       answer ? 'border-blue-400 bg-blue-50' : 'border-gray-300'
                     }`}

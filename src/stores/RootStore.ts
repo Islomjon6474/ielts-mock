@@ -3,6 +3,7 @@ import { ReadingStore } from './ReadingStore'
 import { WritingStore } from './WritingStore'
 import { ListeningStore } from './ListeningStore'
 import { AuthStore } from './AuthStore'
+import { AdminStore } from './AdminStore'
 
 export class RootStore {
   appStore: AppStore
@@ -10,6 +11,7 @@ export class RootStore {
   writingStore: WritingStore
   listeningStore: ListeningStore
   authStore: AuthStore
+  adminStore: AdminStore
 
   constructor() {
     this.appStore = new AppStore()
@@ -17,5 +19,6 @@ export class RootStore {
     this.writingStore = new WritingStore()
     this.listeningStore = new ListeningStore()
     this.authStore = new AuthStore()
+    this.adminStore = new AdminStore()
   }
 }

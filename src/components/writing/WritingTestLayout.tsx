@@ -148,23 +148,27 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
 
         {/* Right Pane - Answer Input */}
         <div
-          className="bg-gray-50 flex flex-col overflow-hidden"
+          className="bg-gray-50 flex flex-col p-6"
           style={{ width: `${100 - leftWidth}%` }}
         >
-          <div className="flex-1 p-6 overflow-auto">
+          <div className="flex-1 flex flex-col" style={{ minHeight: 0 }}>
             <TextArea
               value={answer}
               onChange={(e) => handleTextChange(e.target.value)}
               placeholder="Type your answer here..."
-              className="w-full h-full resize-none text-base leading-relaxed"
-              style={{ minHeight: '100%', fontFamily: 'inherit' }}
+              className="w-full flex-1 resize-none text-base leading-relaxed"
+              style={{ 
+                height: '100%',
+                minHeight: '100%',
+                fontFamily: 'inherit'
+              }}
               autoSize={false}
             />
-          </div>
-          <div className="px-6 py-3 bg-white border-t text-right flex-shrink-0">
-            <span className="text-sm text-gray-600">
-              Words: <span className="font-semibold text-gray-900">{wordCount}</span>
-            </span>
+            <div className="mt-2 text-right">
+              <span className="text-sm text-gray-600">
+                Words: <span className="font-semibold text-gray-900">{wordCount}</span>
+              </span>
+            </div>
           </div>
         </div>
       </Content>
@@ -207,27 +211,34 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
             })}
           </div>
 
-          {/* Navigation and Submit */}
-          <div className="flex items-center gap-2">
+          {/* Navigation Arrows and Submit */}
+          <div className="flex items-center gap-3">
+            {/* Previous Button */}
             <Button
-              type="primary"
               icon={<LeftOutlined />}
-              disabled={writingStore.currentTask === 1}
               onClick={() => handleTaskChange(writingStore.currentTask - 1)}
-              className="bg-gray-700"
-            >
-              Previous
-            </Button>
+              disabled={writingStore.currentTask === 1}
+              className="w-12 h-12 flex items-center justify-center"
+              style={{ 
+                backgroundColor: writingStore.currentTask !== 1 ? '#d1d5db' : '#f3f4f6',
+                borderColor: writingStore.currentTask !== 1 ? '#9ca3af' : '#e5e7eb'
+              }}
+            />
+            
+            {/* Next Button */}
             <Button
-              type="primary"
               icon={<RightOutlined />}
-              iconPosition="end"
-              disabled={writingStore.currentTask === writingStore.tasks.length}
               onClick={() => handleTaskChange(writingStore.currentTask + 1)}
-              className="bg-gray-700"
-            >
-              Next
-            </Button>
+              disabled={writingStore.currentTask === writingStore.tasks.length}
+              className="w-12 h-12 flex items-center justify-center"
+              style={{ 
+                backgroundColor: writingStore.currentTask !== writingStore.tasks.length ? '#000000' : '#f3f4f6',
+                borderColor: writingStore.currentTask !== writingStore.tasks.length ? '#000000' : '#e5e7eb',
+                color: writingStore.currentTask !== writingStore.tasks.length ? '#ffffff' : '#9ca3af'
+              }}
+            />
+            
+            {/* Submit Button */}
             <Button
               type="primary"
               icon={<CheckOutlined />}

@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { Radio } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
@@ -12,13 +13,26 @@ interface MultipleChoiceSingleQuestionProps {
 const MultipleChoiceSingleQuestion = observer(({ question, questionNumber }: MultipleChoiceSingleQuestionProps) => {
   const { listeningStore } = useStore()
   const answer = listeningStore.getAnswer(question.id) as string | undefined
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const currentQuestionNumber = listeningStore.currentQuestionNumber
+    if (currentQuestionNumber === questionNumber && containerRef.current) {
+      setTimeout(() => {
+        const radio = containerRef.current?.querySelector('input[type="radio"]') as HTMLInputElement
+        if (radio) {
+          radio.focus()
+        }
+      }, 100)
+    }
+  }, [listeningStore.currentQuestionNumber, questionNumber])
 
   const handleChange = (value: string) => {
     listeningStore.setAnswer(question.id, value)
   }
 
   return (
-    <div className="border-b pb-4">
+    <div className="border-b pb-4" data-question-id={questionNumber} ref={containerRef}>
       <div className="flex items-start gap-4">
         <div className="flex-1">
           <p className="mb-3 font-medium text-sm"><strong>{questionNumber}</strong> {question.text}</p>

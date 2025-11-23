@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { Input } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
@@ -11,6 +12,35 @@ interface FillInBlankQuestionProps {
 
 const FillInBlankQuestion = observer(({ question, questionNumber }: FillInBlankQuestionProps) => {
   const { listeningStore } = useStore()
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const currentQuestionNumber = listeningStore.currentQuestionNumber
+    
+    // For fill-in-blank questions, we need to focus on the specific input for the current question number
+    // The question text contains placeholders like [6], [7], [8] etc.
+    if (containerRef.current) {
+      setTimeout(() => {
+        if (!containerRef.current) return
+        
+        // Try to find input with placeholder matching the current question number
+        const inputs = containerRef.current.querySelectorAll('input')
+        
+        if (!inputs || inputs.length === 0) return
+        
+        inputs.forEach((input) => {
+          const htmlInput = input as HTMLInputElement
+          const placeholder = htmlInput.placeholder
+          const placeholderNum = parseInt(placeholder)
+          
+          if (placeholderNum === currentQuestionNumber) {
+            htmlInput.focus()
+            htmlInput.select()
+          }
+        })
+      }, 100)
+    }
+  }, [listeningStore.currentQuestionNumber, questionNumber])
 
   // Check if text contains HTML (from rich text editor)
   const isHtml = question.text.includes('<') && question.text.includes('>')
@@ -103,7 +133,7 @@ const FillInBlankQuestion = observer(({ question, questionNumber }: FillInBlankQ
   }
 
   return (
-    <div className="border-b pb-4">
+    <div className="border-b pb-4" data-question-id={questionNumber} ref={containerRef}>
       {renderWithInputs()}
     </div>
   )

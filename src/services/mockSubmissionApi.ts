@@ -32,12 +32,12 @@ const api = axios.create({
 // Add request interceptor for authentication token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    
     if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('authToken')
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
+      
       const fullUrl = `${config.baseURL}${config.url || ''}`
       console.log('🎯 Mock Submission API Request:', fullUrl)
     }
@@ -54,9 +54,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('authToken')
-      localStorage.removeItem('user')
       if (typeof window !== 'undefined') {
+        localStorage.removeItem('authToken')
+        localStorage.removeItem('user')
         window.location.href = '/auth/signin'
       }
     }

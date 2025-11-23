@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { Layout, Typography, Card, Button, Table, message, Spin, Tabs, Space, List, Upload, Modal } from 'antd'
 import { ArrowLeftOutlined, SoundOutlined, DeleteOutlined, UploadOutlined, MenuOutlined } from '@ant-design/icons'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
+import { observer } from 'mobx-react-lite'
+import { useStore } from '@/stores/StoreContext'
 import { testManagementApi, listeningAudioApi, fileApi } from '@/services/testManagementApi'
 
 const { Header, Content } = Layout
@@ -24,10 +26,11 @@ interface AudioFile {
   ord?: number
 }
 
-const SectionPartsPage = () => {
+const SectionPartsPage = observer(() => {
   const router = useRouter()
   const params = useParams()
   const searchParams = useSearchParams()
+  const { adminStore } = useStore()
   
   const testId = params.testId as string
   const sectionType = params.sectionType as string
@@ -54,8 +57,10 @@ const SectionPartsPage = () => {
   const fetchParts = async () => {
     try {
       setLoading(true)
-      const response = await testManagementApi.getAllParts(sectionId)
-      const partsData = response.data || response || []
+      
+      // Load parts into AdminStore
+      await adminStore.loadParts(sectionId)
+      const partsData = adminStore.getParts(sectionId)
       
       const isWriting = sectionType.toLowerCase() === 'writing'
       
@@ -442,6 +447,6 @@ const SectionPartsPage = () => {
       </Content>
     </Layout>
   )
-}
+})
 
 export default SectionPartsPage

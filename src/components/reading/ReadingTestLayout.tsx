@@ -170,25 +170,6 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
         >
           <QuestionPanel />
         </div>
-
-        {/* Navigation Buttons */}
-        <div className="absolute bottom-4 right-4 flex gap-2">
-          <Button
-            type="primary"
-            size="large"
-            icon={<LeftOutlined />}
-            onClick={() => readingStore.previousQuestion()}
-            disabled={readingStore.currentPart === 1 && readingStore.currentQuestionIndex === 0}
-            className="bg-gray-700"
-          />
-          <Button
-            type="primary"
-            size="large"
-            icon={<RightOutlined />}
-            onClick={() => readingStore.nextQuestion()}
-            className="bg-gray-700"
-          />
-        </div>
       </Content>
 
       {/* Bottom Navigation */}

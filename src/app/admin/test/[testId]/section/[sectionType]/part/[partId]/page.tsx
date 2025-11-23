@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { Layout, Typography, Tabs, Button, Form, Input, message, Spin, Space, Card, Divider, Modal } from 'antd'
 import { ArrowLeftOutlined, SaveOutlined, PlusOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
+import { observer } from 'mobx-react-lite'
+import { useStore } from '@/stores/StoreContext'
 import { testManagementApi } from '@/services/testManagementApi'
 import { safeMultiParseJson, normalizeArrayMaybeStringOrObject } from '@/utils/json'
 import { AdminPartContent, AdminQuestionGroup, AdminQuestion, PersistedPartContentEnvelope } from '@/types/testContent'
@@ -16,10 +18,11 @@ const { Header, Content } = Layout
 const { Title, Text } = Typography
 const { TextArea } = Input
 
-const PartEditorPage = () => {
+const PartEditorPage = observer(() => {
   const router = useRouter()
   const params = useParams()
   const searchParams = useSearchParams()
+  const { adminStore } = useStore()
   
   const testId = params.testId as string
   const sectionType = params.sectionType as string
@@ -36,22 +39,48 @@ const PartEditorPage = () => {
   const [questionOffset, setQuestionOffset] = useState(0) // Offset based on previous parts
   const passageEditorRef = useRef<PassageRichTextEditorRef>(null)
 
+  // Get part order from AdminStore
+  const partOrder = adminStore.getPartOrder(partId)
+
   useEffect(() => {
     if (partId && sectionId) {
-      calculateQuestionOffset()
-      fetchPartContent()
-      fetchCorrectAnswers()
+      initializeData()
     }
   }, [partId, sectionId])
+
+  // Initialize data - load parts if not cached, then load content
+  const initializeData = async () => {
+    try {
+      // Load parts for this section if not already loaded
+      if (!adminStore.arePartsLoaded(sectionId)) {
+        console.log('📥 Loading parts for section:', sectionId)
+        await adminStore.loadParts(sectionId)
+      } else {
+        console.log('📦 Using cached parts for section:', sectionId)
+      }
+
+      // Now that parts are loaded, we can calculate offset and fetch content
+      await calculateQuestionOffset()
+      await fetchPartContent()
+      await fetchCorrectAnswers()
+    } catch (error) {
+      console.error('❌ Error initializing data:', error)
+      message.error('Failed to load part data')
+    }
+  }
 
   // Calculate question offset based on previous parts
   const calculateQuestionOffset = async () => {
     try {
       console.log('🔢 Calculating question offset for part:', partId)
       
-      // Get all parts in this section
-      const partsResponse = await testManagementApi.getAllParts(sectionId)
-      const allParts = partsResponse?.data || partsResponse || []
+      // Get all parts from AdminStore (already loaded)
+      const allParts = adminStore.getParts(sectionId)
+      
+      if (allParts.length === 0) {
+        console.log('⚠️ No parts found in store, loading...')
+        await adminStore.loadParts(sectionId)
+      }
       
       // Find current part's index
       const currentPartIndex = allParts.findIndex((p: any) => p.id === partId)
@@ -397,6 +426,9 @@ const PartEditorPage = () => {
       // Note: API function already does JSON.stringify, so pass the object directly
       await testManagementApi.savePartQuestionContent(partId, contentToSave)
       
+      // Invalidate content cache for this part
+      adminStore.invalidatePartContentCache(partId)
+      
       // Save all pending answers
       await savePendingAnswers()
       
@@ -421,8 +453,8 @@ const PartEditorPage = () => {
     try {
       console.log('🔄 Recalculating ranges for all parts in section...')
       
-      const partsResponse = await testManagementApi.getAllParts(sectionId)
-      const allParts = partsResponse?.data || partsResponse || []
+      // Get parts from AdminStore
+      const allParts = adminStore.getParts(sectionId)
       
       let cumulativeQuestions = 0
       
@@ -1229,7 +1261,7 @@ const PartEditorPage = () => {
           />
           <div style={{ minWidth: 0 }}>
             <Title level={4} style={{ margin: 0, marginBottom: '4px', lineHeight: '1.3' }}>
-              {sectionType.charAt(0).toUpperCase() + sectionType.slice(1)} - Part {partId.slice(0, 8)}
+              {sectionType.charAt(0).toUpperCase() + sectionType.slice(1)} - {partOrder !== null ? `Part ${partOrder}` : 'Loading...'}
             </Title>
             <Text type="secondary" style={{ fontSize: '14px', display: 'block' }}>
               Edit part content and questions
@@ -1322,6 +1354,6 @@ const PartEditorPage = () => {
       </Content>
     </Layout>
   )
-}
+})
 
 export default PartEditorPage

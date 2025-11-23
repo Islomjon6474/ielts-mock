@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { Checkbox, Card } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
@@ -14,6 +15,22 @@ const MultipleChoiceQuestion = observer(({ question, questionNumber }: MultipleC
   const { readingStore } = useStore()
   const answer = (readingStore.getAnswer(question.id) as string[]) || []
   const maxAnswers = question.maxAnswers || 2
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    // Only focus if not in preview mode
+    if (readingStore.isPreviewMode) return
+    
+    const currentQuestionNumber = readingStore.parts[readingStore.currentPart - 1]?.questionRange[0] + readingStore.currentQuestionIndex
+    if (currentQuestionNumber === questionNumber && containerRef.current) {
+      setTimeout(() => {
+        const checkbox = containerRef.current?.querySelector('input[type="checkbox"]:not([disabled])') as HTMLInputElement
+        if (checkbox) {
+          checkbox.focus()
+        }
+      }, 100)
+    }
+  }, [readingStore.currentQuestionIndex, readingStore.currentPart, questionNumber, readingStore.isPreviewMode])
 
   const handleChange = (checkedValues: string[]) => {
     // Limit to max answers
@@ -23,7 +40,7 @@ const MultipleChoiceQuestion = observer(({ question, questionNumber }: MultipleC
   }
 
   return (
-    <Card className="mb-4">
+    <Card className="mb-4" ref={containerRef}>
       <div className="flex items-start gap-4">
         <div className="flex-1">
           <p className="mb-4 font-medium"><strong>{questionNumber}</strong> {question.text}</p>

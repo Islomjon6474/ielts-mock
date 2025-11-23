@@ -27,8 +27,28 @@ const QuestionPanel = observer(() => {
     if (currentQuestionRef) {
       currentQuestionRef.scrollIntoView({
         behavior: 'smooth',
-        block: 'start',
+        block: 'center',
       })
+      
+      // Focus on the first focusable element in the question after scrolling
+      setTimeout(() => {
+        // Try to find input, textarea, or radio button
+        const input = currentQuestionRef.querySelector('input:not([type="checkbox"]):not([type="radio"]), textarea') as HTMLInputElement | HTMLTextAreaElement | null
+        const radio = currentQuestionRef.querySelector('input[type="radio"]') as HTMLInputElement | null
+        const checkbox = currentQuestionRef.querySelector('input[type="checkbox"]') as HTMLInputElement | null
+        
+        // Priority: text input > radio > checkbox
+        if (input) {
+          input.focus()
+          if ('select' in input && typeof input.select === 'function') {
+            input.select() // Select text if it's an input
+          }
+        } else if (radio) {
+          radio.focus()
+        } else if (checkbox) {
+          checkbox.focus()
+        }
+      }, 400)
     }
   }, [readingStore.currentQuestionIndex, readingStore.currentPart, currentPart])
 
@@ -86,29 +106,37 @@ const QuestionPanel = observer(() => {
     }
   }
 
-  // Group consecutive questions of the same type
+  // Group consecutive questions of the same type and groupIndex
   const groupQuestions = () => {
     const groups: Array<{
       type: string
       questions: Array<{ question: Question; index: number; questionNumber: number }>
       startNumber: number
       endNumber: number
+      groupIndex?: number
     }> = []
 
     currentPart.questions.forEach((question, index) => {
       const questionNumber = currentPart.questionRange[0] + index
       const lastGroup = groups[groups.length - 1]
+      const qGroupIndex = (question as any).groupIndex
 
-      if (lastGroup && lastGroup.type === question.type) {
-        lastGroup.questions.push({ question, index, questionNumber })
-        lastGroup.endNumber = questionNumber
-      } else {
+      // Start new group if type changes OR groupIndex changes
+      const shouldStartNewGroup = !lastGroup || 
+        lastGroup.type !== question.type ||
+        (qGroupIndex !== undefined && qGroupIndex !== lastGroup.groupIndex)
+
+      if (shouldStartNewGroup) {
         groups.push({
           type: question.type,
           questions: [{ question, index, questionNumber }],
           startNumber: questionNumber,
           endNumber: questionNumber,
+          groupIndex: qGroupIndex,
         })
+      } else {
+        lastGroup.questions.push({ question, index, questionNumber })
+        lastGroup.endNumber = questionNumber
       }
     })
 

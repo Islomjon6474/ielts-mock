@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from 'antd'
-import { CheckOutlined } from '@ant-design/icons'
+import { CheckOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons'
 import { observer } from 'mobx-react-lite'
 import * as R from 'ramda'
 
@@ -20,6 +20,10 @@ interface BottomNavigationProps {
   isQuestionAnswered: (questionNumber: number) => boolean
   onSubmit?: () => void
   isPreviewMode?: boolean
+  onPrevious?: () => void
+  onNext?: () => void
+  hasPrevious?: boolean
+  hasNext?: boolean
 }
 
 const BottomNavigation = observer(({
@@ -30,7 +34,11 @@ const BottomNavigation = observer(({
   onQuestionClick,
   isQuestionAnswered,
   onSubmit,
-  isPreviewMode = false
+  isPreviewMode = false,
+  onPrevious,
+  onNext,
+  hasPrevious = true,
+  hasNext = true
 }: BottomNavigationProps) => {
   const currentPartData = parts.find(p => p.id === currentPart)
   const currentQuestionNumber = currentPartData
@@ -138,16 +146,45 @@ const BottomNavigation = observer(({
           )}
         </div>
 
-        {/* Submit Button */}
-        <Button
-          type="primary"
-          icon={<CheckOutlined />}
-          className="bg-green-600 hover:bg-green-700 flex-shrink-0"
-          onClick={onSubmit}
-          disabled={isPreviewMode}
-        >
-          Submit
-        </Button>
+        {/* Navigation Arrows and Submit Button */}
+        <div className="flex items-center gap-3 flex-shrink-0">
+          {/* Previous Button */}
+          <Button
+            icon={<LeftOutlined />}
+            onClick={onPrevious}
+            disabled={!hasPrevious}
+            className="w-12 h-12 flex items-center justify-center"
+            style={{ 
+              backgroundColor: hasPrevious ? '#3b82f6' : '#f3f4f6',
+              borderColor: hasPrevious ? '#2563eb' : '#e5e7eb',
+              color: hasPrevious ? '#ffffff' : '#9ca3af'
+            }}
+          />
+          
+          {/* Next Button */}
+          <Button
+            icon={<RightOutlined />}
+            onClick={onNext}
+            disabled={!hasNext}
+            className="w-12 h-12 flex items-center justify-center"
+            style={{ 
+              backgroundColor: hasNext ? '#3b82f6' : '#f3f4f6',
+              borderColor: hasNext ? '#2563eb' : '#e5e7eb',
+              color: hasNext ? '#ffffff' : '#9ca3af'
+            }}
+          />
+          
+          {/* Submit Button */}
+          <Button
+            type="primary"
+            icon={<CheckOutlined />}
+            className="bg-green-600 hover:bg-green-700"
+            onClick={onSubmit}
+            disabled={isPreviewMode}
+          >
+            Submit
+          </Button>
+        </div>
       </div>
     </footer>
   )

@@ -19,14 +19,14 @@ const api = axios.create({
 // Add request interceptor for authentication token and debugging
 api.interceptors.request.use(
   (config) => {
-    // Add auth token from localStorage
-    const token = localStorage.getItem('authToken')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    
-    // Log the full request URL for debugging
+    // Add auth token from localStorage (only in browser)
     if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('authToken')
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
+
+      // Log the full request URL for debugging
       const fullUrl = `${config.baseURL}${config.url || ''}`
       console.log('🌐 API Request:', fullUrl)
       
@@ -48,10 +48,10 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid - redirect to login
-      localStorage.removeItem('authToken')
-      localStorage.removeItem('user')
+      // Token expired or invalid - redirect to login (only in browser)
       if (typeof window !== 'undefined') {
+        localStorage.removeItem('authToken')
+        localStorage.removeItem('user')
         window.location.href = '/auth/signin'
       }
     }
@@ -72,6 +72,12 @@ export const testManagementApi = {
     const response = await api.get('/test-management/get-all', {
       params: { page, size },
     })
+    return response.data
+  },
+
+  // Get single test by ID
+  getTest: async (id: string) => {
+    const response = await api.get(`/test-management/get/${id}`)
     return response.data
   },
 
@@ -97,6 +103,12 @@ export const testManagementApi = {
     const response = await api.get('/test-management/get-all-part', {
       params: { sectionId },
     })
+    return response.data
+  },
+
+  // Get single part by ID
+  getPart: async (id: string) => {
+    const response = await api.get(`/test-management/get-part/${id}`)
     return response.data
   },
 
@@ -254,9 +266,11 @@ export const fileApi = {
     const formData = new FormData()
     formData.append('file', file)
 
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null
     const response = await api.post('/file/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
+        'Authorization': token ? `Bearer ${token}` : '',
       },
     })
     return response.data

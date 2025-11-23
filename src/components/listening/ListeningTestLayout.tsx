@@ -123,6 +123,11 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
 
   const handleQuestionClick = (questionNumber: number) => {
     listeningStore.goToQuestion(questionNumber)
+    
+    // Scroll and focus after navigation
+    setTimeout(() => {
+      scrollToQuestionAndFocus(questionNumber)
+    }, 100)
   }
 
   const handleSubmit = () => {
@@ -145,6 +150,76 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
       router.push('/')
     }
   }
+
+  const handlePrevious = () => {
+    const allQuestions = listeningStore.allQuestions
+    const currentQuestionNumber = listeningStore.currentQuestionNumber
+    const currentIndex = allQuestions.findIndex(q => q.id === currentQuestionNumber)
+    
+    if (currentIndex > 0) {
+      const prevQuestion = allQuestions[currentIndex - 1]
+      listeningStore.goToQuestion(prevQuestion.id)
+      
+      // Scroll and focus after navigation
+      setTimeout(() => {
+        scrollToQuestionAndFocus(prevQuestion.id)
+      }, 100)
+    }
+  }
+
+  const handleNext = () => {
+    const allQuestions = listeningStore.allQuestions
+    const currentQuestionNumber = listeningStore.currentQuestionNumber
+    const currentIndex = allQuestions.findIndex(q => q.id === currentQuestionNumber)
+    
+    if (currentIndex < allQuestions.length - 1) {
+      const nextQuestion = allQuestions[currentIndex + 1]
+      listeningStore.goToQuestion(nextQuestion.id)
+      
+      // Scroll and focus after navigation
+      setTimeout(() => {
+        scrollToQuestionAndFocus(nextQuestion.id)
+      }, 100)
+    }
+  }
+
+  const scrollToQuestionAndFocus = (questionId: number) => {
+    // Find the question element by data attribute or id
+    const questionElement = document.querySelector(`[data-question-id="${questionId}"]`) as HTMLElement
+    
+    if (questionElement) {
+      questionElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      })
+      
+      // Focus on the first focusable element in the question
+      setTimeout(() => {
+        const input = questionElement.querySelector('input:not([type="checkbox"]):not([type="radio"]), textarea') as HTMLInputElement | null
+        const radio = questionElement.querySelector('input[type="radio"]') as HTMLInputElement | null
+        const checkbox = questionElement.querySelector('input[type="checkbox"]') as HTMLInputElement | null
+        
+        // Priority: text input > radio > checkbox
+        if (input) {
+          input.focus()
+          if (input.select) {
+            input.select()
+          }
+        } else if (radio) {
+          radio.focus()
+        } else if (checkbox) {
+          checkbox.focus()
+        }
+      }, 400)
+    }
+  }
+
+  // Check navigation availability
+  const allQuestions = listeningStore.allQuestions
+  const currentQuestionNumber = listeningStore.currentQuestionNumber
+  const currentIndex = allQuestions.findIndex(q => q.id === currentQuestionNumber)
+  const hasPrevious = currentIndex > 0
+  const hasNext = currentIndex < allQuestions.length - 1
 
   // Check if parts are loaded - conditional returns at the end
   if (!listeningStore.parts || listeningStore.parts.length === 0) {
@@ -181,8 +256,8 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
       </div>
 
       {/* Main Content */}
-      <Content className="flex-1 overflow-hidden bg-gray-200 flex justify-center py-6">
-        <div className="w-full max-w-4xl bg-white p-8 rounded shadow overflow-y-auto">
+      <Content className="flex-1 overflow-hidden bg-gray-200 flex justify-center py-6 px-6">
+        <div className="w-full bg-white p-8 rounded shadow overflow-y-auto">
           {/* Render questions based on part */}
           {/* Dynamic generic renderer: if questions are provided, show them; otherwise fall back to legacy hardcoded UI */}
           {Array.isArray(currentPart.questions) && currentPart.questions.length > 0 && (
@@ -193,11 +268,13 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                 let currentGroup: QuestionGroup | null = null
                 
                 currentPart.questions.forEach((q: ListeningQuestion) => {
-                  // Start a new group if imageUrl, type, or groupInstruction changes
+                  // Start a new group if imageUrl, type, groupInstruction, or groupIndex changes
+                  const qGroupIndex = (q as any).groupIndex
                   const shouldStartNewGroup = !currentGroup || 
                     q.imageUrl !== currentGroup.imageUrl || 
                     q.type !== currentGroup.type ||
-                    (q as any).groupInstruction !== currentGroup.instruction
+                    (q as any).groupInstruction !== currentGroup.instruction ||
+                    (qGroupIndex !== undefined && qGroupIndex !== (currentGroup as any).groupIndex)
                   
                   if (shouldStartNewGroup) {
                     // Use groupInstruction from question data
@@ -208,8 +285,9 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                       imageUrl: q.imageUrl, 
                       instruction, 
                       questions: [q],
-                      options: q.options || []
-                    }
+                      options: q.options || [],
+                      groupIndex: qGroupIndex
+                    } as QuestionGroup
                     grouped.push(currentGroup)
                   } else {
                     if (currentGroup) {
@@ -309,7 +387,7 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                                 
                                 case 'IMAGE_INPUTS':
                                   return (
-                                    <div key={q.id} className="flex items-center gap-2 mb-3">
+                                    <div key={q.id} className="flex items-center gap-2 mb-3" data-question-id={q.id}>
                                       <span className="font-semibold text-gray-700">{q.id}.</span>
                                       <Input
                                         value={(listeningStore.getAnswer(q.id) as string) || ''}
@@ -323,7 +401,7 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                                 
                                 default:
                                   return (
-                                    <div key={q.id} className="border-b pb-4">
+                                    <div key={q.id} className="border-b pb-4" data-question-id={q.id}>
                                       <p className="mb-2 text-sm"><strong>{q.id}.</strong> {q.text}</p>
                                       <Input
                                         value={(listeningStore.getAnswer(q.id) as string) || ''}
@@ -375,7 +453,7 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                               
                               case 'IMAGE_INPUTS':
                                 return (
-                                  <div key={q.id} className="flex items-center gap-2 mb-3">
+                                  <div key={q.id} className="flex items-center gap-2 mb-3" data-question-id={q.id}>
                                     <span className="font-semibold text-gray-700">{q.id}.</span>
                                     <Input
                                       value={(listeningStore.getAnswer(q.id) as string) || ''}
@@ -390,7 +468,7 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                               default:
                                 // Fallback: basic input with question number
                                 return (
-                                  <div key={q.id} className="border-b pb-4">
+                                  <div key={q.id} className="border-b pb-4" data-question-id={q.id}>
                                     <p className="mb-2 text-sm"><strong>{q.id}.</strong> {q.text}</p>
                                     <Input
                                       value={(listeningStore.getAnswer(q.id) as string) || ''}
@@ -914,6 +992,10 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
         isQuestionAnswered={(qNum) => listeningStore.isQuestionAnswered(qNum)}
         onSubmit={handleSubmit}
         isPreviewMode={isPreviewMode}
+        onPrevious={handlePrevious}
+        onNext={handleNext}
+        hasPrevious={hasPrevious}
+        hasNext={hasNext}
       />
 
       {/* Audio Instruction Modal */}

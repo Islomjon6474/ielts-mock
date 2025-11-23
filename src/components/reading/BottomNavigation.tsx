@@ -20,6 +20,24 @@ const BottomNavigation = observer(({ onSubmit, isPreviewMode = false }: BottomNa
     readingStore.goToQuestion(questionNumber)
   }
 
+  const handlePrevious = () => {
+    readingStore.previousQuestion()
+  }
+
+  const handleNext = () => {
+    readingStore.nextQuestion()
+  }
+
+  // Check if there's a previous question
+  const hasPrevious = !(readingStore.currentPart === 1 && readingStore.currentQuestionIndex === 0)
+
+  // Check if there's a next question
+  const currentPart = readingStore.parts[readingStore.currentPart - 1]
+  const hasNext = currentPart && !(
+    readingStore.currentPart === readingStore.parts.length &&
+    readingStore.currentQuestionIndex === currentPart.questions.length - 1
+  )
+
   return (
     <BottomNavigationComponent
       parts={readingStore.parts}
@@ -30,6 +48,10 @@ const BottomNavigation = observer(({ onSubmit, isPreviewMode = false }: BottomNa
       isQuestionAnswered={(qNum) => readingStore.isQuestionAnswered(qNum)}
       onSubmit={onSubmit}
       isPreviewMode={isPreviewMode}
+      onPrevious={handlePrevious}
+      onNext={handleNext}
+      hasPrevious={hasPrevious}
+      hasNext={hasNext}
     />
   )
 })

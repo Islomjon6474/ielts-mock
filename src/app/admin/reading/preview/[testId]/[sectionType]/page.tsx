@@ -205,21 +205,42 @@ const SectionPreviewPage = observer(() => {
             // Transform question groups with imageId to imageUrl
             let questionGroups = undefined
             if (dataToUse.questionGroups && Array.isArray(dataToUse.questionGroups)) {
-              questionGroups = dataToUse.questionGroups.map((group: any) => ({
+              questionGroups = dataToUse.questionGroups.map((group: any, groupIndex: number) => ({
                 instruction: group.instruction,
                 imageUrl: fileApi.getImageUrl(group.imageId),
                 questions: (group.questions || []).map((q: any) => ({
                   ...q,
-                  options: q.options || []
+                  options: q.options || [],
+                  groupIndex: groupIndex  // Add groupIndex to each question
                 }))
               }))
             }
 
-            // Map questions with options
-            const mappedQuestions = (dataToUse.questions || []).map((q: any) => ({
-              ...q,
-              options: q.options || []
-            }))
+            // Map questions with options and add groupIndex from questionGroups
+            const mappedQuestions = (dataToUse.questions || []).map((q: any) => {
+              // Find which group this question belongs to based on question range
+              let groupIndex = q.groupIndex
+              if (groupIndex === undefined && dataToUse.questionGroups && Array.isArray(dataToUse.questionGroups)) {
+                dataToUse.questionGroups.forEach((group: any, gIdx: number) => {
+                  if (group.range) {
+                    const match = group.range.match(/^(\d+)-(\d+)$/)
+                    if (match) {
+                      const start = parseInt(match[1])
+                      const end = parseInt(match[2])
+                      if (q.id >= start && q.id <= end) {
+                        groupIndex = gIdx
+                      }
+                    }
+                  }
+                })
+              }
+              
+              return {
+                ...q,
+                options: q.options || [],
+                groupIndex: groupIndex
+              }
+            })
             
             // Calculate questionRange from actual question IDs
             let questionRange: [number, number] = [1, 13]
