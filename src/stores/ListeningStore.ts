@@ -1,5 +1,5 @@
 import { makeAutoObservable } from 'mobx'
-import { mockSubmissionApi } from '@/services/mockSubmissionApi'
+import { mockSubmissionApi } from '@/services/testManagementApi'
 
 export interface ListeningQuestion {
   id: number

@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { Typography, Card, Row, Col, Button, Empty, Spin, Space, Tag, Pagination, Skeleton } from 'antd'
-import { FileTextOutlined, SettingOutlined, CalendarOutlined, ArrowRightOutlined } from '@ant-design/icons'
+import { Typography, Card, Row, Col, Button, Empty, Spin, Space, Tag, Pagination, Skeleton, Modal } from 'antd'
+import { FileTextOutlined, SettingOutlined, CalendarOutlined, ArrowRightOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import { mockSubmissionApi } from '@/services/testManagementApi'
@@ -21,6 +21,9 @@ const HomePage = observer(() => {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalTests, setTotalTests] = useState(0)
   const [pageSize, setPageSize] = useState(9) // 3x3 grid
+  const [selectedTest, setSelectedTest] = useState<any>(null)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [startingTest, setStartingTest] = useState(false)
 
   // Force component re-render when pathname changes (navigation)
   useEffect(() => {
@@ -90,9 +93,40 @@ const HomePage = observer(() => {
   const router = useRouter()
 
   const handleOpenTest = (test: any) => {
-    const id = test.id || test.testId || test?.uuid || test?.ID
+    setSelectedTest(test)
+    setShowConfirmModal(true)
+  }
+
+  const handleConfirmStart = async () => {
+    if (!selectedTest) return
+    
+    const id = selectedTest.id || selectedTest.testId || selectedTest?.uuid || selectedTest?.ID
     if (!id) return
-    router.push(`/test/${id}`)
+    
+    try {
+      setStartingTest(true)
+      // Start the mock test
+      const response = await mockSubmissionApi.startMock(id)
+      const mockId = response.data // Get the mockId from response
+      console.log('✅ Mock test started:', mockId)
+      
+      // Navigate to test page with mockId
+      router.push(`/test/${id}?mockId=${mockId}`)
+    } catch (error) {
+      console.error('Error starting test:', error)
+      Modal.error({
+        title: 'Failed to Start Test',
+        content: 'There was an error starting the test. Please try again.',
+      })
+    } finally {
+      setStartingTest(false)
+      setShowConfirmModal(false)
+    }
+  }
+
+  const handleCancelStart = () => {
+    setShowConfirmModal(false)
+    setSelectedTest(null)
   }
 
   // Compute admin status directly from user object for reactivity
@@ -320,6 +354,47 @@ const HomePage = observer(() => {
           </div>
         )}
       </div>
+
+      {/* Confirmation Modal */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <ExclamationCircleOutlined style={{ color: '#1677ff', fontSize: '20px' }} />
+            <span>Start Test</span>
+          </div>
+        }
+        open={showConfirmModal}
+        onOk={handleConfirmStart}
+        onCancel={handleCancelStart}
+        okText="Start Test"
+        cancelText="Cancel"
+        confirmLoading={startingTest}
+        okButtonProps={{
+          size: 'large',
+          style: { minWidth: '120px' }
+        }}
+        cancelButtonProps={{
+          size: 'large',
+          style: { minWidth: '120px' }
+        }}
+      >
+        <div style={{ padding: '16px 0' }}>
+          <Paragraph style={{ fontSize: '16px', marginBottom: '12px' }}>
+            You are about to start:
+          </Paragraph>
+          <Title level={5} style={{ marginBottom: '16px', color: '#1677ff' }}>
+            {selectedTest?.name || selectedTest?.title || 'IELTS Mock Test'}
+          </Title>
+          <Paragraph style={{ fontSize: '14px', color: '#595959', marginBottom: '8px' }}>
+            Once you start the test:
+          </Paragraph>
+          <ul style={{ fontSize: '14px', color: '#595959', paddingLeft: '20px', marginBottom: 0 }}>
+            <li>Your test session will begin</li>
+            <li>You can complete sections at your own pace</li>
+            <li>Your answers will be automatically saved</li>
+          </ul>
+        </div>
+      </Modal>
     </div>
   )
 })

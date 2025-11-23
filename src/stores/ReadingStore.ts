@@ -1,6 +1,6 @@
 import { makeAutoObservable } from 'mobx'
 import * as R from 'ramda'
-import { mockSubmissionApi } from '@/services/mockSubmissionApi'
+import { mockSubmissionApi } from '@/services/testManagementApi'
 
 export type QuestionType = 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN' | 'FILL_IN_BLANK' | 'MATCH_HEADING' | 'MULTIPLE_CHOICE' | 'MULTIPLE_CHOICE_SINGLE' | 'IMAGE_INPUTS' | 'SENTENCE_COMPLETION'
 

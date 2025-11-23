@@ -7,6 +7,7 @@ import { useStore } from '@/stores/StoreContext'
 import WritingTestLayout from '@/components/writing/WritingTestLayout'
 import { mockSubmissionApi, fileApi } from '@/services/testManagementApi'
 import { safeMultiParseJson } from '@/utils/json'
+import type { TestDto, SectionDto, PartDto } from '@/types/api'
 
 const WritingPageContent = observer(() => {
   const { writingStore } = useStore()
@@ -28,11 +29,10 @@ const WritingPageContent = observer(() => {
         } else {
           // 1) Get active tests and take the first ACTIVE one
           const testsResp = await mockSubmissionApi.getAllTests(0, 100)
-          const tests = testsResp?.data || testsResp?.content || testsResp || []
-          const allTests = Array.isArray(tests) ? tests : (tests?.data || [])
+          const allTests: TestDto[] = testsResp.data
           
           // Filter for active tests only (isActive === 1)
-          const activeTests = allTests.filter((t: any) => t.isActive === 1)
+          const activeTests = allTests.filter((t) => t.isActive === 1)
           
           // If no active tests, use first available test
           const test = activeTests.length > 0 ? activeTests[0] : allTests[0]
@@ -44,7 +44,7 @@ const WritingPageContent = observer(() => {
             return
           }
           
-          testIdToUse = test.id || test.testId || test?.id
+          testIdToUse = test.id
           console.log('✍️ Loading writing test:', test.name || test.id)
         }
 
@@ -56,31 +56,64 @@ const WritingPageContent = observer(() => {
           return
         }
 
-        // 2) Get sections and pick writing
+        // 2) Get or start mock test
+        // First, check if there's an existing mock session
+        const mocksResp = await mockSubmissionApi.getAllMocks(0, 100)
+        const allMocks = mocksResp.data || []
+        let existingMock = allMocks.find((m) => m.testId === testIdToUse && m.isFinished === 0)
+        
+        let mockId: string
+        if (existingMock) {
+          mockId = existingMock.id
+          console.log('✍️ Resuming existing mock session:', mockId)
+        } else {
+          const mockResp = await mockSubmissionApi.startMock(testIdToUse)
+          mockId = mockResp.data
+          console.log('✍️ Started new mock session:', mockId)
+        }
+
+        // 3) Get sections and pick writing
         const sectionsResp = await mockSubmissionApi.getAllSections(testIdToUse)
-        const sections = sectionsResp?.data || sectionsResp || []
-        const writingSection = sections.find((s: any) => `${s.sectionType}`.toLowerCase() === 'writing')
+        const sections: SectionDto[] = sectionsResp.data
+        const writingSection = sections.find((s) => s.sectionType.toLowerCase() === 'writing')
         if (!writingSection) {
           writingStore.setTasks([])
           setLoading(false)
           return
         }
 
-        // 3) Get parts and their content
+        // 4) Start writing section
+        await mockSubmissionApi.startSection(mockId, writingSection.id)
+        console.log('✍️ Started writing section:', writingSection.id)
+
+        // 5) Set mockId and sectionId in store for submission
+        writingStore.setMockId(mockId)
+        writingStore.setSectionId(writingSection.id)
+
+        // 6) Get parts and their content
         console.log('🔍 Getting parts for writing section ID:', writingSection.id)
         const partsResp = await mockSubmissionApi.getAllParts(writingSection.id)
         console.log('📦 Parts response:', partsResp)
         
-        const parts = partsResp?.data || partsResp || []
+        const parts: PartDto[] = partsResp.data
         console.log('✍️ All parts for writing:', parts.length, parts)
         
-        const allTasks: any[] = []
+        interface WritingTaskData {
+          id: number
+          title: string
+          timeMinutes: number
+          minWords: number
+          instruction: string
+          question: string
+          image?: string
+        }
+        const allTasks: WritingTaskData[] = []
         
         for (const part of parts) {
           try {
             console.log('📄 Processing part:', part.id)
             const contentResp = await mockSubmissionApi.getPartQuestionContent(part.id)
-            const raw = contentResp?.data?.content ?? contentResp?.content ?? null
+            const raw = contentResp.data.content
             if (!raw) {
               console.log('⚠️ No content for part:', part.id)
               continue
@@ -123,6 +156,32 @@ const WritingPageContent = observer(() => {
         console.log('✍️ Total writing tasks loaded:', allTasks.length)
         
         writingStore.setTasks(allTasks)
+
+        // 5) Load previously submitted answers (if any)
+        try {
+          console.log('🔄 Loading previously submitted answers...')
+          const answersResp = await mockSubmissionApi.getSubmittedAnswers(mockId, writingSection.id)
+          const submittedAnswers = answersResp.data
+          
+          if (submittedAnswers.length > 0) {
+            console.log(`✅ Found ${submittedAnswers.length} previously submitted answers`)
+            submittedAnswers.forEach((answer: any) => {
+              const questionOrd = answer.questionOrd || answer.ord
+              const answerValue = answer.answer
+              
+              if (questionOrd && answerValue) {
+                // For writing, questionOrd corresponds to task ID (1 for Task 1, 2 for Task 2)
+                writingStore.answers.set(questionOrd, answerValue)
+                console.log(`📝 Restored answer for Task ${questionOrd}`)
+              }
+            })
+          } else {
+            console.log('ℹ️ No previously submitted answers found')
+          }
+        } catch (error) {
+          console.error('⚠️ Error loading submitted answers:', error)
+          // Continue anyway - this is not critical
+        }
       } catch (error) {
         console.error('❌ Error loading writing test:', error)
         writingStore.setTasks([])

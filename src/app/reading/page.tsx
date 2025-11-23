@@ -5,8 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import ReadingTestLayout from '@/components/reading/ReadingTestLayout'
-import { mockSubmissionApi } from '@/services/mockSubmissionApi'
-import { fileApi } from '@/services/testManagementApi'
+import { mockSubmissionApi, fileApi } from '@/services/testManagementApi'
 import { safeMultiParseJson } from '@/utils/json'
 
 const ReadingPageContent = observer(() => {
@@ -65,9 +64,22 @@ const ReadingPageContent = observer(() => {
           return
         }
 
-        // 2) Start mock test
-        const mockResp = await mockSubmissionApi.startMock(testIdToUse)
-        const mockId = mockResp.data
+        // 2) Get or start mock test
+        // First, check if there's an existing mock session
+        const mocksResp = await mockSubmissionApi.getAllMocks(0, 100)
+        const allMocks = mocksResp.data || []
+        let existingMock = allMocks.find((m) => m.testId === testIdToUse && m.isFinished === 0)
+        
+        let mockId: string
+        if (existingMock) {
+          mockId = existingMock.id
+          console.log('📖 Resuming existing mock session:', mockId)
+        } else {
+          const mockResp = await mockSubmissionApi.startMock(testIdToUse)
+          mockId = mockResp.data
+          console.log('📖 Started new mock session:', mockId)
+        }
+        
         // 3) Get sections and pick reading
         console.log('🔍 Getting sections for test ID:', testIdToUse)
         
@@ -192,6 +204,32 @@ const ReadingPageContent = observer(() => {
         
         console.log('📚 Total reading parts loaded:', allParts.length)
         readingStore.setParts(allParts)
+
+        // 7) Load previously submitted answers (if any)
+        try {
+          console.log('🔄 Loading previously submitted answers...')
+          const answersResp = await mockSubmissionApi.getSubmittedAnswers(mockId, readingSection.id)
+          const submittedAnswers = answersResp.data || []
+          
+          if (submittedAnswers.length > 0) {
+            console.log(`✅ Found ${submittedAnswers.length} previously submitted answers`)
+            submittedAnswers.forEach((answer: any) => {
+              const questionOrd = answer.questionOrd || answer.ord
+              const answerValue = answer.answer
+              
+              if (questionOrd && answerValue) {
+                // Set answer in store without triggering auto-submit
+                readingStore.answers.set(questionOrd, answerValue)
+                console.log(`📝 Restored answer for Q${questionOrd}:`, answerValue)
+              }
+            })
+          } else {
+            console.log('ℹ️ No previously submitted answers found')
+          }
+        } catch (error) {
+          console.error('⚠️ Error loading submitted answers:', error)
+          // Continue anyway - this is not critical
+        }
       } catch (error) {
         console.error('❌ Error loading reading test:', error)
         readingStore.setParts([])

@@ -176,7 +176,12 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
       <BottomNavigation onSubmit={handleSubmit} isPreviewMode={isPreviewMode} />
 
       {/* Submit Modal */}
-      <SubmitModal visible={showSubmitModal} onClose={handleModalClose} onConfirm={handleModalConfirm} />
+      <SubmitModal 
+        visible={showSubmitModal} 
+        onClose={handleModalClose} 
+        onConfirm={handleModalConfirm}
+        loading={readingStore.isSubmitting}
+      />
     </Layout>
   )
 })

@@ -95,9 +95,17 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
     setShowSubmitModal(false)
   }
 
-  const handleModalConfirm = () => {
-    setShowSubmitModal(false)
-    router.push('/')
+  const handleModalConfirm = async () => {
+    try {
+      await writingStore.finishSection()
+      setShowSubmitModal(false)
+      router.push('/')
+    } catch (error) {
+      console.error('Failed to submit test:', error)
+      // Still close modal and redirect even if submission fails
+      setShowSubmitModal(false)
+      router.push('/')
+    }
   }
 
   return (
@@ -253,7 +261,12 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
       </Footer>
 
       {/* Submit Modal */}
-      <SubmitModal visible={showSubmitModal} onClose={handleModalClose} onConfirm={handleModalConfirm} />
+      <SubmitModal 
+        visible={showSubmitModal} 
+        onClose={handleModalClose} 
+        onConfirm={handleModalConfirm}
+        loading={writingStore.isSubmitting}
+      />
     </Layout>
   )
 })

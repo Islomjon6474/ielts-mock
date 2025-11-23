@@ -1008,7 +1008,12 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
       />
 
       {/* Submit Modal */}
-      <SubmitModal visible={showSubmitModal} onClose={handleModalClose} onConfirm={handleModalConfirm} />
+      <SubmitModal 
+        visible={showSubmitModal} 
+        onClose={handleModalClose} 
+        onConfirm={handleModalConfirm}
+        loading={listeningStore.isSubmitting}
+      />
     </Layout>
   )
 })
