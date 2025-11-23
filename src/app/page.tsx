@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { Typography, Card, Row, Col, Button, Empty, Spin, Space, Tag, Pagination, Skeleton, Modal } from 'antd'
-import { FileTextOutlined, SettingOutlined, CalendarOutlined, ArrowRightOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
+import { Typography, Card, Row, Col, Button, Empty, Spin, Space, Tag, Pagination, Skeleton, Modal, Tabs } from 'antd'
+import { FileTextOutlined, SettingOutlined, CalendarOutlined, ArrowRightOutlined, ExclamationCircleOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
-import { mockSubmissionApi } from '@/services/testManagementApi'
+import { mockSubmissionApi, testManagementApi } from '@/services/testManagementApi'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { withAuth } from '@/components/auth/withAuth'
 
@@ -16,14 +16,18 @@ const HomePage = observer(() => {
   const { appStore, authStore } = useStore()
   const [loading, setLoading] = useState(true)
   const [tests, setTests] = useState<any[]>([])
+  const [mocks, setMocks] = useState<any[]>([])
+  const [testNamesMap, setTestNamesMap] = useState<Record<string, string>>({})
   const pathname = usePathname()
   const [renderKey, setRenderKey] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalTests, setTotalTests] = useState(0)
+  const [totalMocks, setTotalMocks] = useState(0)
   const [pageSize, setPageSize] = useState(9) // 3x3 grid
   const [selectedTest, setSelectedTest] = useState<any>(null)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [startingTest, setStartingTest] = useState(false)
+  const [activeTab, setActiveTab] = useState('available')
 
   // Force component re-render when pathname changes (navigation)
   useEffect(() => {
@@ -72,24 +76,59 @@ const HomePage = observer(() => {
         // Scroll to top on page change for better UX
         window.scrollTo({ top: 0, behavior: 'smooth' })
         
-        const response = await mockSubmissionApi.getAllTests(currentPage - 1, pageSize)
-        
-        // Response format: { success: true, data: [tests], totalCount: X }
-        const testsData = response?.data || []
-        const total = response?.totalCount || 0
-        
-        setTests(testsData)
-        setTotalTests(total)
+        if (activeTab === 'available') {
+          const response = await mockSubmissionApi.getAllTests(currentPage - 1, pageSize)
+          
+          // Response format: { success: true, data: [tests], totalCount: X }
+          const testsData = response?.data || []
+          const total = response?.totalCount || 0
+          
+          setTests(testsData)
+          setTotalTests(total)
+        } else {
+          const response = await mockSubmissionApi.getAllMocks(currentPage - 1, pageSize)
+          
+          // Response format: { success: true, data: [mocks], totalCount: X }
+          const mocksData = response?.data || []
+          const total = response?.totalCount || 0
+          
+          // Fetch test names for all unique testIds
+          const uniqueTestIds = [...new Set(mocksData.map((m: any) => m.testId))]
+          const newTestNames: Record<string, string> = { ...testNamesMap }
+          
+          await Promise.all(
+            uniqueTestIds.map(async (testId: string) => {
+              if (!newTestNames[testId]) {
+                try {
+                  const testResponse = await testManagementApi.getTest(testId)
+                  newTestNames[testId] = testResponse?.data?.name || `Test ${testId.substring(0, 8)}`
+                } catch (error) {
+                  console.error(`Error fetching test ${testId}:`, error)
+                  newTestNames[testId] = `Test ${testId.substring(0, 8)}`
+                }
+              }
+            })
+          )
+          
+          setTestNamesMap(newTestNames)
+          setMocks(mocksData)
+          setTotalMocks(total)
+        }
       } catch (error) {
-        console.error('Error fetching tests:', error)
-        setTests([])
-        setTotalTests(0)
+        console.error('Error fetching data:', error)
+        if (activeTab === 'available') {
+          setTests([])
+          setTotalTests(0)
+        } else {
+          setMocks([])
+          setTotalMocks(0)
+        }
       } finally {
         setLoading(false)
       }
     }
     load()
-  }, [currentPage, pageSize])
+  }, [currentPage, pageSize, activeTab])
   const router = useRouter()
 
   const handleOpenTest = (test: any) => {
@@ -129,6 +168,18 @@ const HomePage = observer(() => {
     setSelectedTest(null)
   }
 
+  const handleContinueTest = (mock: any) => {
+    // Navigate to test page with existing mockId
+    const testId = mock.testId
+    const mockId = mock.id
+    router.push(`/test/${testId}?mockId=${mockId}`)
+  }
+
+  const handleTabChange = (key: string) => {
+    setActiveTab(key)
+    setCurrentPage(1) // Reset to first page when switching tabs
+  }
+
   // Compute admin status directly from user object for reactivity
   const isAdmin = authStore.user?.role === 'ADMIN'
   
@@ -143,7 +194,7 @@ const HomePage = observer(() => {
   return (
     <div className="min-h-screen" style={{ background: '#f5f5f5' }}>
       <div className="max-w-7xl mx-auto py-12 px-6">
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <div key={`header-${renderKey}-${authStore.user?.role}`} className="flex justify-end items-center gap-3 mb-6">
             {isAdmin && (
               <Button
@@ -166,6 +217,30 @@ const HomePage = observer(() => {
           </Paragraph>
         </div>
 
+        {/* Tabs for Available Tests and My Mock Exams */}
+        <Card style={{ 
+          marginBottom: '24px',
+          borderRadius: '12px',
+          border: '1px solid #e8e8e8',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+        }}>
+          <Tabs 
+            activeKey={activeTab} 
+            onChange={handleTabChange}
+            size="large"
+            items={[
+              {
+                key: 'available',
+                label: 'Available Mock Exams',
+              },
+              {
+                key: 'my-mocks',
+                label: 'My Mock Exams',
+              },
+            ]}
+          />
+        </Card>
+
         {loading ? (
           <Row gutter={[24, 24]}>
             {Array.from({ length: Math.min(pageSize, 6) }).map((_, index) => (
@@ -181,7 +256,7 @@ const HomePage = observer(() => {
               </Col>
             ))}
           </Row>
-        ) : tests.length === 0 ? (
+        ) : activeTab === 'available' && tests.length === 0 ? (
           <Card 
             style={{ 
               padding: '80px 40px',
@@ -201,7 +276,27 @@ const HomePage = observer(() => {
               Tests will appear here once they are created by administrators.
             </Paragraph>
           </Card>
-        ) : (
+        ) : activeTab === 'my-mocks' && mocks.length === 0 ? (
+          <Card 
+            style={{ 
+              padding: '80px 40px',
+              borderRadius: '12px',
+              textAlign: 'center',
+              border: '1px solid #e8e8e8',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+            }}
+          >
+            <div style={{ fontSize: 64, color: '#d9d9d9', marginBottom: 24 }}>
+              📋
+            </div>
+            <Title level={3} style={{ marginBottom: 12 }}>
+              No mock exams yet
+            </Title>
+            <Paragraph style={{ fontSize: '16px', color: '#8c8c8c', marginBottom: 0 }}>
+              Start a test from "Available Mock Exams" to see your progress here.
+            </Paragraph>
+          </Card>
+        ) : activeTab === 'available' ? (
           <Row gutter={[12, 12]}>
             {tests.map((t) => (
               <Col xs={24} sm={12} lg={8} key={t.id || t.testId}>
@@ -295,10 +390,136 @@ const HomePage = observer(() => {
               </Col>
             ))}
           </Row>
+        ) : (
+          <Row gutter={[12, 12]}>
+            {mocks.map((mock) => (
+              <Col xs={24} sm={12} lg={8} key={mock.id}>
+                <Card
+                  hoverable
+                  className="mock-card"
+                  style={{ 
+                    borderRadius: '12px',
+                    border: '1px solid #e8e8e8',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}
+                  bodyStyle={{ 
+                    padding: '20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    flex: 1
+                  }}
+                >
+                  {/* Header: Status Badge */}
+                  <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Tag 
+                      icon={mock.isFinished === 1 ? <CheckCircleOutlined /> : <ClockCircleOutlined />}
+                      color={mock.isFinished === 1 ? 'success' : 'processing'}
+                      style={{ fontSize: '14px', padding: '4px 12px' }}
+                    >
+                      {mock.isFinished === 1 ? 'Completed' : 'In Progress'}
+                    </Tag>
+                    {mock.startDate && (
+                      <Text type="secondary" style={{ fontSize: '12px' }}>
+                        {new Date(mock.startDate).toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </Text>
+                    )}
+                  </div>
+
+                  {/* Test Title */}
+                  <Title 
+                    level={4} 
+                    style={{ 
+                      margin: '0 0 16px 0',
+                      fontSize: '18px',
+                      fontWeight: 600
+                    }}
+                    ellipsis={{ rows: 1 }}
+                  >
+                    {testNamesMap[mock.testId] || mock.testId?.substring(0, 8) || 'Test'}
+                  </Title>
+
+                  {/* Sections with Scores */}
+                  {mock.sections && mock.sections.length > 0 && (
+                    <Space direction="vertical" size={8} style={{ width: '100%', marginBottom: '16px' }}>
+                      {mock.sections.map((section: any) => (
+                        <div 
+                          key={section.id}
+                          style={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between',
+                            padding: '8px 12px',
+                            background: '#f5f5f5',
+                            borderRadius: '6px'
+                          }}
+                        >
+                          <Text strong style={{ fontSize: '13px' }}>
+                            {section.sectionType}
+                          </Text>
+                          <Text style={{ fontSize: '13px', color: '#52c41a', fontWeight: 500 }}>
+                            {section.score !== undefined && section.score !== null 
+                              ? `${section.score}/9.0` 
+                              : 'Not graded'}
+                          </Text>
+                        </div>
+                      ))}
+                    </Space>
+                  )}
+
+                  {/* Footer: Action Button */}
+                  <div style={{ 
+                    paddingTop: '16px',
+                    borderTop: '1px solid #f0f0f0',
+                    marginTop: 'auto'
+                  }}>
+                    {mock.isFinished === 0 ? (
+                      <Button 
+                        type="primary"
+                        block
+                        size="large"
+                        icon={<ArrowRightOutlined />}
+                        iconPosition="end"
+                        onClick={() => handleContinueTest(mock)}
+                        style={{
+                          borderRadius: '6px',
+                          fontWeight: 500,
+                          height: '40px',
+                          background: '#52c41a',
+                          borderColor: '#52c41a'
+                        }}
+                      >
+                        Continue Test
+                      </Button>
+                    ) : (
+                      <Button 
+                        type="default"
+                        block
+                        size="large"
+                        onClick={() => router.push(`/test/${mock.testId}?mockId=${mock.id}`)}
+                        style={{
+                          borderRadius: '6px',
+                          fontWeight: 500,
+                          height: '40px'
+                        }}
+                      >
+                        View Results
+                      </Button>
+                    )}
+                  </div>
+                </Card>
+              </Col>
+            ))}
+          </Row>
         )}
 
         {/* Pagination */}
-        {!loading && tests.length > 0 && (
+        {!loading && ((activeTab === 'available' && tests.length > 0) || (activeTab === 'my-mocks' && mocks.length > 0)) && (
           <div style={{ 
             marginTop: '24px',
             padding: '24px',
@@ -313,11 +534,11 @@ const HomePage = observer(() => {
             boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
           }}>
             <Text type="secondary" style={{ fontSize: '14px' }}>
-              Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalTests)} of {totalTests} tests
+              Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, activeTab === 'available' ? totalTests : totalMocks)} of {activeTab === 'available' ? totalTests : totalMocks} {activeTab === 'available' ? 'tests' : 'mocks'}
             </Text>
             <Pagination
               current={currentPage}
-              total={totalTests}
+              total={activeTab === 'available' ? totalTests : totalMocks}
               pageSize={pageSize}
               onChange={(page, newPageSize) => {
                 console.log('Page changed:', page, 'New page size:', newPageSize)
@@ -338,7 +559,7 @@ const HomePage = observer(() => {
           </div>
         )}
 
-        {tests.length > 0 && (
+        {activeTab === 'available' && tests.length > 0 && (
           <div className="mt-6 text-center">
             <Card style={{ 
               borderRadius: '12px',
