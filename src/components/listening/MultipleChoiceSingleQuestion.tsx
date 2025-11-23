@@ -8,9 +8,10 @@ import { useStore } from '@/stores/StoreContext'
 interface MultipleChoiceSingleQuestionProps {
   question: any
   questionNumber: number
+  isPreviewMode?: boolean
 }
 
-const MultipleChoiceSingleQuestion = observer(({ question, questionNumber }: MultipleChoiceSingleQuestionProps) => {
+const MultipleChoiceSingleQuestion = observer(({ question, questionNumber, isPreviewMode = false }: MultipleChoiceSingleQuestionProps) => {
   const { listeningStore } = useStore()
   const answer = listeningStore.getAnswer(question.id) as string | undefined
   const containerRef = useRef<HTMLDivElement>(null)
@@ -50,6 +51,7 @@ const MultipleChoiceSingleQuestion = observer(({ question, questionNumber }: Mul
                     <Radio
                       value={option}
                       className="whitespace-normal"
+                      disabled={isPreviewMode}
                     >
                       <span className="font-semibold mr-2">{optionLabel}.</span>
                       <span className="text-sm">{option}</span>

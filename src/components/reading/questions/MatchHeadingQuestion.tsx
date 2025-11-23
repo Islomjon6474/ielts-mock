@@ -9,12 +9,14 @@ interface MatchHeadingQuestionProps {
   questions: Question[]
   questionNumbers: number[]
   headings: string[]
+  isPreviewMode?: boolean
 }
 
 const MatchHeadingQuestion = observer(({ 
   questions, 
   questionNumbers,
-  headings 
+  headings,
+  isPreviewMode = false
 }: MatchHeadingQuestionProps) => {
   const { readingStore } = useStore()
   const [draggedItem, setDraggedItem] = useState<string | null>(null)
@@ -97,8 +99,8 @@ const MatchHeadingQuestion = observer(({
                 <div className="flex items-center gap-2">
                   <strong className="text-sm">{questionNumber}.</strong>
                   <div
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, question.id)}
+                    onDragOver={!isPreviewMode ? handleDragOver : undefined}
+                    onDrop={!isPreviewMode ? (e) => handleDrop(e, question.id) : undefined}
                     className={`flex-1 border-2 border-dashed rounded px-4 py-3 min-h-[50px] flex items-center ${
                       answer ? 'border-blue-400 bg-blue-50' : 'border-gray-400'
                     }`}
@@ -106,12 +108,14 @@ const MatchHeadingQuestion = observer(({
                     {answer ? (
                       <div className="flex items-center justify-between w-full">
                         <span className="text-sm font-medium">{cleanAnswer}</span>
-                        <button
-                          onClick={() => handleRemove(question.id)}
-                          className="text-gray-400 hover:text-gray-600 text-sm font-bold ml-2"
-                        >
-                          ✕
-                        </button>
+                        {!isPreviewMode && (
+                          <button
+                            onClick={() => handleRemove(question.id)}
+                            className="text-gray-400 hover:text-gray-600 text-sm font-bold ml-2"
+                          >
+                            ✕
+                          </button>
+                        )}
                       </div>
                     ) : (
                       <span className="text-gray-400 text-sm">Drag heading here</span>
@@ -135,11 +139,13 @@ const MatchHeadingQuestion = observer(({
             return (
               <div
                 key={index}
-                draggable={!isUsed}
-                onDragStart={(e) => handleDragStart(e, heading)}
+                draggable={!isUsed && !isPreviewMode}
+                onDragStart={!isPreviewMode ? (e) => handleDragStart(e, heading) : undefined}
                 className={`px-4 py-3 border-2 rounded-md text-sm transition-all shadow-sm ${
                   isUsed
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed line-through border-gray-500'
+                    : isPreviewMode
+                    ? 'bg-gray-200 border-gray-700 cursor-default'
                     : 'bg-gray-200 border-gray-700 cursor-move hover:bg-blue-50 hover:border-blue-500 hover:shadow-md'
                 }`}
               >

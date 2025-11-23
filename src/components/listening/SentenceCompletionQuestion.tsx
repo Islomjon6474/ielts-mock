@@ -10,6 +10,7 @@ interface SentenceCompletionQuestionProps {
   options: string[]
   instruction?: string
   title?: string
+  isPreviewMode?: boolean
 }
 
 const SentenceCompletionQuestion = observer(({ 
@@ -17,7 +18,8 @@ const SentenceCompletionQuestion = observer(({
   questionNumbers,
   options,
   instruction,
-  title
+  title,
+  isPreviewMode = false
 }: SentenceCompletionQuestionProps) => {
   const { listeningStore } = useStore()
   const [draggedItem, setDraggedItem] = useState<string | null>(null)
@@ -125,8 +127,8 @@ const SentenceCompletionQuestion = observer(({
                   <strong className="whitespace-nowrap">{questionNumber}</strong>
                   <span>{parts[0]}</span>
                   <div
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, question.id)}
+                    onDragOver={!isPreviewMode ? handleDragOver : undefined}
+                    onDrop={!isPreviewMode ? (e) => handleDrop(e, question.id) : undefined}
                     tabIndex={0}
                     className={`inline-flex items-center border-2 border-dashed rounded px-3 py-1 min-w-[100px] ${
                       answer ? 'border-blue-400 bg-blue-50' : 'border-gray-300'
@@ -135,12 +137,14 @@ const SentenceCompletionQuestion = observer(({
                     {answer ? (
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium">{cleanAnswer}</span>
-                        <button
-                          onClick={() => handleRemove(question.id)}
-                          className="text-gray-400 hover:text-gray-600 text-xs font-bold"
-                        >
-                          ✕
-                        </button>
+                        {!isPreviewMode && (
+                          <button
+                            onClick={() => handleRemove(question.id)}
+                            className="text-gray-400 hover:text-gray-600 text-xs font-bold"
+                          >
+                            ✕
+                          </button>
+                        )}
                       </div>
                     ) : (
                       <span className="text-gray-400 text-xs">{placeholderNum}</span>
@@ -164,11 +168,13 @@ const SentenceCompletionQuestion = observer(({
               return (
                 <div
                   key={index}
-                  draggable={!isUsed}
-                  onDragStart={(e) => handleDragStart(e, option)}
+                  draggable={!isUsed && !isPreviewMode}
+                  onDragStart={!isPreviewMode ? (e) => handleDragStart(e, option) : undefined}
                   className={`px-4 py-3 border-2 rounded-md text-sm transition-all shadow-sm ${
                     isUsed
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed line-through border-gray-500'
+                      : isPreviewMode
+                      ? 'bg-gray-200 border-gray-700 cursor-default'
                       : 'bg-gray-200 border-gray-700 cursor-move hover:bg-blue-50 hover:border-blue-500 hover:shadow-md'
                   }`}
                 >

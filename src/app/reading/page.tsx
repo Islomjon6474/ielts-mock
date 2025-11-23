@@ -13,6 +13,7 @@ const ReadingPageContent = observer(() => {
   const [loading, setLoading] = useState(true)
   const searchParams = useSearchParams()
   const urlTestId = searchParams.get('testId')
+  const isPreviewMode = searchParams.get('preview') === 'true'
 
   useEffect(() => {
     const load = async () => {
@@ -21,8 +22,8 @@ const ReadingPageContent = observer(() => {
         
         // Reset reading store to ensure clean state
         readingStore.reset()
-        // Ensure preview mode is disabled on user side
-        readingStore.setPreviewMode(false)
+        // Set preview mode based on URL parameter
+        readingStore.setPreviewMode(isPreviewMode)
         
         let testIdToUse: string | null = null
         

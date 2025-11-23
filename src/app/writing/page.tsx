@@ -14,6 +14,7 @@ const WritingPageContent = observer(() => {
   const [loading, setLoading] = useState(true)
   const searchParams = useSearchParams()
   const urlTestId = searchParams.get('testId')
+  const isPreviewMode = searchParams.get('preview') === 'true'
 
   useEffect(() => {
     const load = async () => {
@@ -201,7 +202,7 @@ const WritingPageContent = observer(() => {
   }, [urlTestId])
 
   if (loading) return null
-  return <WritingTestLayout />
+  return <WritingTestLayout isPreviewMode={isPreviewMode} />
 })
 
 function WritingPage() {

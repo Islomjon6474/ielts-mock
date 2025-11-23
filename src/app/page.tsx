@@ -17,6 +17,7 @@ const HomePage = observer(() => {
   const [loading, setLoading] = useState(true)
   const [tests, setTests] = useState<any[]>([])
   const [mocks, setMocks] = useState<any[]>([])
+  const [lastUnfinishedMock, setLastUnfinishedMock] = useState<any>(null)
   const [testNamesMap, setTestNamesMap] = useState<Record<string, string>>({})
   const pathname = usePathname()
   const [renderKey, setRenderKey] = useState(0)
@@ -67,6 +68,38 @@ const HomePage = observer(() => {
       renderKey
     })
   }, [authStore.isAuthenticated, authStore.user, authStore.isAdmin, renderKey])
+
+  // Fetch last unfinished mock on mount
+  useEffect(() => {
+    const fetchLastUnfinishedMock = async () => {
+      try {
+        const response = await mockSubmissionApi.getAllMocks(0, 1) // Get first mock only
+        const firstMock = response?.data?.[0]
+        
+        if (firstMock && firstMock.isFinished === 0) {
+          // Fetch test name for the unfinished mock
+          try {
+            const testResponse = await testManagementApi.getTest(firstMock.testId)
+            const testName = testResponse?.data?.name || `Test ${firstMock.testId.substring(0, 8)}`
+            setTestNamesMap(prev => ({ ...prev, [firstMock.testId]: testName }))
+          } catch (error) {
+            console.error('Error fetching test name for unfinished mock:', error)
+          }
+          
+          setLastUnfinishedMock(firstMock)
+        } else {
+          setLastUnfinishedMock(null)
+        }
+      } catch (error) {
+        console.error('Error fetching last unfinished mock:', error)
+        setLastUnfinishedMock(null)
+      }
+    }
+    
+    if (authStore.isAuthenticated) {
+      fetchLastUnfinishedMock()
+    }
+  }, [authStore.isAuthenticated])
 
   useEffect(() => {
     const load = async () => {
@@ -194,7 +227,7 @@ const HomePage = observer(() => {
   return (
     <div className="min-h-screen" style={{ background: '#f5f5f5' }}>
       <div className="max-w-7xl mx-auto py-12 px-6">
-        <div className="text-center mb-8">
+        <div className="mb-8">
           <div key={`header-${renderKey}-${authStore.user?.role}`} className="flex justify-end items-center gap-3 mb-6">
             {isAdmin && (
               <Button
@@ -209,12 +242,76 @@ const HomePage = observer(() => {
             )}
             <UserMenu />
           </div>
-          <Title level={1} style={{ marginBottom: '12px', fontSize: '36px', fontWeight: 700 }}>
-            IELTS Mock Assessment Platform
-          </Title>
-          <Paragraph style={{ fontSize: '18px', color: '#595959', marginBottom: 0 }}>
-            Prepare for your IELTS exam with realistic practice tests
-          </Paragraph>
+          
+          {/* Header with Last Unfinished Mock on the left */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '24px', marginBottom: '16px' }}>
+            {/* Last Unfinished Mock - Compact Card */}
+            {lastUnfinishedMock && (
+              <Card 
+                style={{ 
+                  width: '240px',
+                  borderRadius: '8px',
+                  border: '2px solid #faad14',
+                  boxShadow: '0 2px 6px rgba(250, 173, 20, 0.15)',
+                  background: '#fffbf0'
+                }}
+                bodyStyle={{ padding: '12px', textAlign: 'center' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '8px' }}>
+                  <ClockCircleOutlined style={{ fontSize: '16px', color: '#faad14' }} />
+                  <Text strong style={{ fontSize: '12px', color: '#d46b08' }}>
+                    Continue Last Test
+                  </Text>
+                </div>
+                <Title 
+                  level={5} 
+                  style={{ 
+                    margin: '0 0 8px 0',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: '#262626',
+                    textAlign: 'center'
+                  }}
+                  ellipsis={{ rows: 1 }}
+                >
+                  {testNamesMap[lastUnfinishedMock.testId] || `Test ${lastUnfinishedMock.testId?.substring(0, 8)}`}
+                </Title>
+                <Text type="secondary" style={{ fontSize: '11px', display: 'block', marginBottom: '10px' }}>
+                  {new Date(lastUnfinishedMock.startDate).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric'
+                  })}
+                </Text>
+                <Button 
+                  type="primary"
+                  size="small"
+                  block
+                  icon={<ArrowRightOutlined />}
+                  iconPosition="end"
+                  onClick={() => handleContinueTest(lastUnfinishedMock)}
+                  style={{
+                    borderRadius: '6px',
+                    fontWeight: 500,
+                    background: '#faad14',
+                    borderColor: '#faad14',
+                    fontSize: '12px'
+                  }}
+                >
+                  Continue
+                </Button>
+              </Card>
+            )}
+            
+            {/* Title Section */}
+            <div style={{ flex: 1, textAlign: 'center' }}>
+              <Title level={1} style={{ marginBottom: '12px', fontSize: '36px', fontWeight: 700 }}>
+                IELTS Mock Assessment Platform
+              </Title>
+              <Paragraph style={{ fontSize: '18px', color: '#595959', marginBottom: 0 }}>
+                Prepare for your IELTS exam with realistic practice tests
+              </Paragraph>
+            </div>
+          </div>
         </div>
 
         {/* Tabs for Available Tests and My Mock Exams */}

@@ -9,9 +9,10 @@ interface TrueFalseQuestionProps {
   question: any
   questionNumber: number
   type?: 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN'
+  isPreviewMode?: boolean
 }
 
-const TrueFalseQuestion = observer(({ question, questionNumber, type = 'TRUE_FALSE_NOT_GIVEN' }: TrueFalseQuestionProps) => {
+const TrueFalseQuestion = observer(({ question, questionNumber, type = 'TRUE_FALSE_NOT_GIVEN', isPreviewMode = false }: TrueFalseQuestionProps) => {
   const { listeningStore } = useStore()
   const answer = listeningStore.getAnswer(question.id) as string
   const containerRef = useRef<HTMLDivElement>(null)
@@ -44,7 +45,7 @@ const TrueFalseQuestion = observer(({ question, questionNumber, type = 'TRUE_FAL
             className="flex gap-4"
           >
             {options.map((opt: string) => (
-              <Radio key={opt} value={opt} className="text-sm">
+              <Radio key={opt} value={opt} className="text-sm" disabled={isPreviewMode}>
                 {opt}
               </Radio>
             ))}

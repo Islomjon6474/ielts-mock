@@ -8,9 +8,10 @@ import { useStore } from '@/stores/StoreContext'
 interface FillInBlankQuestionProps {
   question: any
   questionNumber: number
+  isPreviewMode?: boolean
 }
 
-const FillInBlankQuestion = observer(({ question, questionNumber }: FillInBlankQuestionProps) => {
+const FillInBlankQuestion = observer(({ question, questionNumber, isPreviewMode = false }: FillInBlankQuestionProps) => {
   const { listeningStore } = useStore()
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -86,6 +87,7 @@ const FillInBlankQuestion = observer(({ question, questionNumber }: FillInBlankQ
             value={blankAnswer || ''}
             onChange={(e) => listeningStore.setAnswer(blankNumber, e.target.value)}
             placeholder={blankNumber.toString()}
+            disabled={isPreviewMode}
           />
         )
       }
@@ -116,6 +118,7 @@ const FillInBlankQuestion = observer(({ question, questionNumber }: FillInBlankQ
                   input.style.width = '120px'
                   input.value = blankAnswer || ''
                   input.placeholder = number.toString()
+                  input.disabled = isPreviewMode
                   input.addEventListener('change', (e) => {
                     listeningStore.setAnswer(number, (e.target as HTMLInputElement).value)
                   })

@@ -14,6 +14,7 @@ const ListeningPageContent = observer(() => {
   const [loading, setLoading] = useState(true)
   const searchParams = useSearchParams()
   const urlTestId = searchParams.get('testId')
+  const isPreviewMode = searchParams.get('preview') === 'true'
 
   useEffect(() => {
     const load = async () => {
@@ -243,7 +244,7 @@ const ListeningPageContent = observer(() => {
   }, [urlTestId])
 
   if (loading) return null
-  return <ListeningTestLayout />
+  return <ListeningTestLayout isPreviewMode={isPreviewMode} />
 })
 
 export default function ListeningPage() {

@@ -8,9 +8,10 @@ import { useStore } from '@/stores/StoreContext'
 interface MultipleChoiceQuestionProps {
   question: any
   questionNumber: number
+  isPreviewMode?: boolean
 }
 
-const MultipleChoiceQuestion = observer(({ question, questionNumber }: MultipleChoiceQuestionProps) => {
+const MultipleChoiceQuestion = observer(({ question, questionNumber, isPreviewMode = false }: MultipleChoiceQuestionProps) => {
   const { listeningStore } = useStore()
   const answer = (listeningStore.getAnswer(question.id) as string[]) || []
   const maxAnswers = question.maxAnswers || 2
@@ -49,7 +50,7 @@ const MultipleChoiceQuestion = observer(({ question, questionNumber }: MultipleC
                   <div key={index} className="block">
                     <Checkbox
                       value={option}
-                      disabled={!answer.includes(option) && answer.length >= maxAnswers}
+                      disabled={isPreviewMode || (!answer.includes(option) && answer.length >= maxAnswers)}
                       className="whitespace-normal"
                     >
                       <span className="font-semibold mr-2">{optionLabel}.</span>

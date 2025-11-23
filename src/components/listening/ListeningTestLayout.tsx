@@ -326,6 +326,7 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                           questions={group.questions}
                           questionNumbers={questionNumbers}
                           options={options}
+                          isPreviewMode={isPreviewMode}
                         />
                       </div>
                     )
@@ -376,18 +377,18 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                             return questionsToRender.map((q: ListeningQuestion) => {
                               switch (q.type) {
                                 case 'MULTIPLE_CHOICE':
-                                  return <MultipleChoiceQuestion key={q.id} question={q} questionNumber={q.id} />
+                                  return <MultipleChoiceQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
                                 
                                 case 'MULTIPLE_CHOICE_SINGLE':
-                                  return <MultipleChoiceSingleQuestion key={q.id} question={q} questionNumber={q.id} />
+                                  return <MultipleChoiceSingleQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
                                 
                                 case 'TRUE_FALSE_NOT_GIVEN':
                                 case 'YES_NO_NOT_GIVEN':
-                                  return <TrueFalseQuestion key={q.id} question={q} questionNumber={q.id} type={q.type as 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN'} />
+                                  return <TrueFalseQuestion key={q.id} question={q} questionNumber={q.id} type={q.type as 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN'} isPreviewMode={isPreviewMode} />
                                 
                                 case 'FILL_IN_BLANK':
                                 case 'SHORT_ANSWER':
-                                  return <FillInBlankQuestion key={q.id} question={q} questionNumber={q.id} />
+                                  return <FillInBlankQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
                                 
                                 case 'IMAGE_INPUTS':
                                   return (
@@ -399,6 +400,7 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                                         placeholder="Your answer"
                                         className="inline-block"
                                         style={{ width: '200px' }}
+                                        disabled={isPreviewMode}
                                       />
                                     </div>
                                   )
@@ -413,6 +415,7 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                                         placeholder="Your answer"
                                         className="inline-block text-center"
                                         style={{ width: '200px' }}
+                                        disabled={isPreviewMode}
                                       />
                                     </div>
                                   )
@@ -442,18 +445,17 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                             // Render based on question type
                             switch (q.type) {
                               case 'MULTIPLE_CHOICE':
-                                return <MultipleChoiceQuestion key={q.id} question={q} questionNumber={q.id} />
-                              
+                                return <MultipleChoiceQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
                               case 'MULTIPLE_CHOICE_SINGLE':
-                                return <MultipleChoiceSingleQuestion key={q.id} question={q} questionNumber={q.id} />
+                                return <MultipleChoiceSingleQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
                               
                               case 'TRUE_FALSE_NOT_GIVEN':
                               case 'YES_NO_NOT_GIVEN':
-                                return <TrueFalseQuestion key={q.id} question={q} questionNumber={q.id} type={q.type as 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN'} />
+                                return <TrueFalseQuestion key={q.id} question={q} questionNumber={q.id} type={q.type as 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN'} isPreviewMode={isPreviewMode} />
                               
                               case 'FILL_IN_BLANK':
                               case 'SHORT_ANSWER':
-                                return <FillInBlankQuestion key={q.id} question={q} questionNumber={q.id} />
+                                return <FillInBlankQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
                               
                               case 'IMAGE_INPUTS':
                                 return (
@@ -465,6 +467,7 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                                       placeholder="Your answer"
                                       className="inline-block"
                                       style={{ width: '200px' }}
+                                      disabled={isPreviewMode}
                                     />
                                   </div>
                                 )
@@ -480,6 +483,7 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                                       placeholder="Your answer"
                                       className="inline-block text-center"
                                       style={{ width: '200px' }}
+                                      disabled={isPreviewMode}
                                     />
                                   </div>
                                 )
