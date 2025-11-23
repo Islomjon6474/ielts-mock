@@ -11,7 +11,7 @@ import MultipleChoiceSingleQuestion from './questions/MultipleChoiceSingleQuesti
 import ImageInputsQuestion from './questions/ImageInputsQuestion'
 import SentenceCompletionQuestion from './questions/SentenceCompletionQuestion'
 import { Question } from '@/stores/ReadingStore'
-import { Image } from 'antd'
+import AuthenticatedImage from '@/components/common/AuthenticatedImage'
 
 const QuestionPanel = observer(() => {
   const { readingStore } = useStore()
@@ -349,11 +349,10 @@ const QuestionPanel = observer(() => {
               {currentPart.questionGroups && currentPart.questionGroups[groupIndex]?.imageUrl && (
                 <div className="mb-6">
                   <div className="border rounded-lg p-1 bg-gray-50">
-                    <Image
+                    <AuthenticatedImage
                       src={currentPart.questionGroups[groupIndex].imageUrl}
                       alt={`Question group ${groupIndex + 1} illustration`}
                       style={{ maxWidth: '100%', maxHeight: '500px', objectFit: 'contain' }}
-                      preview={true}
                     />
                   </div>
                 </div>

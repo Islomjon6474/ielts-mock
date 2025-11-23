@@ -1,6 +1,7 @@
-import { Image, Spin } from 'antd'
+import { Spin } from 'antd'
 import { useState, useEffect } from 'react'
 import { fileApi } from '@/services/testManagementApi'
+import AuthenticatedImage from './AuthenticatedImage'
 
 interface ImageDisplayProps {
   fileId?: string
@@ -12,7 +13,6 @@ interface ImageDisplayProps {
 export const ImageDisplay = ({ fileId, alt = 'Image', style, className }: ImageDisplayProps) => {
   const [imageUrl, setImageUrl] = useState<string | undefined>()
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
 
   useEffect(() => {
     if (fileId) {
@@ -36,18 +36,12 @@ export const ImageDisplay = ({ fileId, alt = 'Image', style, className }: ImageD
     )
   }
 
-  if (error) {
-    return null
-  }
-
   return (
-    <Image
+    <AuthenticatedImage
       src={imageUrl}
       alt={alt}
       style={{ maxWidth: '100%', ...style }}
       className={className}
-      onError={() => setError(true)}
-      preview
     />
   )
 }

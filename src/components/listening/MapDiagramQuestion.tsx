@@ -3,6 +3,7 @@
 import { Input } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
+import AuthenticatedImage from '@/components/common/AuthenticatedImage'
 
 interface MapInputPosition {
   questionId: number
@@ -28,13 +29,13 @@ const MapDiagramQuestion = observer(({ mapUrl, inputPositions, instruction }: Ma
   return (
     <div className="space-y-4">
       {instruction && (
-        <p className="text-gray-700 font-medium">{instruction}</p>
+        <p className="text-sm mb-4">{instruction}</p>
       )}
       
       {/* Map Container */}
       <div className="relative border-2 border-gray-300 rounded-lg overflow-hidden bg-white">
         {/* SVG Map */}
-        <img 
+        <AuthenticatedImage 
           src={mapUrl} 
           alt="Diagram" 
           className="w-full h-auto"
@@ -44,7 +45,6 @@ const MapDiagramQuestion = observer(({ mapUrl, inputPositions, instruction }: Ma
         {/* Positioned Input Fields */}
         {inputPositions.map((position: MapInputPosition) => {
           const answer = listeningStore.getAnswer(position.questionId) as string || ''
-          
           return (
             <div
               key={position.questionId}

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
+import AuthenticatedImage from '@/components/common/AuthenticatedImage'
 import { Input } from 'antd'
 
 interface MapPosition {
@@ -127,7 +128,7 @@ const MapLabelingQuestion = observer(({
         <div className="flex-1">
           <div ref={svgContainerRef} className="relative border border-gray-300 bg-white" style={{ width: '450px', height: '500px' }}>
             {/* Map image */}
-            <img 
+            <AuthenticatedImage 
               src={mapUrl} 
               alt="Map" 
               className="absolute inset-0 w-full h-full object-contain"

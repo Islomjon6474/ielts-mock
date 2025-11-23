@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { useStore } from '@/stores/StoreContext'
 import Header from '@/components/common/Header'
 import Timer from '@/components/common/Timer'
+import AuthenticatedImage from '@/components/common/AuthenticatedImage'
+import AuthenticatedAudio from '@/components/common/AuthenticatedAudio'
 import { ListeningQuestion } from '@/stores/ListeningStore'
 import BottomNavigationComponent from '@/components/common/BottomNavigation'
 import AudioInstructionModal from './AudioInstructionModal'
@@ -233,7 +235,7 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
   return (
     <Layout className="h-screen flex flex-col">
       {/* Hidden Audio Player */}
-      <audio ref={audioRef} style={{ display: 'none' }} />
+      <AuthenticatedAudio ref={audioRef} style={{ display: 'none' }} />
       
       <Header 
         isPreviewMode={isPreviewMode}
@@ -347,7 +349,7 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                       <div className="flex gap-6">
                         {/* Image on the left - fixed width */}
                         <div className="flex-shrink-0">
-                          <img 
+                          <AuthenticatedImage 
                             src={group.imageUrl} 
                             alt={`Question group ${groupIdx + 1}`} 
                             className="rounded border"

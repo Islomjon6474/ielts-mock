@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { useStore } from '@/stores/StoreContext'
 import Header from '@/components/common/Header'
 import Timer from '@/components/common/Timer'
+import AuthenticatedImage from '@/components/common/AuthenticatedImage'
 import SubmitModal from '@/components/common/SubmitModal'
 
 const { Content, Footer } = Layout
@@ -137,13 +138,19 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
           style={{ width: `${leftWidth}%` }}
         >
           <div className="prose max-w-none">
-            <h3 className="text-base font-semibold mb-4">Write about the following topic:</h3>
-            <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
-              {currentTask.question}
-            </div>
+            {currentTask.instruction && (
+              <div 
+                className="text-gray-700 mb-4 prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: currentTask.instruction }}
+              />
+            )}
+            <div 
+              className="text-gray-800 leading-relaxed prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: currentTask.question }}
+            />
             {currentTask.image && (
               <div className="mt-6">
-                <img src={currentTask.image} alt="Task visual" className="max-w-full h-auto" />
+                <AuthenticatedImage src={currentTask.image} alt="Task visual" className="max-w-full h-auto" />
               </div>
             )}
           </div>

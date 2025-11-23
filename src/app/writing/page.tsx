@@ -130,11 +130,8 @@ const WritingPageContent = observer(() => {
               continue
             }
             
-            // Extract question text - first instruction or text field
-            let questionText = dataToUse.question || dataToUse.text || ''
-            if (!questionText && dataToUse.instruction) {
-              questionText = dataToUse.instruction
-            }
+            // Extract task description from passage field (used in admin)
+            const questionText = dataToUse.passage || dataToUse.question || dataToUse.text || 'Write your response based on the task instructions.'
             
             const task = {
               id: allTasks.length + 1,
@@ -142,7 +139,7 @@ const WritingPageContent = observer(() => {
               timeMinutes: Number(dataToUse.timeMinutes) || (allTasks.length === 0 ? 20 : 40),
               minWords: Number(dataToUse.minWords) || (allTasks.length === 0 ? 150 : 250),
               instruction: dataToUse.instruction || '',
-              question: questionText || 'Write your response based on the task instructions.',
+              question: questionText,
               image: fileApi.getImageUrl(dataToUse.imageId),
             }
             allTasks.push(task)

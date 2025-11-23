@@ -2,10 +2,11 @@
 
 import { useState } from 'react'
 import { observer } from 'mobx-react-lite'
-import { Button, Card, Image } from 'antd'
+import { Button, Card } from 'antd'
 import { CloseOutlined } from '@ant-design/icons'
 import { Section } from '@/stores/ReadingStore'
 import { useStore } from '@/stores/StoreContext'
+import AuthenticatedImage from '@/components/common/AuthenticatedImage'
 
 interface ReadingPassageProps {
   passage: string
@@ -160,11 +161,10 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
         {imageUrl && (
           <div className="mb-6">
             <div className="border rounded-lg p-4 bg-gray-50">
-              <Image
+              <AuthenticatedImage
                 src={imageUrl}
                 alt="Passage illustration"
                 style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }}
-                preview={true}
               />
             </div>
           </div>
@@ -253,11 +253,10 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
         {imageUrl && (
           <div className="mb-6">
             <div className="border rounded-lg p-4 bg-gray-50">
-              <Image
+              <AuthenticatedImage
                 src={imageUrl}
                 alt="Passage illustration"
                 style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }}
-                preview={true}
               />
             </div>
           </div>
@@ -334,11 +333,10 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
       {imageUrl && (
         <div className="mb-6">
           <div className="border rounded-lg p-4 bg-gray-50">
-            <Image
+            <AuthenticatedImage
               src={imageUrl}
               alt="Passage illustration"
               style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }}
-              preview={true}
             />
           </div>
         </div>

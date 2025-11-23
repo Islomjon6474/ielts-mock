@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Upload, Button, message, Image, Space, Card } from 'antd'
-import { UploadOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons'
+import { Upload, Button, message, Space, Card } from 'antd'
+import { UploadOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { UploadFile } from 'antd/es/upload/interface'
 import { fileApi } from '@/services/testManagementApi'
+import AuthenticatedImage from '@/components/common/AuthenticatedImage'
 
 interface ImageUploadProps {
   value?: string // fileId
@@ -68,13 +69,10 @@ export const ImageUpload = ({ value, onChange, label = 'Upload Image' }: ImageUp
           size="small"
           style={{ width: 300 }}
           cover={
-            <Image
+            <AuthenticatedImage
               src={previewUrl}
               alt="Uploaded image"
               style={{ width: '100%', height: 200, objectFit: 'contain' }}
-              preview={{
-                mask: <EyeOutlined />
-              }}
             />
           }
         >
