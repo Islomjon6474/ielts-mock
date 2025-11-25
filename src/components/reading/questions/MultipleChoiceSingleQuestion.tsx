@@ -5,6 +5,7 @@ import { Radio, Card } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import { Question } from '@/stores/ReadingStore'
+import AuthenticatedImage from '@/components/common/AuthenticatedImage'
 
 interface MultipleChoiceSingleQuestionProps {
   question: Question
@@ -41,6 +42,18 @@ const MultipleChoiceSingleQuestion = observer(({ question, questionNumber }: Mul
         <div className="flex-1">
           <p className="mb-4 font-medium"><strong>{questionNumber}</strong> {question.text}</p>
           
+          {/* Display image if available */}
+          {question.imageUrl && (
+            <div className="mb-4">
+              <AuthenticatedImage
+                src={question.imageUrl}
+                alt={`Question ${questionNumber} image`}
+                style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }}
+                className="rounded border"
+              />
+            </div>
+          )}
+          
           <Radio.Group
             value={answer}
             onChange={(e) => handleChange(e.target.value)}
@@ -53,7 +66,7 @@ const MultipleChoiceSingleQuestion = observer(({ question, questionNumber }: Mul
                 return (
                   <div key={index} className="block">
                     <Radio
-                      value={option}
+                      value={optionLabel}
                       className="whitespace-normal"
                     >
                       <span className="font-semibold mr-2">{optionLabel}.</span>

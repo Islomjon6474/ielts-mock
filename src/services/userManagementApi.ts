@@ -9,6 +9,7 @@ export interface StudentDto {
   password?: string
   roles?: string[]
   createdDate?: string
+  updatedDate?: string
 }
 
 export interface ChangePasswordDto {

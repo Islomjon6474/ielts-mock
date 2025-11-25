@@ -5,6 +5,7 @@ import { Checkbox, Card } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import { Question } from '@/stores/ReadingStore'
+import AuthenticatedImage from '@/components/common/AuthenticatedImage'
 
 interface MultipleChoiceQuestionProps {
   question: Question
@@ -44,6 +45,18 @@ const MultipleChoiceQuestion = observer(({ question, questionNumber }: MultipleC
       <div className="flex items-start gap-4">
         <div className="flex-1">
           <p className="mb-4 font-medium"><strong>{questionNumber}</strong> {question.text}</p>
+          
+          {/* Display image if available */}
+          {question.imageUrl && (
+            <div className="mb-4">
+              <AuthenticatedImage
+                src={question.imageUrl}
+                alt={`Question ${questionNumber} image`}
+                style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }}
+                className="rounded border"
+              />
+            </div>
+          )}
           
           <Checkbox.Group
             value={answer}

@@ -7,6 +7,13 @@ export interface GradeWritingDto {
   writingType: string
 }
 
+export interface SaveWritingGradeDto {
+  mockId: string
+  sectionId: string
+  writingPartOneScore: number
+  writingPartTwoScore: number
+}
+
 export interface WritingGradeResult {
   score: number
   feedback: string
@@ -16,15 +23,26 @@ export interface WritingGradeResult {
   grammaticalRange?: number
 }
 
+export interface SectionResult {
+  sectionType: 'LISTENING' | 'READING' | 'WRITING'
+  status: string
+  correctAnswers?: number
+  score?: number
+}
+
 export interface MockResultDto {
   id: string
   testId: string
   testName?: string
   userId: string
   userName?: string
-  startedDate: string
+  userFirstName?: string
+  userLastName?: string
+  startDate?: string
+  startedDate?: string
   finishedDate?: string
   status: string
+  sections?: SectionResult[]
   listeningScore?: number
   readingScore?: number
   writingScore?: number
@@ -102,6 +120,32 @@ export const mockResultApi = {
       }
     } catch (error: any) {
       console.error('❌ Error grading writing:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Save writing grades for both tasks
+   * POST /mock-result/grade-writing
+   * Body: { mockId, sectionId, writingPartOneScore, writingPartTwoScore }
+   */
+  saveWritingGrade: async (data: SaveWritingGradeDto): Promise<ApiResponse<string>> => {
+    try {
+      console.log('💾 Saving writing grade:', data)
+      const response = await authApi.post('/mock-result/grade-writing', data)
+      console.log('✅ Save writing grade response:', response.data)
+      
+      // Handle response format: { success, reason, count, totalCount, data }
+      if (response.data.success) {
+        return {
+          success: true,
+          data: response.data.data
+        }
+      }
+      
+      return response.data
+    } catch (error: any) {
+      console.error('❌ Error saving writing grade:', error)
       throw error
     }
   },

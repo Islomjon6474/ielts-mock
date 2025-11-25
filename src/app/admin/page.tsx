@@ -158,20 +158,12 @@ const AdminPage = () => {
             Users
           </Button>
           <Button 
-            icon={<EditOutlined />}
-            onClick={() => router.push('/admin/grade-writing')}
-            size="large"
-            type="default"
-          >
-            Grade Writing
-          </Button>
-          <Button 
             icon={<TrophyOutlined />}
             onClick={() => router.push('/admin/results')}
             size="large"
             type="default"
           >
-            Results
+            Mock Management
           </Button>
           <Button 
             icon={<HomeOutlined />}
@@ -307,11 +299,20 @@ const AdminPage = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <CalendarOutlined style={{ color: '#8c8c8c', fontSize: '14px' }} />
                       <Text style={{ fontSize: '14px', color: '#52c41a', fontWeight: 500 }}>
-                        Created {test.createdDate ? new Date(test.createdDate).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric', 
-                          year: 'numeric' 
-                        }) : 'N/A'}
+                        Created {(() => {
+                          if (!test.createdDate) return 'N/A'
+                          try {
+                            const date = new Date(test.createdDate)
+                            if (isNaN(date.getTime())) return 'Invalid Date'
+                            return date.toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric', 
+                              year: 'numeric' 
+                            })
+                          } catch {
+                            return 'Invalid Date'
+                          }
+                        })()}
                       </Text>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

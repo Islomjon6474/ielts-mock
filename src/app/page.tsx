@@ -30,6 +30,10 @@ const HomePage = observer(() => {
   const [startingTest, setStartingTest] = useState(false)
   const [activeTab, setActiveTab] = useState('available')
 
+  useEffect(() => {
+    console.log("lastUnfinishedMock", lastUnfinishedMock)
+  }, [lastUnfinishedMock]);
+
   // Force component re-render when pathname changes (navigation)
   useEffect(() => {
     console.log('🏠 HomePage: Pathname changed, forcing re-render')
@@ -277,10 +281,7 @@ const HomePage = observer(() => {
                   {testNamesMap[lastUnfinishedMock.testId] || `Test ${lastUnfinishedMock.testId?.substring(0, 8)}`}
                 </Title>
                 <Text type="secondary" style={{ fontSize: '11px', display: 'block', marginBottom: '10px' }}>
-                  {new Date(lastUnfinishedMock.startDate).toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric'
-                  })}
+                  {lastUnfinishedMock.startDate}
                 </Text>
                 <Button 
                   type="primary"
@@ -518,15 +519,7 @@ const HomePage = observer(() => {
                     >
                       {mock.isFinished === 1 ? 'Completed' : 'In Progress'}
                     </Tag>
-                    {mock.startDate && (
-                      <Text type="secondary" style={{ fontSize: '12px' }}>
-                        {new Date(mock.startDate).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric',
-                          year: 'numeric'
-                        })}
-                      </Text>
-                    )}
+                    {mock.startDate}
                   </div>
 
                   {/* Test Title */}
@@ -549,21 +542,34 @@ const HomePage = observer(() => {
                         <div 
                           key={section.id}
                           style={{ 
-                            display: 'flex', 
-                            justifyContent: 'space-between',
                             padding: '8px 12px',
                             background: '#f5f5f5',
                             borderRadius: '6px'
                           }}
                         >
-                          <Text strong style={{ fontSize: '13px' }}>
-                            {section.sectionType}
-                          </Text>
-                          <Text style={{ fontSize: '13px', color: '#52c41a', fontWeight: 500 }}>
-                            {section.score !== undefined && section.score !== null 
-                              ? `${section.score}/9.0` 
-                              : 'Not graded'}
-                          </Text>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                            <Text strong style={{ fontSize: '13px' }}>
+                              {section.sectionType}
+                            </Text>
+                            <Tag 
+                              color={section.status === 'FINISHED' ? 'success' : section.status === 'IN_PROGRESS' ? 'processing' : 'default'}
+                              style={{ fontSize: '11px', padding: '0 6px', margin: 0 }}
+                            >
+                              {section.status || 'N/A'}
+                            </Tag>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Text type="secondary" style={{ fontSize: '12px' }}>
+                              {section.correctAnswers !== undefined && section.correctAnswers !== null 
+                                ? `Correct: ${section.correctAnswers}` 
+                                : ''}
+                            </Text>
+                            <Text style={{ fontSize: '13px', color: '#52c41a', fontWeight: 500 }}>
+                              {section.score !== undefined && section.score !== null 
+                                ? `${section.score}/9.0` 
+                                : 'Not graded'}
+                            </Text>
+                          </div>
                         </div>
                       ))}
                     </Space>

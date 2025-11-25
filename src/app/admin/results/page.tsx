@@ -9,24 +9,18 @@ import {
   Table, 
   message, 
   Space,
-  Tag,
-  Tooltip,
-  Statistic,
-  Row,
-  Col
+  Tag
 } from 'antd'
 import { 
   HomeOutlined, 
   ReloadOutlined,
-  TrophyOutlined,
   UserOutlined,
   CalendarOutlined,
   CheckCircleOutlined,
-  ClockCircleOutlined,
-  FileTextOutlined
+  ClockCircleOutlined
 } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
-import { mockResultApi, MockResultDto } from '@/services/mockResultApi'
+import { mockResultApi, MockResultDto, SectionResult } from '@/services/mockResultApi'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { withAuth } from '@/components/auth/withAuth'
 
@@ -50,6 +44,8 @@ const ResultsManagementPage = () => {
       setLoading(true)
       const response = await mockResultApi.getAllMockResults(page, size)
       console.log('Results response:', response)
+      console.log('First result object:', response.data?.[0])
+      console.log('First result startDate:', response.data?.[0]?.startDate)
       
       const resultsList = response.data || []
       setResults(resultsList)
@@ -62,12 +58,52 @@ const ResultsManagementPage = () => {
     }
   }
 
+  // Helper function to parse date - handles both ISO and custom DD.MM.YYYY HH:mm:ss format
+  const parseCustomDate = (dateString: string): Date | null => {
+    if (!dateString) return null
+    try {
+      // Try ISO format first (e.g., "2025-01-25T18:30:46.000+00:00")
+      const isoDate = new Date(dateString)
+      if (!isNaN(isoDate.getTime())) {
+        return isoDate
+      }
+      
+      // Fallback to custom format: "24.11.2025 13:27:46" or "DD.MM.YYYY HH:mm:ss"
+      const parts = dateString.split(' ')
+      if (parts.length !== 2) return null
+      
+      const dateParts = parts[0].split('.')
+      const timeParts = parts[1].split(':')
+      
+      if (dateParts.length !== 3 || timeParts.length !== 3) return null
+      
+      const day = parseInt(dateParts[0])
+      const month = parseInt(dateParts[1]) - 1 // Month is 0-indexed
+      const year = parseInt(dateParts[2])
+      const hour = parseInt(timeParts[0])
+      const minute = parseInt(timeParts[1])
+      const second = parseInt(timeParts[2])
+      
+      const date = new Date(year, month, day, hour, minute, second)
+      return isNaN(date.getTime()) ? null : date
+    } catch (error) {
+      return null
+    }
+  }
+
+  // Helper to get section by type
+  const getSectionByType = (record: MockResultDto, sectionType: 'LISTENING' | 'READING' | 'WRITING'): SectionResult | undefined => {
+    return record.sections?.find(s => s.sectionType === sectionType)
+  }
+
   const getStatusTag = (status: string) => {
     const statusMap: Record<string, { color: string; icon: React.ReactNode; text: string }> = {
       'COMPLETED': { color: 'success', icon: <CheckCircleOutlined />, text: 'Completed' },
       'IN_PROGRESS': { color: 'processing', icon: <ClockCircleOutlined />, text: 'In Progress' },
       'STARTED': { color: 'warning', icon: <ClockCircleOutlined />, text: 'Started' },
-      'ABANDONED': { color: 'default', icon: <ClockCircleOutlined />, text: 'Abandoned' }
+      'ABANDONED': { color: 'default', icon: <ClockCircleOutlined />, text: 'Abandoned' },
+      'NOT_STARTED': { color: 'default', icon: null, text: 'Not Started' },
+      'FINISHED': { color: 'success', icon: <CheckCircleOutlined />, text: 'Finished' }
     }
     
     const statusInfo = statusMap[status] || { color: 'default', icon: null, text: status }
@@ -77,21 +113,6 @@ const ResultsManagementPage = () => {
         {statusInfo.text}
       </Tag>
     )
-  }
-
-  const calculateTotalScore = (record: MockResultDto) => {
-    const listening = record.listeningScore || 0
-    const reading = record.readingScore || 0
-    const writing = record.writingScore || 0
-    
-    if (listening === 0 && reading === 0 && writing === 0) {
-      return 'N/A'
-    }
-    
-    const count = (listening > 0 ? 1 : 0) + (reading > 0 ? 1 : 0) + (writing > 0 ? 1 : 0)
-    const total = (listening + reading + writing) / (count || 1)
-    
-    return total.toFixed(1)
   }
 
   const columns = [
@@ -109,14 +130,19 @@ const ResultsManagementPage = () => {
       )
     },
     {
-      title: 'Student',
-      dataIndex: 'userName',
-      key: 'userName',
+      title: 'Student First Name',
+      dataIndex: 'userFirstName',
+      key: 'userFirstName',
       render: (text: string, record: MockResultDto) => (
-        <Space>
-          <UserOutlined style={{ color: '#1677ff' }} />
-          <Text>{text || record.userId}</Text>
-        </Space>
+        <Text>{text || record.userName?.split(' ')[0] || '-'}</Text>
+      )
+    },
+    {
+      title: 'Student Last Name',
+      dataIndex: 'userLastName',
+      key: 'userLastName',
+      render: (text: string, record: MockResultDto) => (
+        <Text>{text || record.userName?.split(' ')[1] || '-'}</Text>
       )
     },
     {
@@ -127,79 +153,93 @@ const ResultsManagementPage = () => {
     },
     {
       title: 'Listening',
-      dataIndex: 'listeningScore',
-      key: 'listeningScore',
-      align: 'center' as const,
-      render: (score: number) => (
-        <Text strong style={{ color: score > 0 ? '#52c41a' : '#8c8c8c' }}>
-          {score > 0 ? score.toFixed(1) : '-'}
-        </Text>
-      )
-    },
-    {
-      title: 'Reading',
-      dataIndex: 'readingScore',
-      key: 'readingScore',
-      align: 'center' as const,
-      render: (score: number) => (
-        <Text strong style={{ color: score > 0 ? '#52c41a' : '#8c8c8c' }}>
-          {score > 0 ? score.toFixed(1) : '-'}
-        </Text>
-      )
-    },
-    {
-      title: 'Writing',
-      dataIndex: 'writingScore',
-      key: 'writingScore',
-      align: 'center' as const,
-      render: (score: number) => (
-        <Text strong style={{ color: score > 0 ? '#52c41a' : '#8c8c8c' }}>
-          {score > 0 ? score.toFixed(1) : '-'}
-        </Text>
-      )
-    },
-    {
-      title: 'Overall',
-      key: 'totalScore',
+      key: 'listening',
       align: 'center' as const,
       render: (_: any, record: MockResultDto) => {
-        const total = calculateTotalScore(record)
+        const section = getSectionByType(record, 'LISTENING')
+        if (!section) return null
+        
         return (
-          <Text strong style={{ color: total !== 'N/A' ? '#1677ff' : '#8c8c8c', fontSize: '16px' }}>
-            {total}
-          </Text>
+          <Space direction="vertical" size={0} style={{ textAlign: 'center' }}>
+            {getStatusTag(section.status)}
+            {section.correctAnswers !== null && section.correctAnswers !== undefined && (
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                Correct: {section.correctAnswers}
+              </Text>
+            )}
+            {section.score !== null && section.score !== undefined && (
+              <Text strong style={{ color: '#52c41a' }}>
+                {section.score.toFixed(1)}
+              </Text>
+            )}
+          </Space>
         )
       }
     },
     {
-      title: 'Started',
-      dataIndex: 'startedDate',
-      key: 'startedDate',
-      render: (date: string) => (
-        <Space>
-          <CalendarOutlined style={{ color: '#8c8c8c' }} />
-          <Text>
-            {date ? new Date(date).toLocaleDateString('en-US', { 
-              month: 'short', 
-              day: 'numeric', 
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            }) : 'N/A'}
-          </Text>
-        </Space>
-      )
+      title: 'Reading',
+      key: 'reading',
+      align: 'center' as const,
+      render: (_: any, record: MockResultDto) => {
+        const section = getSectionByType(record, 'READING')
+        if (!section) return null
+        
+        return (
+          <Space direction="vertical" size={0} style={{ textAlign: 'center' }}>
+            {getStatusTag(section.status)}
+            {section.correctAnswers !== null && section.correctAnswers !== undefined && (
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                Correct: {section.correctAnswers}
+              </Text>
+            )}
+            {section.score !== null && section.score !== undefined && (
+              <Text strong style={{ color: '#52c41a' }}>
+                {section.score.toFixed(1)}
+              </Text>
+            )}
+          </Space>
+        )
+      }
     },
     {
-      title: 'Finished',
-      dataIndex: 'finishedDate',
-      key: 'finishedDate',
-      render: (date: string) => (
-        date ? (
+      title: 'Writing',
+      key: 'writing',
+      align: 'center' as const,
+      render: (_: any, record: MockResultDto) => {
+        const section = getSectionByType(record, 'WRITING')
+        if (!section) return null
+        
+        return (
+          <Space direction="vertical" size={0} style={{ textAlign: 'center' }}>
+            {getStatusTag(section.status)}
+            {section.score !== null && section.score !== undefined && (
+              <Text strong style={{ color: '#52c41a' }}>
+                {section.score.toFixed(1)}
+              </Text>
+            )}
+          </Space>
+        )
+      }
+    },
+    {
+      title: 'Start Date',
+      dataIndex: 'startDate',
+      key: 'startDate',
+      render: (date: string, record: MockResultDto) => {
+        console.log('Start Date - Raw value:', date, 'Record:', record)
+        
+        if (!date) return <Text type="secondary">N/A</Text>
+        
+        const dateObj = parseCustomDate(date)
+        console.log('Start Date - Parsed:', dateObj)
+        
+        if (!dateObj) return <Text type="secondary">Invalid Date</Text>
+        
+        return (
           <Space>
             <CalendarOutlined style={{ color: '#8c8c8c' }} />
             <Text>
-              {new Date(date).toLocaleDateString('en-US', { 
+              {dateObj.toLocaleDateString('en-US', { 
                 month: 'short', 
                 day: 'numeric', 
                 year: 'numeric',
@@ -208,22 +248,11 @@ const ResultsManagementPage = () => {
               })}
             </Text>
           </Space>
-        ) : (
-          <Text type="secondary">-</Text>
         )
-      )
-    }
+      }
+    },
   ]
 
-  // Calculate statistics
-  const completedTests = results.filter(r => r.status === 'COMPLETED').length
-  const inProgressTests = results.filter(r => r.status === 'IN_PROGRESS' || r.status === 'STARTED').length
-  const averageScore = results.length > 0 
-    ? results.reduce((sum, r) => {
-        const total = calculateTotalScore(r)
-        return sum + (total !== 'N/A' ? parseFloat(total) : 0)
-      }, 0) / results.filter(r => calculateTotalScore(r) !== 'N/A').length
-    : 0
 
   return (
     <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
@@ -284,41 +313,6 @@ const ResultsManagementPage = () => {
             </Button>
           </div>
 
-          {/* Statistics Cards */}
-          <Row gutter={16} style={{ marginBottom: '24px' }}>
-            <Col xs={24} sm={8}>
-              <Card>
-                <Statistic
-                  title="Total Results"
-                  value={totalResults}
-                  prefix={<FileTextOutlined />}
-                  valueStyle={{ color: '#1677ff' }}
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={8}>
-              <Card>
-                <Statistic
-                  title="Completed Tests"
-                  value={completedTests}
-                  prefix={<CheckCircleOutlined />}
-                  valueStyle={{ color: '#52c41a' }}
-                />
-              </Card>
-            </Col>
-            <Col xs={24} sm={8}>
-              <Card>
-                <Statistic
-                  title="Average Score"
-                  value={averageScore.toFixed(1)}
-                  prefix={<TrophyOutlined />}
-                  valueStyle={{ color: '#faad14' }}
-                  suffix="/ 9.0"
-                />
-              </Card>
-            </Col>
-          </Row>
-
           {/* Results Table */}
           <Card 
             style={{ 
@@ -331,6 +325,13 @@ const ResultsManagementPage = () => {
               dataSource={results}
               loading={loading}
               rowKey={(record) => record.id}
+              onRow={(record) => ({
+                onClick: () => {
+                  // Navigate to preview page with testId and result info
+                  router.push(`/admin/results/${record.id}/preview?testId=${record.testId}`)
+                },
+                style: { cursor: 'pointer' }
+              })}
               pagination={{
                 current: currentPage,
                 pageSize: pageSize,

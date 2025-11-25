@@ -5,6 +5,7 @@ import { Radio, Space, Card } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import { Question } from '@/stores/ReadingStore'
+import AuthenticatedImage from '@/components/common/AuthenticatedImage'
 
 interface TrueFalseQuestionProps {
   question: Question
@@ -14,7 +15,9 @@ interface TrueFalseQuestionProps {
 
 const TrueFalseQuestion = observer(({ question, questionNumber, type = 'TRUE_FALSE_NOT_GIVEN' }: TrueFalseQuestionProps) => {
   const { readingStore } = useStore()
-  const answer = readingStore.getAnswer(question.id) as string | undefined
+  const storedAnswer = readingStore.getAnswer(question.id) as string | undefined
+  // Convert stored answer (with underscores) to display format (with spaces)
+  const answer = storedAnswer?.replace(/_/g, ' ')
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -33,7 +36,9 @@ const TrueFalseQuestion = observer(({ question, questionNumber, type = 'TRUE_FAL
   }, [readingStore.currentQuestionIndex, readingStore.currentPart, questionNumber, readingStore.isPreviewMode])
 
   const handleChange = (value: string) => {
-    readingStore.setAnswer(question.id, value)
+    // Normalize the value by replacing spaces with underscores to match admin format
+    const normalizedValue = value.replace(/ /g, '_')
+    readingStore.setAnswer(question.id, normalizedValue)
   }
   
   const isYesNo = type === 'YES_NO_NOT_GIVEN'
@@ -46,6 +51,18 @@ const TrueFalseQuestion = observer(({ question, questionNumber, type = 'TRUE_FAL
       <div className="flex items-start gap-4">
         <div className="flex-1">
           <p className="mb-4"><strong>{questionNumber}</strong> {question.text}</p>
+          
+          {/* Display image if available */}
+          {question.imageUrl && (
+            <div className="mb-4">
+              <AuthenticatedImage
+                src={question.imageUrl}
+                alt={`Question ${questionNumber} image`}
+                style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }}
+                className="rounded border"
+              />
+            </div>
+          )}
           
           <Radio.Group
             value={answer}

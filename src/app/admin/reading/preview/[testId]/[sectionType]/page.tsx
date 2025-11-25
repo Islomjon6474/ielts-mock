@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import ReadingTestLayout from '@/components/reading/ReadingTestLayout'
@@ -9,6 +9,7 @@ import type { Part as ReadingPart, Question as ReadingQuestion, Section as Readi
 import ListeningTestLayout from '@/components/listening/ListeningTestLayout'
 import WritingTestLayout from '@/components/writing/WritingTestLayout'
 import { testManagementApi, listeningAudioApi, fileApi } from '@/services/testManagementApi'
+import { mockSubmissionApi } from '@/services/mockSubmissionApi'
 import { safeMultiParseJson } from '@/utils/json'
 import { transformAdminPartsToListening } from '@/utils/transformListeningData'
 import { Spin, message, Button, Card, Typography } from 'antd'
@@ -20,10 +21,13 @@ const SectionPreviewPage = observer(() => {
   const { readingStore, listeningStore, writingStore } = useStore()
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const testId = params.testId as string
   const sectionType = params.sectionType as string
+  const resultId = searchParams.get('resultId')
   const [loading, setLoading] = useState(true)
   const [hasContent, setHasContent] = useState(false)
+  const [userAnswers, setUserAnswers] = useState<any[]>([])
   
   const isReading = sectionType.toLowerCase() === 'reading'
   const isListening = sectionType.toLowerCase() === 'listening'
@@ -53,6 +57,19 @@ const SectionPreviewPage = observer(() => {
         message.warning(`No ${sectionType} section found for this test`)
         setLoading(false)
         return
+      }
+
+      // Fetch user answers if resultId is provided
+      if (resultId) {
+        try {
+          const answersResponse = await mockSubmissionApi.getSubmittedAnswers(resultId, section.id)
+          const answers = answersResponse?.data || []
+          console.log('User submitted answers:', answers)
+          setUserAnswers(answers)
+        } catch (error) {
+          console.error('Error fetching user answers:', error)
+          message.warning('Could not load user answers')
+        }
       }
 
       // Fetch parts for this section
@@ -398,14 +415,67 @@ const SectionPreviewPage = observer(() => {
   }
 
   const handleBackClick = () => {
-    router.push(`/admin/reading/preview/${testId}`)
+    if (resultId) {
+      router.push(`/admin/results/${resultId}/preview?testId=${testId}`)
+    } else {
+      router.push(`/admin/reading/preview/${testId}`)
+    }
   }
 
   return (
     <div>
-      {isReading && <ReadingTestLayout isPreviewMode={true} onBackClick={handleBackClick} />}
-      {isListening && <ListeningTestLayout isPreviewMode={true} onBackClick={handleBackClick} />}
-      {isWriting && <WritingTestLayout isPreviewMode={true} onBackClick={handleBackClick} />}
+      {/* Show user answers if viewing a result */}
+      {resultId ? (
+        <div style={{ background: '#f5f5f5', minHeight: '100vh' }}>
+          <div style={{ background: '#fff', padding: '24px 48px', borderBottom: '1px solid #f0f0f0' }}>
+            <Button
+              icon={<ArrowLeftOutlined />}
+              onClick={handleBackClick}
+              size="large"
+              style={{ marginBottom: 16 }}
+            >
+              Back to Result Preview
+            </Button>
+            <Title level={3} style={{ marginBottom: 16 }}>Student Answers - {sectionType.toUpperCase()}</Title>
+          </div>
+          <div style={{ padding: '24px 48px' }}>
+            {userAnswers.length > 0 ? (
+              <Card>
+                {userAnswers.map((answer: any, index: number) => (
+                  <div key={answer.id || index} style={{ marginBottom: 16, paddingBottom: 16, borderBottom: index < userAnswers.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
+                    <Text strong>Question {answer.questionNumber || index + 1}: </Text>
+                    <Text style={{ marginLeft: 8 }}>
+                      {answer.userAnswer || answer.answer || '(No answer)'}
+                    </Text>
+                    {answer.isCorrect !== undefined && (
+                      <Text style={{ marginLeft: 16, color: answer.isCorrect ? '#52c41a' : '#ff4d4f' }}>
+                        {answer.isCorrect ? '✓ Correct' : '✗ Incorrect'}
+                      </Text>
+                    )}
+                    {answer.correctAnswer && (
+                      <Text type="secondary" style={{ marginLeft: 16 }}>
+                        (Correct: {answer.correctAnswer})
+                      </Text>
+                    )}
+                  </div>
+                ))}
+              </Card>
+            ) : (
+              <Card>
+                <div style={{ textAlign: 'center', padding: '40px' }}>
+                  <Text type="secondary">No answers found for this section</Text>
+                </div>
+              </Card>
+            )}
+          </div>
+        </div>
+      ) : (
+        <>
+          {isReading && <ReadingTestLayout isPreviewMode={true} onBackClick={handleBackClick} />}
+          {isListening && <ListeningTestLayout isPreviewMode={true} onBackClick={handleBackClick} />}
+          {isWriting && <WritingTestLayout isPreviewMode={true} onBackClick={handleBackClick} />}
+        </>
+      )}
     </div>
   )
 })

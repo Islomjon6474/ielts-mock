@@ -5,6 +5,7 @@ import { Input, Card } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import { Question } from '@/stores/ReadingStore'
+import AuthenticatedImage from '@/components/common/AuthenticatedImage'
 
 interface FillInBlankQuestionProps {
   question: Question
@@ -147,6 +148,17 @@ const FillInBlankQuestion = observer(({ question, questionNumber }: FillInBlankQ
   return (
     <Card className="mb-4" ref={containerRef}>
       <div className="space-y-4">
+        {/* Display image if available */}
+        {question.imageUrl && (
+          <div className="mb-4">
+            <AuthenticatedImage
+              src={question.imageUrl}
+              alt={`Question ${questionNumber} image`}
+              style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }}
+              className="rounded border"
+            />
+          </div>
+        )}
         {renderWithInputs()}
       </div>
     </Card>

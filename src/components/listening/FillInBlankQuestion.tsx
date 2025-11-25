@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import { Input } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
+import AuthenticatedImage from '@/components/common/AuthenticatedImage'
 
 interface FillInBlankQuestionProps {
   question: any
@@ -137,6 +138,17 @@ const FillInBlankQuestion = observer(({ question, questionNumber, isPreviewMode 
 
   return (
     <div className="border-b pb-4" data-question-id={questionNumber} ref={containerRef}>
+      {/* Display image if available */}
+      {question.imageUrl && (
+        <div className="mb-4">
+          <AuthenticatedImage
+            src={question.imageUrl}
+            alt={`Question ${questionNumber} image`}
+            style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }}
+            className="rounded border"
+          />
+        </div>
+      )}
       {renderWithInputs()}
     </div>
   )
