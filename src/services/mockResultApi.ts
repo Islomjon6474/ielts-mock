@@ -36,6 +36,8 @@ export interface MockResultDto {
   testName?: string
   userId: string
   userName?: string
+  firstName?: string
+  lastName?: string
   userFirstName?: string
   userLastName?: string
   startDate?: string

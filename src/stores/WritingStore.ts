@@ -18,6 +18,7 @@ export class WritingStore {
   mockId: string | null = null
   sectionId: string | null = null
   isSubmitting: boolean = false
+  isPreviewMode: boolean = false
   
   // Timer properties
   timeLimit: number = 60 * 60 // 60 minutes in seconds
@@ -35,6 +36,10 @@ export class WritingStore {
 
   setSectionId(sectionId: string) {
     this.sectionId = sectionId
+  }
+
+  setPreviewMode(isPreview: boolean) {
+    this.isPreviewMode = isPreview
   }
 
   setTasks(tasks: WritingTask[]) {
@@ -64,8 +69,8 @@ export class WritingStore {
   }
 
   async finishSection() {
-    if (!this.mockId || !this.sectionId) {
-      console.log('Cannot finish section: missing mockId/sectionId')
+    if (!this.mockId || !this.sectionId || this.isPreviewMode) {
+      console.log('Cannot finish section: missing mockId/sectionId or in preview mode')
       return
     }
 
@@ -83,6 +88,8 @@ export class WritingStore {
   }
 
   startTimer(onTimeUp: () => void) {
+    if (this.isPreviewMode) return
+    
     this.stopTimer()
     this.timeRemaining = this.timeLimit
     this.isTimeUp = false

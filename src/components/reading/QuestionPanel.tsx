@@ -301,6 +301,7 @@ const QuestionPanel = observer(() => {
                   questions={group.questions.map(q => q.question)}
                   questionNumbers={group.questions.map(q => q.questionNumber)}
                   options={parsedOptions}
+                  imageUrl={questionGroupData?.imageUrl}
                 />
               </div>
             </div>

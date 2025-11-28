@@ -147,38 +147,41 @@ const BottomNavigation = observer(({
         </div>
 
         {/* Navigation Arrows and Submit Button */}
-        <div className="flex items-center gap-3 flex-shrink-0">
-          {/* Previous Button */}
-          <Button
-            icon={<LeftOutlined />}
-            onClick={onPrevious}
-            disabled={!hasPrevious}
-            className="w-12 h-12 flex items-center justify-center"
-            style={{ 
-              backgroundColor: hasPrevious ? '#3b82f6' : '#f3f4f6',
-              borderColor: hasPrevious ? '#2563eb' : '#e5e7eb',
-              color: hasPrevious ? '#ffffff' : '#9ca3af'
-            }}
-          />
+        <div className="flex flex-col gap-2 flex-shrink-0">
+          {/* Previous and Next Buttons Row */}
+          <div className="flex items-center gap-3">
+            {/* Previous Button */}
+            <Button
+              icon={<LeftOutlined />}
+              onClick={onPrevious}
+              disabled={!hasPrevious}
+              className="w-12 h-12 flex items-center justify-center"
+              style={{ 
+                backgroundColor: hasPrevious ? '#3b82f6' : '#f3f4f6',
+                borderColor: hasPrevious ? '#2563eb' : '#e5e7eb',
+                color: hasPrevious ? '#ffffff' : '#9ca3af'
+              }}
+            />
+            
+            {/* Next Button */}
+            <Button
+              icon={<RightOutlined />}
+              onClick={onNext}
+              disabled={!hasNext}
+              className="w-12 h-12 flex items-center justify-center"
+              style={{ 
+                backgroundColor: hasNext ? '#3b82f6' : '#f3f4f6',
+                borderColor: hasNext ? '#2563eb' : '#e5e7eb',
+                color: hasNext ? '#ffffff' : '#9ca3af'
+              }}
+            />
+          </div>
           
-          {/* Next Button */}
-          <Button
-            icon={<RightOutlined />}
-            onClick={onNext}
-            disabled={!hasNext}
-            className="w-12 h-12 flex items-center justify-center"
-            style={{ 
-              backgroundColor: hasNext ? '#3b82f6' : '#f3f4f6',
-              borderColor: hasNext ? '#2563eb' : '#e5e7eb',
-              color: hasNext ? '#ffffff' : '#9ca3af'
-            }}
-          />
-          
-          {/* Submit Button */}
+          {/* Submit Button Row */}
           <Button
             type="primary"
             icon={<CheckOutlined />}
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-green-600 hover:bg-green-700 w-full"
             onClick={onSubmit}
             disabled={isPreviewMode}
           >

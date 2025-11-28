@@ -14,6 +14,7 @@ const ListeningPageContent = observer(() => {
   const [loading, setLoading] = useState(true)
   const searchParams = useSearchParams()
   const urlTestId = searchParams.get('testId')
+  const urlMockId = searchParams.get('mockId')
   const isPreviewMode = searchParams.get('preview') === 'true'
 
   useEffect(() => {
@@ -22,6 +23,8 @@ const ListeningPageContent = observer(() => {
         setLoading(true)
         // Reset listening store to ensure clean state
         listeningStore.reset()
+        // Set preview mode based on URL parameter
+        listeningStore.setPreviewMode(isPreviewMode)
         
         let testIdToUse: string | null = null
         
@@ -60,19 +63,35 @@ const ListeningPageContent = observer(() => {
         }
 
         // 2) Get or start mock test
-        // First, check if there's an existing mock session
-        const mocksResp = await mockSubmissionApi.getAllMocks(0, 100)
-        const allMocks = mocksResp.data || []
-        let existingMock = allMocks.find((m) => m.testId === testIdToUse && m.isFinished === 0)
-        
         let mockId: string
-        if (existingMock) {
-          mockId = existingMock.id
-          console.log('🎧 Resuming existing mock session:', mockId)
+        
+        if (urlMockId) {
+          // Use mockId from URL (for viewing results or continuing test)
+          mockId = urlMockId
+          console.log('🎧 Using mockId from URL:', mockId)
+          
+          // Check if this mock is finished to automatically enable preview mode
+          const mocksResp = await mockSubmissionApi.getAllMocks(0, 100)
+          const allMocks = mocksResp.data || []
+          const mock = allMocks.find((m) => m.id === mockId)
+          if (mock && mock.isFinished === 1) {
+            console.log('🎧 Mock is finished, enabling preview mode')
+            listeningStore.setPreviewMode(true)
+          }
         } else {
-          const mockResp = await mockSubmissionApi.startMock(testIdToUse)
-          mockId = mockResp.data
-          console.log('🎧 Started new mock session:', mockId)
+          // First, check if there's an existing unfinished mock session
+          const mocksResp = await mockSubmissionApi.getAllMocks(0, 100)
+          const allMocks = mocksResp.data || []
+          let existingMock = allMocks.find((m) => m.testId === testIdToUse && m.isFinished === 0)
+          
+          if (existingMock) {
+            mockId = existingMock.id
+            console.log('🎧 Resuming existing mock session:', mockId)
+          } else {
+            const mockResp = await mockSubmissionApi.startMock(testIdToUse)
+            mockId = mockResp.data
+            console.log('🎧 Started new mock session:', mockId)
+          }
         }
 
         // 3) Get sections and pick listening
@@ -92,6 +111,25 @@ const ListeningPageContent = observer(() => {
         // 5) Set mockId and sectionId in store for submission
         listeningStore.setMockId(mockId)
         listeningStore.setSectionId(listeningSection.id)
+
+        // 5.5) Load submitted answers if in preview mode or if mock is finished
+        if (listeningStore.isPreviewMode) {
+          try {
+            const answersResp = await mockSubmissionApi.getSubmittedAnswers(mockId, listeningSection.id)
+            const submittedAnswers = answersResp.data || []
+            console.log('📝 Loading submitted answers:', submittedAnswers)
+            
+            // Populate the answers in the store
+            submittedAnswers.forEach((ans: any) => {
+              if (ans.questionOrd && ans.answer) {
+                listeningStore.answers.set(ans.questionOrd, ans.answer)
+              }
+            })
+            console.log('✅ Loaded', submittedAnswers.length, 'submitted answers')
+          } catch (error) {
+            console.error('❌ Failed to load submitted answers:', error)
+          }
+        }
 
         // 6) Get parts and their content
         const partsResp = await mockSubmissionApi.getAllParts(listeningSection.id)
@@ -244,7 +282,8 @@ const ListeningPageContent = observer(() => {
   }, [urlTestId])
 
   if (loading) return null
-  return <ListeningTestLayout isPreviewMode={isPreviewMode} />
+  // Use the store's preview mode which gets automatically set when viewing finished mocks
+  return <ListeningTestLayout isPreviewMode={listeningStore.isPreviewMode} />
 })
 
 export default function ListeningPage() {

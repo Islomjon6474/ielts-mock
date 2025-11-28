@@ -25,7 +25,7 @@ export const TrueFalseQuestion = ({
     : [{ value: 'TRUE', label: 'TRUE' }, { value: 'FALSE', label: 'FALSE' }, { value: 'NOT_GIVEN', label: 'NOT GIVEN' }]
 
   return (
-    <Card size="small" className="mb-2" bodyStyle={{ padding: '12px' }} title={<span className="text-sm">Statement {questionIndex + 1}</span>} extra={
+    <Card size="small" className="mb-2" bodyStyle={{ padding: '12px' }} title={<span className="text-sm font-bold">Statement {questionIndex + 1}</span>} extra={
       <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={onRemove} />
     }>
       <Form.Item

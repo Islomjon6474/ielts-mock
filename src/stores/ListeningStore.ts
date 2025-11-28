@@ -35,6 +35,7 @@ export class ListeningStore {
   mockId: string | null = null
   sectionId: string | null = null
   isSubmitting: boolean = false
+  isPreviewMode: boolean = false
   
   // Timer properties (audio duration + 10 minutes)
   audioDuration: number = 0 // Will be set based on actual audio duration
@@ -54,6 +55,10 @@ export class ListeningStore {
     this.sectionId = sectionId
   }
 
+  setPreviewMode(isPreview: boolean) {
+    this.isPreviewMode = isPreview
+  }
+
   setParts(parts: ListeningPart[]) {
     this.parts = parts
   }
@@ -63,8 +68,8 @@ export class ListeningStore {
   }
 
   async finishSection() {
-    if (!this.mockId || !this.sectionId) {
-      console.log('Cannot finish section: missing mockId/sectionId')
+    if (!this.mockId || !this.sectionId || this.isPreviewMode) {
+      console.log('Cannot finish section: missing mockId/sectionId or in preview mode')
       return
     }
 
@@ -127,8 +132,8 @@ export class ListeningStore {
   async setAnswer(questionId: number, value: string | string[]) {
     this.answers.set(questionId, value)
     
-    // Auto-submit answer
-    if (this.mockId && this.sectionId) {
+    // Auto-submit answer if not in preview mode
+    if (!this.isPreviewMode && this.mockId && this.sectionId) {
       try {
         const answerString = Array.isArray(value) ? value.join(',') : value
         await mockSubmissionApi.sendAnswer(this.mockId, this.sectionId, questionId, answerString)
@@ -177,6 +182,8 @@ export class ListeningStore {
 
   // Start timer after audio ends (audio duration + 10 minutes)
   startTimerAfterAudio(audioDurationInSeconds: number, onTimeUp: () => void) {
+    if (this.isPreviewMode) return
+    
     this.audioDuration = audioDurationInSeconds
     const totalTime = audioDurationInSeconds + (10 * 60) // audio + 10 minutes
     this.timeRemaining = totalTime

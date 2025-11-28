@@ -49,12 +49,21 @@ const ResultPreviewPage = () => {
   }
 
   const handleSectionClick = (sectionType: string) => {
+    // Get student name from result
+    const studentName = result?.userName || 
+      (result?.firstName && result?.lastName ? `${result.firstName} ${result.lastName}` : '') ||
+      (result?.userFirstName && result?.userLastName ? `${result.userFirstName} ${result.userLastName}` : '') ||
+      result?.userId || ''
+    
+    const studentParam = studentName ? `&studentName=${encodeURIComponent(studentName)}` : ''
+    const testNameParam = result?.testName ? `&testName=${encodeURIComponent(result.testName)}` : ''
+    
     if (sectionType === 'LISTENING') {
-      router.push(`/admin/reading/preview/${testId}/LISTENING?resultId=${resultId}`)
+      router.push(`/admin/reading/preview/${testId}/LISTENING?resultId=${resultId}${studentParam}${testNameParam}`)
     } else if (sectionType === 'READING') {
-      router.push(`/admin/reading/preview/${testId}/READING?resultId=${resultId}`)
+      router.push(`/admin/reading/preview/${testId}/READING?resultId=${resultId}${studentParam}${testNameParam}`)
     } else if (sectionType === 'WRITING') {
-      router.push(`/admin/results/${resultId}/grade-writing?testId=${testId}`)
+      router.push(`/admin/results/${resultId}/grade-writing?testId=${testId}${studentParam}${testNameParam}`)
     }
   }
 
@@ -141,7 +150,15 @@ const ResultPreviewPage = () => {
               <Card style={{ marginBottom: 24 }}>
                 <Space direction="vertical" size={8}>
                   <Title level={3} style={{ margin: 0 }}>{result.testName}</Title>
-                  <Text type="secondary">Student: {result.userName}</Text>
+                  <Text type="secondary">
+                    Student: {
+                      result.userName || 
+                      (result.firstName && result.lastName ? `${result.firstName} ${result.lastName}` : '') ||
+                      (result.userFirstName && result.userLastName ? `${result.userFirstName} ${result.userLastName}` : '') ||
+                      result.userId || 
+                      'Unknown'
+                    }
+                  </Text>
                   <Text type="secondary">Status: <Tag color="success">{result.status}</Tag></Text>
                 </Space>
               </Card>

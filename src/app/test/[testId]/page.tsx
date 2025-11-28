@@ -34,10 +34,12 @@ function TestSectionsContent() {
         // Get sections with mockId to check isStarted and isFinished status
         const sectionsResp = await mockSubmissionApi.getAllSections(testId, mockId || undefined)
         const list: SectionDto[] = sectionsResp.data
-        
+        console.log('Sections list', list)
+
         // Check if mock is finished (check from first section or make separate API call)
         // For now, we'll check if all sections are finished
         const allFinished = list.every((s: any) => s.isFinished === 1)
+        console.log('Setting is finished', allFinished)
         setIsFinished(allFinished)
         
         // Filter sections that have content
@@ -104,12 +106,15 @@ function TestSectionsContent() {
         console.log(`📌 Section already started, skipping start-section API: ${sectionType} (${sectionId})`)
       }
       
-      // Navigate to section pages with testId parameter
-      // Add preview mode if mock is finished
-      const previewParam = isFinished ? '&preview=true' : ''
-      if (lower === 'listening') router.push(`/listening?testId=${testId}${previewParam}`)
-      else if (lower === 'reading') router.push(`/reading?testId=${testId}${previewParam}`)
-      else if (lower === 'writing') router.push(`/writing?testId=${testId}${previewParam}`)
+      // Navigate to section pages with testId and mockId parameters
+      // Add preview mode if THIS SPECIFIC section is finished
+      const isSectionFinished = section.isFinished === 1
+      const mockIdParam = mockId ? `&mockId=${mockId}` : ''
+      console.log('Is section finished:', isSectionFinished, 'for section:', sectionType)
+      const previewParam = isSectionFinished ? '&preview=true' : ''
+      if (lower === 'listening') router.push(`/listening?testId=${testId}${mockIdParam}${previewParam}`)
+      else if (lower === 'reading') router.push(`/reading?testId=${testId}${mockIdParam}${previewParam}`)
+      else if (lower === 'writing') router.push(`/writing?testId=${testId}${mockIdParam}${previewParam}`)
     } catch (error) {
       console.error('Error starting section:', error)
       Modal.error({

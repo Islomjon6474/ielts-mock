@@ -16,9 +16,9 @@ interface TrueFalseQuestionProps {
 const TrueFalseQuestion = observer(({ question, questionNumber, type = 'TRUE_FALSE_NOT_GIVEN', isPreviewMode = false }: TrueFalseQuestionProps) => {
   const { listeningStore } = useStore()
   const storedAnswer = listeningStore.getAnswer(question.id) as string
-  // Convert stored answer (with underscores) to display format (with spaces)
   const answer = storedAnswer?.replace(/_/g, ' ')
   const containerRef = useRef<HTMLDivElement>(null)
+    // Convert stored answer (with underscores) to display format (with spaces)
 
   useEffect(() => {
     const currentQuestionNumber = listeningStore.currentQuestionNumber

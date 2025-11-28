@@ -107,6 +107,7 @@ html {
 
 .ant-input::placeholder {
   color: #9ca3af !important;
+  font-weight: 700 !important;
 }
 
 /* Test Card Hover Effects */

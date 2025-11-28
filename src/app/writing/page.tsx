@@ -14,12 +14,16 @@ const WritingPageContent = observer(() => {
   const [loading, setLoading] = useState(true)
   const searchParams = useSearchParams()
   const urlTestId = searchParams.get('testId')
+  const urlMockId = searchParams.get('mockId')
   const isPreviewMode = searchParams.get('preview') === 'true'
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true)
+        // Reset writing store and set preview mode
+        writingStore.reset()
+        writingStore.setPreviewMode(isPreviewMode)
         
         let testIdToUse: string | null = null
         
@@ -58,19 +62,35 @@ const WritingPageContent = observer(() => {
         }
 
         // 2) Get or start mock test
-        // First, check if there's an existing mock session
-        const mocksResp = await mockSubmissionApi.getAllMocks(0, 100)
-        const allMocks = mocksResp.data || []
-        let existingMock = allMocks.find((m) => m.testId === testIdToUse && m.isFinished === 0)
-        
         let mockId: string
-        if (existingMock) {
-          mockId = existingMock.id
-          console.log('✍️ Resuming existing mock session:', mockId)
+        
+        if (urlMockId) {
+          // Use mockId from URL (for viewing results or continuing test)
+          mockId = urlMockId
+          console.log('✍️ Using mockId from URL:', mockId)
+          
+          // Check if this mock is finished to automatically enable preview mode
+          const mocksResp = await mockSubmissionApi.getAllMocks(0, 100)
+          const allMocks = mocksResp.data || []
+          const mock = allMocks.find((m) => m.id === mockId)
+          if (mock && mock.isFinished === 1) {
+            console.log('✍️ Mock is finished, enabling preview mode')
+            writingStore.setPreviewMode(true)
+          }
         } else {
-          const mockResp = await mockSubmissionApi.startMock(testIdToUse)
-          mockId = mockResp.data
-          console.log('✍️ Started new mock session:', mockId)
+          // First, check if there's an existing unfinished mock session
+          const mocksResp = await mockSubmissionApi.getAllMocks(0, 100)
+          const allMocks = mocksResp.data || []
+          let existingMock = allMocks.find((m) => m.testId === testIdToUse && m.isFinished === 0)
+          
+          if (existingMock) {
+            mockId = existingMock.id
+            console.log('✍️ Resuming existing mock session:', mockId)
+          } else {
+            const mockResp = await mockSubmissionApi.startMock(testIdToUse)
+            mockId = mockResp.data
+            console.log('✍️ Started new mock session:', mockId)
+          }
         }
 
         // 3) Get sections and pick writing

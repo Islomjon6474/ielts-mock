@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { testManagementApi } from '@/services/testManagementApi'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { withAuth } from '@/components/auth/withAuth'
+import { parseCustomDate } from '@/utils/dateUtils'
 
 const { Header, Content } = Layout
 const { Title, Text } = Typography
@@ -301,17 +302,14 @@ const AdminPage = () => {
                       <Text style={{ fontSize: '14px', color: '#52c41a', fontWeight: 500 }}>
                         Created {(() => {
                           if (!test.createdDate) return 'N/A'
-                          try {
-                            const date = new Date(test.createdDate)
-                            if (isNaN(date.getTime())) return 'Invalid Date'
-                            return date.toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric', 
-                              year: 'numeric' 
-                            })
-                          } catch {
-                            return 'Invalid Date'
-                          }
+                          const date = parseCustomDate(test.createdDate)
+                          if (!date) return 'Invalid Date'
+                          // Format as "7 Nov 2025" (day first, then month) to match DD.MM.YYYY format
+                          return date.toLocaleDateString('en-GB', { 
+                            day: 'numeric',
+                            month: 'short', 
+                            year: 'numeric' 
+                          })
                         })()}
                       </Text>
                     </div>

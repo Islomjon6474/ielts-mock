@@ -52,7 +52,7 @@ export const MatchHeadingQuestion = ({
       size="small" 
       className="mb-2" 
       bodyStyle={{ padding: '12px' }}
-      title={<span className="text-sm">Question {questionNumber}</span>} 
+      title={<span className="text-sm font-bold">Question {questionNumber}</span>} 
       extra={<Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={onRemove} />}
     >
       <Form.Item

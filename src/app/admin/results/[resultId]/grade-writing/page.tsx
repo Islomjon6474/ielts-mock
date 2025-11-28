@@ -28,7 +28,8 @@ import {
   TrophyOutlined,
   LoadingOutlined
 } from '@ant-design/icons'
-import { mockResultApi, SaveWritingGradeDto, WritingGradeResult } from '@/services/mockResultApi'
+import { mockResultApi, SaveWritingGradeDto, WritingGradeResult, MockResultDto } from '@/services/mockResultApi'
+import { mockSubmissionApi } from '@/services/testManagementApi'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { withAuth } from '@/components/auth/withAuth'
 
@@ -52,6 +53,8 @@ const GradeWritingResultPage = () => {
   const searchParams = useSearchParams()
   const resultId = params.resultId as string
   const testId = searchParams.get('testId')
+  const studentNameParam = searchParams.get('studentName')
+  const testNameParam = searchParams.get('testName')
   
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
@@ -70,37 +73,128 @@ const GradeWritingResultPage = () => {
   const fetchWritingData = async () => {
     try {
       setLoading(true)
-      // TODO: Fetch actual writing data from API
-      // const response = await mockResultApi.getWritingAnswers(resultId, testId)
       
-      // Temporary mock data
-      setResult({
-        id: resultId,
-        testId: testId,
-        testName: 'IELTS Practice Test 1',
-        userName: 'John Doe',
-        status: 'COMPLETED'
-      })
+      // Fetch result details from API
+      const response = await mockResultApi.getAllMockResults(0, 1000)
+      const resultData = (response.data || []).find((r: MockResultDto) => r.id === resultId)
       
-      // TODO: Get sectionId from API response
-      setSectionId('3fa85f64-5717-4562-b3fc-2c963f66afa6') // Temporary
+      if (!resultData) {
+        message.error('Result not found')
+        return
+      }
       
-      setWritingParts([
-        {
-          id: 'task1',
-          type: 'TASK_1',
-          question: 'The chart below shows the percentage of households in owned and rented accommodation in England and Wales between 1918 and 2011. Summarize the information by selecting and reporting the main features, and make comparisons where relevant.',
-          answer: 'The bar chart illustrates the proportion of households that owned or rented accommodation in England and Wales from 1918 to 2011...',
-          graded: false
-        },
-        {
-          id: 'task2',
-          type: 'TASK_2',
-          question: 'Some people believe that unpaid community service should be a compulsory part of high school programmes. To what extent do you agree or disagree?',
-          answer: 'In recent years, there has been a growing debate about whether community service should be mandatory for high school students...',
-          graded: false
+      setResult(resultData)
+      
+      // Get writing section from mock submission API
+      const sectionsResp = await mockSubmissionApi.getAllSections(testId || '')
+      const sections = sectionsResp.data || []
+      const writingSection = sections.find((s: any) => s.sectionType === 'WRITING')
+      
+      if (!writingSection) {
+        message.error('Writing section not found')
+        return
+      }
+      
+      setSectionId(writingSection.id)
+      
+      // Fetch submitted answers for writing section
+      const answersResp = await mockSubmissionApi.getSubmittedAnswers(resultId, writingSection.id)
+      const answers = answersResp.data || []
+      
+      console.log('📝 Writing answers:', answers)
+      
+      // Fetch writing questions/prompts from test content
+      const partsResp = await mockSubmissionApi.getAllParts(writingSection.id)
+      const parts = partsResp.data || []
+      
+      console.log('📄 Writing parts:', parts)
+      
+      const writingTasksData: WritingPart[] = []
+      
+      for (const part of parts) {
+        const contentResp = await mockSubmissionApi.getPartQuestionContent(part.id)
+        const content = contentResp.data?.content
+        
+        console.log(`📄 Part ${part.ord} content:`, content)
+        
+        if (content) {
+          let parsed
+          try {
+            parsed = JSON.parse(content)
+          } catch (e) {
+            console.error('Failed to parse content:', e)
+            continue
+          }
+          
+          console.log(`📄 Part ${part.ord} parsed:`, parsed)
+          
+          const taskData = parsed.user || parsed.admin || parsed
+          const taskNum = part.ord // 1 for Task 1, 2 for Task 2
+          
+          // Find the corresponding answer
+          const answer = answers.find((a: any) => a.questionOrd === taskNum)
+          
+          // For writing: 'passage' contains the task description/question
+          // 'instruction' contains general instructions (time limits, etc.)
+          let questionText = 'No question text available'
+          
+          if (taskData.passage) {
+            // This is the actual writing task question/description
+            questionText = taskData.passage
+          } else if (taskData.description) {
+            questionText = taskData.description
+          } else if (taskData.question) {
+            questionText = taskData.question
+          } else if (taskData.text) {
+            questionText = taskData.text
+          } else if (taskData.instruction) {
+            // Fallback to instruction if nothing else available
+            questionText = taskData.instruction
+          } else if (typeof taskData === 'string') {
+            questionText = taskData
+          }
+          
+          console.log(`📄 Task ${taskNum} question text:`, questionText?.substring(0, 100))
+          
+          writingTasksData.push({
+            id: `task${taskNum}`,
+            type: taskNum === 1 ? 'TASK_1' : 'TASK_2',
+            question: questionText,
+            answer: answer?.answer || '',
+            graded: false
+          })
         }
-      ])
+      }
+      
+      setWritingParts(writingTasksData)
+      
+      if (writingTasksData.length === 0) {
+        // Fallback: create tasks from answers even without questions
+        const task1Answer = answers.find((a: any) => a.questionOrd === 1)
+        const task2Answer = answers.find((a: any) => a.questionOrd === 2)
+        
+        if (task1Answer) {
+          writingTasksData.push({
+            id: 'task1',
+            type: 'TASK_1',
+            question: 'Writing Task 1',
+            answer: task1Answer.answer || '',
+            graded: false
+          })
+        }
+        
+        if (task2Answer) {
+          writingTasksData.push({
+            id: 'task2',
+            type: 'TASK_2',
+            question: 'Writing Task 2',
+            answer: task2Answer.answer || '',
+            graded: false
+          })
+        }
+        
+        setWritingParts(writingTasksData)
+      }
     } catch (error) {
       console.error('Error fetching writing data:', error)
       message.error('Failed to load writing data')
@@ -215,8 +309,19 @@ const GradeWritingResultPage = () => {
               <Row gutter={16} align="middle">
                 <Col flex="auto">
                   <Space direction="vertical" size={4}>
-                    <Title level={3} style={{ margin: 0 }}>{result.testName}</Title>
-                    <Text type="secondary">Student: {result.userName}</Text>
+                    <Title level={3} style={{ margin: 0 }}>
+                      {testNameParam || result?.testName || 'Test'}
+                    </Title>
+                    <Text type="secondary">
+                      Student: {
+                        studentNameParam ||
+                        result?.userName || 
+                        (result?.firstName && result?.lastName ? `${result.firstName} ${result.lastName}` : '') ||
+                        (result?.userFirstName && result?.userLastName ? `${result.userFirstName} ${result.userLastName}` : '') ||
+                        result?.userId || 
+                        'Unknown'
+                      }
+                    </Text>
                   </Space>
                 </Col>
                 {allGraded && averageScore !== null && (
@@ -266,7 +371,11 @@ const GradeWritingResultPage = () => {
                   <div style={{ marginBottom: 16 }}>
                     <Text strong style={{ display: 'block', marginBottom: 8 }}>Question:</Text>
                     <Card size="small" style={{ background: '#f5f5f5' }}>
-                      <Paragraph style={{ marginBottom: 0 }}>{part.question}</Paragraph>
+                      <div 
+                        style={{ marginBottom: 0 }}
+                        className="prose prose-sm max-w-none"
+                        dangerouslySetInnerHTML={{ __html: part.question }}
+                      />
                     </Card>
                   </div>
 

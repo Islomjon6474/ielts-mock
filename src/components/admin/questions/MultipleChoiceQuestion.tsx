@@ -52,7 +52,7 @@ export const MultipleChoiceQuestion = ({
   }
 
   return (
-    <Card size="small" className="mb-2" bodyStyle={{ padding: '12px' }} title={<span className="text-sm">Question {questionIndex + 1}</span>} extra={
+    <Card size="small" className="mb-2" bodyStyle={{ padding: '12px' }} title={<span className="text-sm font-bold">Question {questionIndex + 1}</span>} extra={
       <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={onRemove} />
     }>
       <Form.Item

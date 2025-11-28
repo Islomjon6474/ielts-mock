@@ -444,18 +444,16 @@ const SectionPreviewPage = observer(() => {
                 {userAnswers.map((answer: any, index: number) => (
                   <div key={answer.id || index} style={{ marginBottom: 16, paddingBottom: 16, borderBottom: index < userAnswers.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
                     <Text strong>Question {answer.questionNumber || index + 1}: </Text>
-                    <Text style={{ marginLeft: 8 }}>
-                      {answer.userAnswer || answer.answer || '(No answer)'}
-                    </Text>
+                    <span style={{ marginLeft: 8 }} dangerouslySetInnerHTML={{ __html: answer.userAnswer || answer.answer || '(No answer)' }} />
                     {answer.isCorrect !== undefined && (
                       <Text style={{ marginLeft: 16, color: answer.isCorrect ? '#52c41a' : '#ff4d4f' }}>
                         {answer.isCorrect ? '✓ Correct' : '✗ Incorrect'}
                       </Text>
                     )}
                     {answer.correctAnswer && (
-                      <Text type="secondary" style={{ marginLeft: 16 }}>
-                        (Correct: {answer.correctAnswer})
-                      </Text>
+                      <span style={{ marginLeft: 16, color: 'rgba(0, 0, 0, 0.45)' }}>
+                        (Correct: <span dangerouslySetInnerHTML={{ __html: answer.correctAnswer }} />)
+                      </span>
                     )}
                   </div>
                 ))}

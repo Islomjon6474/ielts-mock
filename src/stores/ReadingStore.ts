@@ -126,24 +126,97 @@ export class ReadingStore {
   }
 
   nextQuestion() {
-    const currentPart = this.parts[this.currentPart - 1]
+    // Try to find the next unanswered question
+    const currentPartIndex = this.currentPart - 1
+    const currentPart = this.parts[currentPartIndex]
     if (!currentPart) return
 
-    if (this.currentQuestionIndex < currentPart.questions.length - 1) {
-      this.currentQuestionIndex++
-    } else if (this.currentPart < this.parts.length) {
-      this.currentPart++
-      this.currentQuestionIndex = 0
+    // Search forward from current position for first unanswered question
+    let foundUnanswered = false
+    
+    // First, check remaining questions in current part
+    for (let i = this.currentQuestionIndex + 1; i < currentPart.questions.length; i++) {
+      const question = currentPart.questions[i]
+      if (!this.isQuestionAnswered(question.id)) {
+        this.currentQuestionIndex = i
+        foundUnanswered = true
+        break
+      }
+    }
+    
+    // If not found in current part, check subsequent parts
+    if (!foundUnanswered) {
+      for (let partIdx = currentPartIndex + 1; partIdx < this.parts.length; partIdx++) {
+        const part = this.parts[partIdx]
+        for (let qIdx = 0; qIdx < part.questions.length; qIdx++) {
+          const question = part.questions[qIdx]
+          if (!this.isQuestionAnswered(question.id)) {
+            this.currentPart = partIdx + 1
+            this.currentQuestionIndex = qIdx
+            foundUnanswered = true
+            break
+          }
+        }
+        if (foundUnanswered) break
+      }
+    }
+    
+    // If no unanswered question found, just go to next question sequentially
+    if (!foundUnanswered) {
+      if (this.currentQuestionIndex < currentPart.questions.length - 1) {
+        this.currentQuestionIndex++
+      } else if (this.currentPart < this.parts.length) {
+        this.currentPart++
+        this.currentQuestionIndex = 0
+      }
     }
   }
 
   previousQuestion() {
-    if (this.currentQuestionIndex > 0) {
-      this.currentQuestionIndex--
-    } else if (this.currentPart > 1) {
-      this.currentPart--
-      const prevPart = this.parts[this.currentPart - 1]
-      this.currentQuestionIndex = prevPart.questions.length - 1
+    // Try to find the previous unanswered question
+    const currentPartIndex = this.currentPart - 1
+    const currentPart = this.parts[currentPartIndex]
+    if (!currentPart) return
+
+    // Search backward from current position for first unanswered question
+    let foundUnanswered = false
+    
+    // First, check previous questions in current part
+    for (let i = this.currentQuestionIndex - 1; i >= 0; i--) {
+      const question = currentPart.questions[i]
+      if (!this.isQuestionAnswered(question.id)) {
+        this.currentQuestionIndex = i
+        foundUnanswered = true
+        break
+      }
+    }
+    
+    // If not found in current part, check previous parts (backwards)
+    if (!foundUnanswered) {
+      for (let partIdx = currentPartIndex - 1; partIdx >= 0; partIdx--) {
+        const part = this.parts[partIdx]
+        for (let qIdx = part.questions.length - 1; qIdx >= 0; qIdx--) {
+          const question = part.questions[qIdx]
+          if (!this.isQuestionAnswered(question.id)) {
+            this.currentPart = partIdx + 1
+            this.currentQuestionIndex = qIdx
+            foundUnanswered = true
+            break
+          }
+        }
+        if (foundUnanswered) break
+      }
+    }
+    
+    // If no unanswered question found, just go to previous question sequentially
+    if (!foundUnanswered) {
+      if (this.currentQuestionIndex > 0) {
+        this.currentQuestionIndex--
+      } else if (this.currentPart > 1) {
+        this.currentPart--
+        const prevPart = this.parts[this.currentPart - 1]
+        this.currentQuestionIndex = prevPart.questions.length - 1
+      }
     }
   }
 

@@ -232,39 +232,42 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
           </div>
 
           {/* Navigation Arrows and Submit */}
-          <div className="flex items-center gap-3">
-            {/* Previous Button */}
-            <Button
-              icon={<LeftOutlined />}
-              onClick={() => handleTaskChange(writingStore.currentTask - 1)}
-              disabled={writingStore.currentTask === 1}
-              className="w-12 h-12 flex items-center justify-center"
-              style={{ 
-                backgroundColor: writingStore.currentTask !== 1 ? '#d1d5db' : '#f3f4f6',
-                borderColor: writingStore.currentTask !== 1 ? '#9ca3af' : '#e5e7eb'
-              }}
-            />
+          <div className="flex flex-col gap-2">
+            {/* Previous and Next Buttons Row */}
+            <div className="flex items-center gap-3">
+              {/* Previous Button */}
+              <Button
+                icon={<LeftOutlined />}
+                onClick={() => handleTaskChange(writingStore.currentTask - 1)}
+                disabled={writingStore.currentTask === 1}
+                className="w-12 h-12 flex items-center justify-center"
+                style={{ 
+                  backgroundColor: writingStore.currentTask !== 1 ? '#d1d5db' : '#f3f4f6',
+                  borderColor: writingStore.currentTask !== 1 ? '#9ca3af' : '#e5e7eb'
+                }}
+              />
+              
+              {/* Next Button */}
+              <Button
+                icon={<RightOutlined />}
+                onClick={() => handleTaskChange(writingStore.currentTask + 1)}
+                disabled={writingStore.currentTask === writingStore.tasks.length}
+                className="w-12 h-12 flex items-center justify-center"
+                style={{ 
+                  backgroundColor: writingStore.currentTask !== writingStore.tasks.length ? '#000000' : '#f3f4f6',
+                  borderColor: writingStore.currentTask !== writingStore.tasks.length ? '#000000' : '#e5e7eb',
+                  color: writingStore.currentTask !== writingStore.tasks.length ? '#ffffff' : '#9ca3af'
+                }}
+              />
+            </div>
             
-            {/* Next Button */}
-            <Button
-              icon={<RightOutlined />}
-              onClick={() => handleTaskChange(writingStore.currentTask + 1)}
-              disabled={writingStore.currentTask === writingStore.tasks.length}
-              className="w-12 h-12 flex items-center justify-center"
-              style={{ 
-                backgroundColor: writingStore.currentTask !== writingStore.tasks.length ? '#000000' : '#f3f4f6',
-                borderColor: writingStore.currentTask !== writingStore.tasks.length ? '#000000' : '#e5e7eb',
-                color: writingStore.currentTask !== writingStore.tasks.length ? '#ffffff' : '#9ca3af'
-              }}
-            />
-            
-            {/* Submit Button */}
+            {/* Submit Button Row */}
             <Button
               type="primary"
               icon={<CheckOutlined />}
               onClick={handleSubmit}
               disabled={isPreviewMode}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-green-600 hover:bg-green-700 w-full"
             >
               Submit
             </Button>

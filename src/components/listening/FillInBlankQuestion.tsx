@@ -83,7 +83,7 @@ const FillInBlankQuestion = observer(({ question, questionNumber, isPreviewMode 
         return (
           <Input
             key={index}
-            className="inline-block mx-2 text-center"
+            className="inline-block mx-2 text-center font-bold"
             style={{ width: '120px' }}
             value={blankAnswer || ''}
             onChange={(e) => listeningStore.setAnswer(blankNumber, e.target.value)}
@@ -115,7 +115,7 @@ const FillInBlankQuestion = observer(({ question, questionNumber, isPreviewMode 
                   
                   const input = document.createElement('input')
                   input.type = 'text'
-                  input.className = 'ant-input inline-block mx-2 text-center'
+                  input.className = 'ant-input inline-block mx-2 text-center font-bold'
                   input.style.width = '120px'
                   input.value = blankAnswer || ''
                   input.placeholder = number.toString()

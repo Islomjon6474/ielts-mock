@@ -159,13 +159,32 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
     const currentIndex = allQuestions.findIndex(q => q.id === currentQuestionNumber)
     
     if (currentIndex > 0) {
-      const prevQuestion = allQuestions[currentIndex - 1]
-      listeningStore.goToQuestion(prevQuestion.id)
+      // Try to find the previous unanswered question
+      let foundUnanswered = false
+      for (let i = currentIndex - 1; i >= 0; i--) {
+        const question = allQuestions[i]
+        if (!listeningStore.isQuestionAnswered(question.id)) {
+          listeningStore.goToQuestion(question.id)
+          foundUnanswered = true
+          
+          // Scroll and focus after navigation
+          setTimeout(() => {
+            scrollToQuestionAndFocus(question.id)
+          }, 100)
+          break
+        }
+      }
       
-      // Scroll and focus after navigation
-      setTimeout(() => {
-        scrollToQuestionAndFocus(prevQuestion.id)
-      }, 100)
+      // If no unanswered question found, just go to previous question
+      if (!foundUnanswered) {
+        const prevQuestion = allQuestions[currentIndex - 1]
+        listeningStore.goToQuestion(prevQuestion.id)
+        
+        // Scroll and focus after navigation
+        setTimeout(() => {
+          scrollToQuestionAndFocus(prevQuestion.id)
+        }, 100)
+      }
     }
   }
 
@@ -175,13 +194,32 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
     const currentIndex = allQuestions.findIndex(q => q.id === currentQuestionNumber)
     
     if (currentIndex < allQuestions.length - 1) {
-      const nextQuestion = allQuestions[currentIndex + 1]
-      listeningStore.goToQuestion(nextQuestion.id)
+      // Try to find the next unanswered question
+      let foundUnanswered = false
+      for (let i = currentIndex + 1; i < allQuestions.length; i++) {
+        const question = allQuestions[i]
+        if (!listeningStore.isQuestionAnswered(question.id)) {
+          listeningStore.goToQuestion(question.id)
+          foundUnanswered = true
+          
+          // Scroll and focus after navigation
+          setTimeout(() => {
+            scrollToQuestionAndFocus(question.id)
+          }, 100)
+          break
+        }
+      }
       
-      // Scroll and focus after navigation
-      setTimeout(() => {
-        scrollToQuestionAndFocus(nextQuestion.id)
-      }, 100)
+      // If no unanswered question found, just go to next question
+      if (!foundUnanswered) {
+        const nextQuestion = allQuestions[currentIndex + 1]
+        listeningStore.goToQuestion(nextQuestion.id)
+        
+        // Scroll and focus after navigation
+        setTimeout(() => {
+          scrollToQuestionAndFocus(nextQuestion.id)
+        }, 100)
+      }
     }
   }
 
@@ -326,6 +364,7 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                           questions={group.questions}
                           questionNumbers={questionNumbers}
                           options={options}
+                          imageUrl={group.imageUrl}
                           isPreviewMode={isPreviewMode}
                         />
                       </div>

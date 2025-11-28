@@ -88,7 +88,7 @@ export const ShortAnswerQuestion = ({
       bodyStyle={{ padding: '12px' }} 
       title={
         <div className="flex items-center gap-2 flex-wrap">
-          <span>Question {questionIndex + 1}</span>
+          <span className="font-bold">Question {questionIndex + 1}</span>
           {extractedPlaceholders.length > 0 && (
             <span className="text-xs font-normal flex items-center gap-1 flex-wrap">
               <span className="text-gray-500">(Contains placeholders for</span>

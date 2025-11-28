@@ -28,19 +28,27 @@ export function transformAdminToListeningPart(
       questionRange = [1, 10] // Default fallback
     }
     
-    // Build a map of question ID to group instruction and groupIndex from questionGroups
+    // Build a map of question ID to group instruction, groupIndex, and imageUrl from questionGroups
     const questionToGroupInstruction: { [key: number]: string } = {}
     const questionToGroupIndex: { [key: number]: number } = {}
+    const questionToGroupImageUrl: { [key: number]: string } = {}
     if (adminData.questionGroups && Array.isArray(adminData.questionGroups)) {
       adminData.questionGroups.forEach((group: any, groupIndex: number) => {
-        if (group.range && group.instruction) {
+        if (group.range) {
           const match = group.range.match(/^(\d+)-(\d+)$/)
           if (match) {
             const start = parseInt(match[1])
             const end = parseInt(match[2])
+            // Convert imageId to imageUrl at group level
+            const groupImageUrl = group.imageId ? fileApi.getImageUrl(group.imageId) : (group.imageUrl || '')
             for (let i = start; i <= end; i++) {
-              questionToGroupInstruction[i] = group.instruction
+              if (group.instruction) {
+                questionToGroupInstruction[i] = group.instruction
+              }
               questionToGroupIndex[i] = groupIndex
+              if (groupImageUrl) {
+                questionToGroupImageUrl[i] = groupImageUrl
+              }
             }
           }
         }
@@ -63,6 +71,9 @@ export function transformAdminToListeningPart(
             imageUrl = fileApi.getImageUrl(fileIdMatch[1])
           }
         }
+      } else {
+        // If question doesn't have imageUrl, use group's imageUrl
+        imageUrl = questionToGroupImageUrl[q.id] || ''
       }
       
       return {

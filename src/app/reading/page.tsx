@@ -13,6 +13,7 @@ const ReadingPageContent = observer(() => {
   const [loading, setLoading] = useState(true)
   const searchParams = useSearchParams()
   const urlTestId = searchParams.get('testId')
+  const urlMockId = searchParams.get('mockId')
   const isPreviewMode = searchParams.get('preview') === 'true'
 
   useEffect(() => {
@@ -66,19 +67,35 @@ const ReadingPageContent = observer(() => {
         }
 
         // 2) Get or start mock test
-        // First, check if there's an existing mock session
-        const mocksResp = await mockSubmissionApi.getAllMocks(0, 100)
-        const allMocks = mocksResp.data || []
-        let existingMock = allMocks.find((m) => m.testId === testIdToUse && m.isFinished === 0)
-        
         let mockId: string
-        if (existingMock) {
-          mockId = existingMock.id
-          console.log('📖 Resuming existing mock session:', mockId)
+        
+        if (urlMockId) {
+          // Use mockId from URL (for viewing results or continuing test)
+          mockId = urlMockId
+          console.log('📖 Using mockId from URL:', mockId)
+          
+          // Check if this mock is finished to automatically enable preview mode
+          const mocksResp = await mockSubmissionApi.getAllMocks(0, 100)
+          const allMocks = mocksResp.data || []
+          const mock = allMocks.find((m) => m.id === mockId)
+          if (mock && mock.isFinished === 1) {
+            console.log('📖 Mock is finished, enabling preview mode')
+            readingStore.setPreviewMode(true)
+          }
         } else {
-          const mockResp = await mockSubmissionApi.startMock(testIdToUse)
-          mockId = mockResp.data
-          console.log('📖 Started new mock session:', mockId)
+          // First, check if there's an existing unfinished mock session
+          const mocksResp = await mockSubmissionApi.getAllMocks(0, 100)
+          const allMocks = mocksResp.data || []
+          let existingMock = allMocks.find((m) => m.testId === testIdToUse && m.isFinished === 0)
+          
+          if (existingMock) {
+            mockId = existingMock.id
+            console.log('📖 Resuming existing mock session:', mockId)
+          } else {
+            const mockResp = await mockSubmissionApi.startMock(testIdToUse)
+            mockId = mockResp.data
+            console.log('📖 Started new mock session:', mockId)
+          }
         }
         
         // 3) Get sections and pick reading
@@ -107,6 +124,25 @@ const ReadingPageContent = observer(() => {
         // 5) Set mockId and sectionId in store for submission
         readingStore.setMockId(mockId)
         readingStore.setSectionId(readingSection.id)
+
+        // 5.5) Load submitted answers if in preview mode or if mock is finished
+        if (readingStore.isPreviewMode) {
+          try {
+            const answersResp = await mockSubmissionApi.getSubmittedAnswers(mockId, readingSection.id)
+            const submittedAnswers = answersResp.data || []
+            console.log('📝 Loading submitted answers:', submittedAnswers)
+            
+            // Populate the answers in the store
+            submittedAnswers.forEach((ans: any) => {
+              if (ans.questionOrd && ans.answer) {
+                readingStore.answers.set(ans.questionOrd, ans.answer)
+              }
+            })
+            console.log('✅ Loaded', submittedAnswers.length, 'submitted answers')
+          } catch (error) {
+            console.error('❌ Failed to load submitted answers:', error)
+          }
+        }
 
         // 6) Get parts and their content
         console.log('🔍 Getting parts for section ID:', readingSection.id)
@@ -253,7 +289,8 @@ const ReadingPageContent = observer(() => {
   }, [urlTestId])
 
   if (loading) return null
-  return <ReadingTestLayout />
+  // Use the store's preview mode which gets automatically set when viewing finished mocks
+  return <ReadingTestLayout isPreviewMode={readingStore.isPreviewMode} />
 })
 
 function ReadingPage() {

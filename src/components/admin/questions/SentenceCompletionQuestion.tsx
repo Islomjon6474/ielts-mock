@@ -1,7 +1,8 @@
-import { Card, Button, Form, Select } from 'antd'
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
+import { Card, Button, Form, Select, Space, Tooltip } from 'antd'
+import { DeleteOutlined, PlusOutlined, ArrowDownOutlined, ArrowUpOutlined, ArrowLeftOutlined, ArrowRightOutlined } from '@ant-design/icons'
 import { PassageRichTextEditor } from '../PassageRichTextEditor'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import type { PassageRichTextEditorRef } from '../PassageRichTextEditor'
 
 interface SentenceCompletionQuestionProps {
   groupPath: (string | number)[]
@@ -21,6 +22,7 @@ export const SentenceCompletionQuestion = ({
   form
 }: SentenceCompletionQuestionProps) => {
   const [options, setOptions] = useState<string[]>([])
+  const editorRef = useRef<PassageRichTextEditorRef>(null)
 
   // Load options from group level
   useEffect(() => {  
@@ -41,23 +43,87 @@ export const SentenceCompletionQuestion = ({
   }, [form, groupPath, options])
 
   const handleInsertPlaceholder = () => {
-    const currentText = form.getFieldValue([...groupPath, 'questions', questionIndex, 'text']) || ''
     const placeholder = `[${questionNumber}]`
-    const newText = currentText + placeholder
-    form.setFieldValue([...groupPath, 'questions', questionIndex, 'text'], newText)
+    
+    if (editorRef.current) {
+      // Insert placeholder at cursor position
+      editorRef.current.insertText(placeholder)
+    }
+  }
+
+  const handleInsertArrow = (direction: 'down' | 'up' | 'left' | 'right') => {
+    const arrows = {
+      down: '↓',
+      up: '↑',
+      left: '←',
+      right: '→'
+    }
+    
+    if (editorRef.current) {
+      // Insert arrow with some spacing for better visibility
+      editorRef.current.insertText(` ${arrows[direction]} `)
+    }
   }
 
   return (
-    <Card size="small" className="mb-2" bodyStyle={{ padding: '12px' }} title={<span className="text-sm">Question {questionNumber}</span>} extra={
+    <Card size="small" className="mb-2" bodyStyle={{ padding: '12px' }} title={<span className="text-sm font-bold">Question {questionNumber}</span>} extra={
       <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={onRemove} />
     }>
       <Form.Item
-        label={<span className="text-xs">Sentence with blank</span>}
+        label={
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <span className="text-xs">Sentence with blank</span>
+            <Space size="small">
+              <Tooltip title="Insert down arrow">
+                <Button 
+                  size="small" 
+                  icon={<ArrowDownOutlined />} 
+                  onClick={() => handleInsertArrow('down')}
+                  type="text"
+                />
+              </Tooltip>
+              <Tooltip title="Insert up arrow">
+                <Button 
+                  size="small" 
+                  icon={<ArrowUpOutlined />} 
+                  onClick={() => handleInsertArrow('up')}
+                  type="text"
+                />
+              </Tooltip>
+              <Tooltip title="Insert left arrow">
+                <Button 
+                  size="small" 
+                  icon={<ArrowLeftOutlined />} 
+                  onClick={() => handleInsertArrow('left')}
+                  type="text"
+                />
+              </Tooltip>
+              <Tooltip title="Insert right arrow">
+                <Button 
+                  size="small" 
+                  icon={<ArrowRightOutlined />} 
+                  onClick={() => handleInsertArrow('right')}
+                  type="text"
+                />
+              </Tooltip>
+              <Tooltip title="Insert question placeholder">
+                <Button 
+                  size="small" 
+                  onClick={handleInsertPlaceholder}
+                  type="text"
+                >
+                  [{questionNumber}]
+                </Button>
+              </Tooltip>
+            </Space>
+          </div>
+        }
         name={[...groupPath, 'questions', questionIndex, 'text']}
         rules={[{ required: true, message: 'Please enter sentence' }]}
         style={{ marginBottom: '8px' }}
       >
         <PassageRichTextEditor
+          ref={editorRef}
           placeholder={`e.g., Impression fossils are [${questionNumber}]`}
           minHeight="100px"
         />

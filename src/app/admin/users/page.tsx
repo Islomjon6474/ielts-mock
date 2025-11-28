@@ -27,6 +27,7 @@ import { useRouter } from 'next/navigation'
 import { userManagementApi, StudentDto, ChangePasswordDto } from '@/services/userManagementApi'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { withAuth } from '@/components/auth/withAuth'
+import { parseCustomDate } from '@/utils/dateUtils'
 
 const { Header, Content } = Layout
 const { Title, Text } = Typography
@@ -125,33 +126,6 @@ const UserManagementPage = () => {
     setIsPasswordModalOpen(true)
   }
 
-  // Helper function to parse date in DD.MM.YYYY HH:mm:ss format
-  const parseCustomDate = (dateString: string): Date | null => {
-    if (!dateString) return null
-    try {
-      // Format: "23.11.2025 10:32:07" or "DD.MM.YYYY HH:mm:ss"
-      const parts = dateString.split(' ')
-      if (parts.length !== 2) return null
-      
-      const dateParts = parts[0].split('.')
-      const timeParts = parts[1].split(':')
-      
-      if (dateParts.length !== 3 || timeParts.length !== 3) return null
-      
-      const day = parseInt(dateParts[0])
-      const month = parseInt(dateParts[1]) - 1 // Month is 0-indexed
-      const year = parseInt(dateParts[2])
-      const hour = parseInt(timeParts[0])
-      const minute = parseInt(timeParts[1])
-      const second = parseInt(timeParts[2])
-      
-      const date = new Date(year, month, day, hour, minute, second)
-      return isNaN(date.getTime()) ? null : date
-    } catch (error) {
-      return null
-    }
-  }
-
   const columns = [
     {
       title: 'First Name',
@@ -202,9 +176,9 @@ const UserManagementPage = () => {
         if (!date) return 'N/A'
         const dateObj = parseCustomDate(date)
         if (!dateObj) return 'Invalid Date'
-        return dateObj.toLocaleDateString('en-US', { 
+        return dateObj.toLocaleDateString('en-GB', { 
+          day: 'numeric',
           month: 'short', 
-          day: 'numeric', 
           year: 'numeric',
           hour: '2-digit',
           minute: '2-digit'
@@ -219,9 +193,9 @@ const UserManagementPage = () => {
         if (!date) return 'N/A'
         const dateObj = parseCustomDate(date)
         if (!dateObj) return 'Invalid Date'
-        return dateObj.toLocaleDateString('en-US', { 
+        return dateObj.toLocaleDateString('en-GB', { 
+          day: 'numeric',
           month: 'short', 
-          day: 'numeric', 
           year: 'numeric',
           hour: '2-digit',
           minute: '2-digit'
