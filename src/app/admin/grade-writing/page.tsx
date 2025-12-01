@@ -150,7 +150,7 @@ const GradeWritingPage = () => {
       render: (text: string, record: MockResultDto) => (
         <Space direction="vertical" size={0}>
           <Text strong>{text || 'Unnamed Test'}</Text>
-          <Text type="secondary" style={{ fontSize: '12px' }}>
+          <Text type="secondary" style={{ fontSize: '0.75rem' }}>
             ID: {record.testId?.substring(0, 8)}...
           </Text>
         </Space>
@@ -220,11 +220,11 @@ const GradeWritingPage = () => {
   ]
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+    <Layout style={{ minHeight: '100vh', background: 'var(--background)' }}>
       {/* Header */}
-      <Header style={{ 
-        background: '#fff', 
-        borderBottom: '1px solid #f0f0f0', 
+      <Header style={{
+        background: 'var(--header-background)',
+        borderBottom: '1px solid var(--border-color)',
         padding: '20px 48px',
         display: 'flex',
         alignItems: 'center',
@@ -236,7 +236,7 @@ const GradeWritingPage = () => {
           Grade Writing
         </Title>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Button 
+          <Button
             icon={<HomeOutlined />}
             onClick={() => router.push('/admin')}
             size="large"
@@ -247,9 +247,9 @@ const GradeWritingPage = () => {
         </div>
       </Header>
 
-      <Content style={{ 
-        padding: '48px', 
-        background: '#f5f5f5', 
+      <Content style={{
+        padding: '48px',
+        background: 'var(--background)',
         minHeight: 'calc(100vh - 64px)'
       }}>
         <div className="max-w-7xl mx-auto" style={{ width: '100%' }}>
@@ -264,7 +264,7 @@ const GradeWritingPage = () => {
               <Title level={2} style={{ marginBottom: '8px' }}>
                 Writing Submissions
               </Title>
-              <Text type="secondary" style={{ fontSize: '16px' }}>
+              <Text type="secondary" style={{ fontSize: '1rem' }}>
                 Grade student writing submissions using AI-powered analysis
               </Text>
             </div>
@@ -340,7 +340,7 @@ const GradeWritingPage = () => {
         cancelButtonProps={{ disabled: grading }}
       >
         {selectedResult && (
-          <div style={{ marginBottom: '16px', padding: '12px', background: '#f5f5f5', borderRadius: '8px' }}>
+          <div style={{ marginBottom: '16px', padding: '12px', background: 'var(--card-background)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
             <Row gutter={16}>
               <Col span={12}>
                 <Text strong>Student: </Text>
@@ -413,7 +413,7 @@ const GradeWritingPage = () => {
                     value={gradeResult.score}
                     precision={1}
                     suffix="/ 9.0"
-                    valueStyle={{ color: '#52c41a', fontSize: '36px' }}
+                    valueStyle={{ color: '#52c41a', fontSize: '2.25rem' }}
                     prefix={<TrophyOutlined />}
                   />
                 </Card>
@@ -493,7 +493,7 @@ const GradeWritingPage = () => {
             )}
 
             <div style={{ marginTop: '24px', textAlign: 'center' }}>
-              <CheckCircleOutlined style={{ fontSize: '48px', color: '#52c41a' }} />
+              <CheckCircleOutlined style={{ fontSize: '3rem', color: '#52c41a' }} />
               <Title level={4} style={{ marginTop: '16px', color: '#52c41a' }}>
                 Writing Graded Successfully!
               </Title>

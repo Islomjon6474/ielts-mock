@@ -2,7 +2,7 @@ import { makeAutoObservable } from 'mobx'
 import * as R from 'ramda'
 import { mockSubmissionApi } from '@/services/testManagementApi'
 
-export type QuestionType = 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN' | 'FILL_IN_BLANK' | 'MATCH_HEADING' | 'MULTIPLE_CHOICE' | 'MULTIPLE_CHOICE_SINGLE' | 'IMAGE_INPUTS' | 'SENTENCE_COMPLETION'
+export type QuestionType = 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN' | 'FILL_IN_BLANK' | 'MATCH_HEADING' | 'MULTIPLE_CHOICE' | 'MULTIPLE_CHOICE_SINGLE' | 'IMAGE_INPUTS' | 'SENTENCE_COMPLETION' | 'MULTIPLE_CORRECT_ANSWERS'
 
 export interface Answer {
   questionId: number
@@ -16,6 +16,7 @@ export interface Question {
   options?: string[]
   maxAnswers?: number
   imageUrl?: string
+  correctAnswer?: string | string[] // Correct answer(s) for the question
 }
 
 export interface QuestionGroup {
@@ -48,7 +49,7 @@ export class ReadingStore {
   currentQuestionIndex: number = 0
   answers: Map<number, string | string[]> = new Map()
   parts: Part[] = []
-  
+
   // Timer properties
   timeLimit: number = 60 * 60 // 60 minutes in seconds
   timeRemaining: number = 60 * 60
@@ -58,6 +59,10 @@ export class ReadingStore {
   mockId: string | null = null
   sectionId: string | null = null
   isSubmitting: boolean = false
+
+  // Answer review properties (for admin result viewing)
+  submittedAnswers: Map<number, string | string[]> = new Map() // User's submitted answers
+  answerCorrectness: Map<number, boolean> = new Map() // Whether each answer is correct
 
   constructor() {
     makeAutoObservable(this)
@@ -231,6 +236,70 @@ export class ReadingStore {
 
   setParts(parts: Part[]) {
     this.parts = parts
+  }
+
+  // Load submitted answers and calculate correctness
+  loadSubmittedAnswers(submittedAnswers: Array<{ questionOrd: number, answer: string }>) {
+    this.submittedAnswers.clear()
+    this.answerCorrectness.clear()
+
+    submittedAnswers.forEach((submitted) => {
+      const questionId = submitted.questionOrd
+      const userAnswer = submitted.answer
+
+      // Store the submitted answer
+      this.submittedAnswers.set(questionId, userAnswer)
+
+      // Find the question to get correct answer
+      const question = this.allQuestions.find(q => q.id === questionId)
+      if (question && question.correctAnswer) {
+        // Check if answer is correct
+        const isCorrect = this.checkAnswerCorrectness(userAnswer, question.correctAnswer, question.type)
+        this.answerCorrectness.set(questionId, isCorrect)
+      }
+    })
+  }
+
+  // Check if a user answer matches the correct answer
+  private checkAnswerCorrectness(
+    userAnswer: string | string[],
+    correctAnswer: string | string[],
+    questionType: QuestionType
+  ): boolean {
+    // Normalize answers for comparison (trim, lowercase)
+    const normalize = (str: string) => str.trim().toLowerCase()
+
+    if (questionType === 'MULTIPLE_CHOICE' || questionType === 'MULTIPLE_CORRECT_ANSWERS') {
+      // For multiple choice with multiple answers
+      const userAnswers = Array.isArray(userAnswer) ? userAnswer : [userAnswer]
+      const correctAnswers = Array.isArray(correctAnswer) ? correctAnswer : [correctAnswer]
+
+      if (userAnswers.length !== correctAnswers.length) return false
+
+      const normalizedUser = userAnswers.map(normalize).sort()
+      const normalizedCorrect = correctAnswers.map(normalize).sort()
+
+      return normalizedUser.every((ans, i) => ans === normalizedCorrect[i])
+    } else {
+      // For single answer questions
+      const userAns = Array.isArray(userAnswer) ? userAnswer[0] : userAnswer
+      const correctAns = Array.isArray(correctAnswer) ? correctAnswer[0] : correctAnswer
+
+      if (!userAns || !correctAns) return false
+
+      return normalize(userAns) === normalize(correctAns)
+    }
+  }
+
+  // Get submitted answer for a question
+  getSubmittedAnswer(questionId: number): string | string[] | null {
+    return this.submittedAnswers.get(questionId) || null
+  }
+
+  // Check if a submitted answer is correct
+  isAnswerCorrect(questionId: number): boolean | null {
+    if (!this.answerCorrectness.has(questionId)) return null
+    return this.answerCorrectness.get(questionId) || false
   }
 
   async finishSection() {

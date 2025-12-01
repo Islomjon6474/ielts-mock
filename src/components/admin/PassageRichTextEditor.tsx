@@ -85,14 +85,19 @@ export const PassageRichTextEditor = forwardRef<PassageRichTextEditorRef, Passag
   }
 
   return (
-    <div 
-      className={`border-2 rounded-md shadow-sm transition-colors ${
-        isFocused ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300 hover:border-blue-400'
-      }`} 
-      style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight }}
+    <div
+      className="border-2 rounded-md shadow-sm transition-colors"
+      style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight,
+        borderColor: isFocused ? '#1890ff' : 'var(--border-color)',
+        boxShadow: isFocused ? '0 0 0 2px rgba(24, 144, 255, 0.2)' : undefined
+      }}
     >
       {/* Toolbar */}
-      <div className="border-b-2 border-gray-300 p-2 bg-gray-50 flex flex-wrap gap-2">
+      <div className="p-2 flex flex-wrap gap-2" style={{ borderBottom: '2px solid var(--border-color)', background: 'var(--card-background)' }}>
         <Space.Compact>
           <Button
             size="small"
@@ -204,11 +209,11 @@ export const PassageRichTextEditor = forwardRef<PassageRichTextEditorRef, Passag
       </div>
 
       {/* Editor Content */}
-      <div 
-        style={{ 
-          flex: 1, 
-          overflow: 'auto', 
-          backgroundColor: '#ffffff',
+      <div
+        style={{
+          flex: 1,
+          overflow: 'auto',
+          backgroundColor: 'var(--input-background)',
           display: 'flex',
           flexDirection: 'column'
         }}
@@ -226,9 +231,9 @@ export const PassageRichTextEditor = forwardRef<PassageRichTextEditorRef, Passag
         .ProseMirror {
           outline: none;
           font-family: serif;
-          font-size: 15px;
+          font-size: 1rem;
           line-height: 1.7;
-          color: #1f2937;
+          color: var(--text-primary);
           min-height: 100%;
         }
         
@@ -284,7 +289,7 @@ export const PassageRichTextEditor = forwardRef<PassageRichTextEditorRef, Passag
         .ProseMirror p.is-editor-empty:first-child::before {
           content: attr(data-placeholder);
           float: left;
-          color: #adb5bd;
+          color: var(--text-secondary);
           pointer-events: none;
           height: 0;
         }

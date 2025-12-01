@@ -28,7 +28,13 @@ const Header = ({
   }
 
   return (
-    <header className="bg-white border-b shadow-sm px-4 py-2 flex items-center justify-between">
+    <header
+      className="border-b shadow-sm px-4 py-2 flex items-center justify-between"
+      style={{
+        backgroundColor: 'var(--header-background)',
+        borderColor: 'var(--border-color)'
+      }}
+    >
       <div className="flex items-center gap-3">
         {isPreviewMode && onBackClick && (
           <Button
@@ -39,19 +45,47 @@ const Header = ({
             Back to Sections
           </Button>
         )}
-        <h1 className="text-red-600 text-lg font-bold tracking-wide">IELTS</h1>
-        <span className="text-gray-700 text-xs font-medium">{testTakerId}</span>
+        <h1
+          className="text-lg font-bold tracking-wide"
+          style={{ color: '#cf1322' }}
+        >
+          IELTS
+        </h1>
+        <span
+          className="text-xs font-medium"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          {testTakerId}
+        </span>
         {isPreviewMode && previewSectionType && (
-          <span className="text-red-600 font-semibold text-xs ml-2">
+          <span
+            className="font-semibold text-xs ml-2"
+            style={{ color: '#cf1322' }}
+          >
             PREVIEW MODE - {previewSectionType.toUpperCase()} - All inputs are disabled
           </span>
         )}
       </div>
       <div className="flex items-center gap-3">
         {children}
-        <Button type="text" icon={<WifiOutlined />} size="small" className="text-gray-600" />
-        <Button type="text" icon={<BellOutlined />} size="small" className="text-gray-600" />
-        <Button type="text" icon={<MenuOutlined />} size="small" className="text-gray-600" />
+        <Button
+          type="text"
+          icon={<WifiOutlined />}
+          size="small"
+          style={{ color: 'var(--text-secondary)' }}
+        />
+        <Button
+          type="text"
+          icon={<BellOutlined />}
+          size="small"
+          style={{ color: 'var(--text-secondary)' }}
+        />
+        <Button
+          type="text"
+          icon={<MenuOutlined />}
+          size="small"
+          style={{ color: 'var(--text-secondary)' }}
+        />
       </div>
     </header>
   )

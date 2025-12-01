@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, Suspense, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
@@ -8,6 +8,8 @@ import WritingTestLayout from '@/components/writing/WritingTestLayout'
 import { mockSubmissionApi, fileApi } from '@/services/testManagementApi'
 import { safeMultiParseJson } from '@/utils/json'
 import type { TestDto, SectionDto, PartDto } from '@/types/api'
+import { enterFullscreen, exitFullscreen, onFullscreenChange } from '@/utils/fullscreen'
+import { playWarningSound } from '@/utils/audioAlert'
 
 const WritingPageContent = observer(() => {
   const { writingStore } = useStore()
@@ -16,6 +18,7 @@ const WritingPageContent = observer(() => {
   const urlTestId = searchParams.get('testId')
   const urlMockId = searchParams.get('mockId')
   const isPreviewMode = searchParams.get('preview') === 'true'
+  const isSubmittingRef = useRef(false) // Track if user is submitting
 
   useEffect(() => {
     const load = async () => {
@@ -172,8 +175,18 @@ const WritingPageContent = observer(() => {
         }
         
         console.log('✍️ Total writing tasks loaded:', allTasks.length)
-        
+
         writingStore.setTasks(allTasks)
+
+        // 4.5) Enter fullscreen mode if not in preview mode
+        if (!writingStore.isPreviewMode) {
+          try {
+            await enterFullscreen()
+            console.log('✅ Entered fullscreen mode')
+          } catch (error) {
+            console.log('⚠️ Could not enter fullscreen (may need user interaction):', error)
+          }
+        }
 
         // 5) Start timer (60 minutes)
         writingStore.startTimer(async () => {
@@ -219,10 +232,44 @@ const WritingPageContent = observer(() => {
       }
     }
     load()
+
+    // Cleanup: exit fullscreen when component unmounts
+    return () => {
+      exitFullscreen().catch(() => {
+        // Ignore errors on cleanup
+      })
+    }
   }, [urlTestId])
 
+  // Listen for fullscreen changes and play warning sound if exited via ESC
+  useEffect(() => {
+    if (writingStore.isPreviewMode) return // Don't monitor in preview mode
+
+    const cleanup = onFullscreenChange((isFullscreen) => {
+      // If user exited fullscreen (not in fullscreen) and they're NOT submitting
+      if (!isFullscreen && !isSubmittingRef.current) {
+        console.log('⚠️ User exited fullscreen without submitting!')
+        playWarningSound()
+      }
+    })
+
+    // Cleanup listener
+    return cleanup
+  }, [writingStore.isPreviewMode])
+
+  // Pass the submitting ref to the layout so it can set it when submitting
+  useEffect(() => {
+    // Expose a method to mark as submitting
+    ;(window as any).__markWritingAsSubmitting = () => {
+      isSubmittingRef.current = true
+    }
+    return () => {
+      delete (window as any).__markWritingAsSubmitting
+    }
+  }, [])
+
   if (loading) return null
-  return <WritingTestLayout isPreviewMode={isPreviewMode} />
+  return <WritingTestLayout isPreviewMode={writingStore.isPreviewMode} />
 })
 
 function WritingPage() {

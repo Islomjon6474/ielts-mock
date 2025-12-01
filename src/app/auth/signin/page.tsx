@@ -40,11 +40,20 @@ const SignInPage = observer(() => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md shadow-2xl">
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{ background: 'var(--background)' }}
+    >
+      <Card
+        className="w-full max-w-md shadow-2xl"
+        style={{
+          backgroundColor: 'var(--card-background)',
+          borderColor: 'var(--border-color)'
+        }}
+      >
         <div className="text-center mb-6">
-          <Title level={2} className="!mb-2">Welcome Back</Title>
-          <Text type="secondary">Sign in to your IELTS Mock account</Text>
+          <Title level={2} className="!mb-2" style={{ color: 'var(--text-primary)' }}>Welcome Back</Title>
+          <Text type="secondary" style={{ color: 'var(--text-secondary)' }}>Sign in to your IELTS Mock account</Text>
         </div>
 
         <Form
@@ -87,7 +96,7 @@ const SignInPage = observer(() => {
           </Form.Item>
 
           <div className="text-center">
-            <Text type="secondary">
+            <Text type="secondary" style={{ color: 'var(--text-secondary)' }}>
               Don&apos;t have an account?{' '}
               <Link href="/auth/signup" className="text-blue-600 hover:text-blue-700">
                 Sign up

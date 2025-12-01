@@ -99,24 +99,27 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
           key={`drop-${idx}`}
           onDragOver={handleHeadingDragOver}
           onDrop={(e) => handleHeadingDrop(e, questionNum)}
-          className={`inline-flex items-center border-2 border-dashed rounded px-3 py-1 mx-1 min-w-[120px] ${
-            answer ? 'border-blue-400 bg-blue-50' : 'border-gray-400'
-          }`}
-          style={{ verticalAlign: 'middle' }}
+          className="inline-flex items-center border-2 border-dashed rounded px-3 py-1 mx-1 min-w-[120px]"
+          style={{
+            verticalAlign: 'middle',
+            borderColor: answer ? '#60a5fa' : 'var(--border-color)',
+            backgroundColor: answer ? '#dbeafe' : 'transparent'
+          }}
         >
           {answer ? (
             <span className="flex items-center gap-2">
-              <strong className="text-sm">{questionNum}.</strong>
-              <span className="text-sm font-medium">{cleanAnswer}</span>
+              <strong className="text-sm" style={{ color: 'var(--text-primary)' }}>{questionNum}.</strong>
+              <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{cleanAnswer}</span>
               <button
                 onClick={() => handleRemoveHeading(questionNum)}
-                className="text-gray-400 hover:text-gray-600 text-xs font-bold"
+                className="text-xs font-bold"
+                style={{ color: 'var(--text-secondary)' }}
               >
                 ✕
               </button>
             </span>
           ) : (
-            <span className="text-gray-400 text-xs">{questionNum}. Drag heading here</span>
+            <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{questionNum}. Drag heading here</span>
           )}
         </span>
       )
@@ -160,7 +163,7 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
         {/* Display part-level image if available */}
         {imageUrl && (
           <div className="mb-6">
-            <div className="border rounded-lg p-4 bg-gray-50">
+            <div className="border rounded-lg p-4" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--card-background)' }}>
               <AuthenticatedImage
                 src={imageUrl}
                 alt="Passage illustration"
@@ -180,24 +183,23 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
               <div key={section.number} className="mb-8">
                 {/* Drop Zone */}
                 <div
-                  className={`border-2 rounded-lg mb-4 transition-all relative group ${
-                    isDragOver
-                      ? 'border-blue-500 bg-blue-50 p-3'
-                      : assignedHeading
-                      ? 'border-gray-800 bg-white p-3'
-                      : 'border-dashed border-gray-400 bg-gray-50 p-3'
-                  }`}
+                  className="border-2 rounded-lg mb-4 transition-all relative group p-3"
+                  style={{
+                    borderColor: isDragOver ? '#3b82f6' : assignedHeading ? 'var(--border-color)' : 'var(--border-color)',
+                    borderStyle: assignedHeading ? 'solid' : 'dashed',
+                    backgroundColor: isDragOver ? '#dbeafe' : assignedHeading ? 'var(--card-background)' : 'var(--background)'
+                  }}
                   onDragOver={(e) => handleDragOver(e, section.number)}
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, section.number)}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="font-bold text-base flex-shrink-0">{section.number}</div>
+                      <div className="font-bold text-base flex-shrink-0" style={{ color: 'var(--text-primary)' }}>{section.number}</div>
                       {assignedHeading ? (
-                        <div className="text-sm text-gray-700 font-medium truncate">{assignedHeading}</div>
+                        <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{assignedHeading}</div>
                       ) : (
-                        <div className="text-sm text-gray-400 italic">Drop heading here</div>
+                        <div className="text-sm italic" style={{ color: 'var(--text-secondary)' }}>Drop heading here</div>
                       )}
                     </div>
                     {assignedHeading && (
@@ -217,7 +219,7 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
                 {/* Section Content */}
                 <div className="prose max-w-none">
                   {paragraphs.map((paragraph, pIndex) => (
-                    <p key={pIndex} className="mb-4 text-gray-800 leading-relaxed">
+                    <p key={pIndex} className="mb-4 leading-relaxed" style={{ color: 'var(--text-primary)' }}>
                       {paragraph}
                     </p>
                   ))}
@@ -235,7 +237,7 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
   if (!passage) {
     return (
       <div className="p-6">
-        <div className="text-center text-gray-400 py-8">
+        <div className="text-center py-8" style={{ color: 'var(--text-secondary)' }}>
           No passage content available
         </div>
       </div>
@@ -252,7 +254,7 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
         {/* Display part-level image if available */}
         {imageUrl && (
           <div className="mb-6">
-            <div className="border rounded-lg p-4 bg-gray-50">
+            <div className="border rounded-lg p-4" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--card-background)' }}>
               <AuthenticatedImage
                 src={imageUrl}
                 alt="Passage illustration"
@@ -267,55 +269,61 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
         <style jsx>{`
           .passage-content {
             font-family: serif;
-            font-size: 15px;
+            font-size: 1rem;
             line-height: 1.7;
-            color: #1f2937;
+            color: var(--text-primary);
           }
-          
+
           .passage-content :global(p) {
             margin: 0.75em 0;
+            color: var(--text-primary);
           }
-          
+
           .passage-content :global(h2) {
             font-size: 1.5em;
             font-weight: 700;
             margin: 1em 0 0.5em 0;
             line-height: 1.3;
+            color: var(--text-primary);
           }
-          
+
           .passage-content :global(h3) {
             font-size: 1.25em;
             font-weight: 600;
             margin: 0.9em 0 0.4em 0;
             line-height: 1.4;
+            color: var(--text-primary);
           }
-          
+
           .passage-content :global(ul),
           .passage-content :global(ol) {
             padding-left: 1.5em;
             margin: 0.75em 0;
           }
-          
+
           .passage-content :global(li) {
             margin: 0.25em 0;
+            color: var(--text-primary);
           }
-          
+
           .passage-content :global(strong) {
             font-weight: 700;
+            color: var(--text-primary);
           }
-          
+
           .passage-content :global(em) {
             font-style: italic;
+            color: var(--text-primary);
           }
-          
+
           .passage-content :global([style*="text-align: center"]) {
             text-align: center;
           }
-          
+
           .passage-content :global([style*="text-align: right"]) {
             text-align: right;
           }
-          
+
           .passage-content :global([style*="text-align: left"]) {
             text-align: left;
           }
@@ -345,19 +353,19 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
       <div className="prose max-w-none">
         {paragraphs.map((paragraph, index) => {
           const match = paragraph.trim().match(/^(\d+)/)
-          
+
           if (match) {
             return (
               <div key={index} className="mb-4">
-                <div className="font-bold text-lg border border-gray-800 inline-block px-3 py-1 rounded">
+                <div className="font-bold text-lg border inline-block px-3 py-1 rounded" style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}>
                   {paragraph.trim()}
                 </div>
               </div>
             )
           }
-          
+
           return (
-            <p key={index} className="mb-4 text-gray-800 leading-relaxed">
+            <p key={index} className="mb-4 leading-relaxed" style={{ color: 'var(--text-primary)' }}>
               {paragraph}
             </p>
           )

@@ -8,6 +8,7 @@ import FillInBlankQuestion from './questions/FillInBlankQuestion'
 import MatchHeadingQuestion from './questions/MatchHeadingQuestion'
 import MultipleChoiceQuestion from './questions/MultipleChoiceQuestion'
 import MultipleChoiceSingleQuestion from './questions/MultipleChoiceSingleQuestion'
+import MultipleCorrectAnswersQuestion from './questions/MultipleCorrectAnswersQuestion'
 import ImageInputsQuestion from './questions/ImageInputsQuestion'
 import SentenceCompletionQuestion from './questions/SentenceCompletionQuestion'
 import { Question } from '@/stores/ReadingStore'
@@ -101,6 +102,13 @@ const QuestionPanel = observer(() => {
             questionNumber={questionNumber}
           />
         )
+      case 'MULTIPLE_CORRECT_ANSWERS':
+        return (
+          <MultipleCorrectAnswersQuestion
+            question={question}
+            questionNumber={questionNumber}
+          />
+        )
       default:
         return null
     }
@@ -147,7 +155,7 @@ const QuestionPanel = observer(() => {
     switch (type) {
       case 'TRUE_FALSE_NOT_GIVEN':
         return (
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
             Choose <strong>TRUE</strong> if the statement agrees with the information given in the text,
             choose <strong>FALSE</strong> if the statement contradicts the information, or choose{' '}
             <strong>NOT GIVEN</strong> if there is no information on this.
@@ -155,19 +163,19 @@ const QuestionPanel = observer(() => {
         )
       case 'FILL_IN_BLANK':
         return (
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
             Complete the notes. Write <strong>ONE WORD ONLY</strong> from the text for each answer.
           </p>
         )
       case 'MATCH_HEADING':
         return (
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
             The text has sections. Choose the correct heading for each section and move it into the gap.
           </p>
         )
       case 'MULTIPLE_CHOICE':
         return (
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
             Choose <strong>TWO</strong> correct answers.
           </p>
         )
@@ -217,17 +225,18 @@ const QuestionPanel = observer(() => {
           return (
             <div key={groupIndex} className="mb-8">
               {groupIndex > 0 && (
-                <div className="border-t-2 border-gray-300 my-6"></div>
+                <div className="border-t-2 my-6" style={{ borderColor: 'var(--border-color)' }}></div>
               )}
-              
+
               <div className="space-y-4">
-                <div className="bg-gray-50 rounded-lg border-l-4 border-green-500 p-4 mb-4">
-                  <h3 className="font-bold text-lg mb-2">
+                <div className="rounded-lg border-l-4 p-4 mb-4" style={{ backgroundColor: 'var(--card-background)', borderLeftColor: '#22c55e' }}>
+                  <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
                     Questions {group.startNumber}–{group.endNumber}
                   </h3>
                   {questionGroupData?.instruction && (
-                    <div 
-                      className="text-sm text-gray-600 prose prose-sm max-w-none"
+                    <div
+                      className="text-sm prose prose-sm max-w-none"
+                      style={{ color: 'var(--text-secondary)' }}
                       dangerouslySetInnerHTML={{ __html: questionGroupData.instruction }}
                     />
                   )}
@@ -235,22 +244,25 @@ const QuestionPanel = observer(() => {
                 
                 {/* Only show available headings - drop zones are in the passage on the left */}
                 <div>
-                  <h4 className="font-semibold text-sm mb-3">Available Headings</h4>
+                  <h4 className="font-semibold text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Available Headings</h4>
                   <div className="space-y-2">
                     {parsedHeadings.map((heading, index) => {
                       const isUsed = usedHeadings.includes(heading)
                       const cleanHeading = stripHtml(heading)
-                      
+
                       return (
                         <div
                           key={index}
                           draggable={!isUsed}
                           onDragStart={(e) => handleDragStart(e, heading)}
-                          className={`px-4 py-3 border-2 rounded-md text-sm transition-all shadow-sm ${
-                            isUsed
-                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed line-through border-gray-500'
-                              : 'bg-gray-200 border-gray-700 cursor-move hover:bg-blue-50 hover:border-blue-500 hover:shadow-md'
-                          }`}
+                          className="px-4 py-3 border-2 rounded-md text-sm transition-all shadow-sm"
+                          style={{
+                            backgroundColor: isUsed ? '#d1d5db' : 'var(--card-background)',
+                            color: isUsed ? '#6b7280' : 'var(--text-primary)',
+                            borderColor: isUsed ? '#9ca3af' : 'var(--border-color)',
+                            cursor: isUsed ? 'not-allowed' : 'move',
+                            textDecoration: isUsed ? 'line-through' : 'none'
+                          }}
                         >
                           <span className="font-medium mr-2">{String.fromCharCode(105 + index)}.</span>
                           {cleanHeading}
@@ -281,17 +293,18 @@ const QuestionPanel = observer(() => {
           return (
             <div key={groupIndex} className="mb-8">
               {groupIndex > 0 && (
-                <div className="border-t-2 border-gray-300 my-6"></div>
+                <div className="border-t-2 my-6" style={{ borderColor: 'var(--border-color)' }}></div>
               )}
-              
+
               <div className="space-y-4">
-                <div className="bg-gray-50 rounded-lg border-l-4 border-blue-500 p-4 mb-4">
-                  <h3 className="font-bold text-lg mb-2">
+                <div className="rounded-lg border-l-4 p-4 mb-4" style={{ backgroundColor: 'var(--card-background)', borderLeftColor: '#3b82f6' }}>
+                  <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
                     Questions {group.startNumber}–{group.endNumber}
                   </h3>
                   {questionGroupData?.instruction && (
-                    <div 
-                      className="text-sm text-gray-600 prose prose-sm max-w-none"
+                    <div
+                      className="text-sm prose prose-sm max-w-none"
+                      style={{ color: 'var(--text-secondary)' }}
                       dangerouslySetInnerHTML={{ __html: questionGroupData.instruction }}
                     />
                   )}
@@ -325,20 +338,21 @@ const QuestionPanel = observer(() => {
           <div key={groupIndex} className="mb-8">
             {/* Divider between groups (except for first group) */}
             {groupIndex > 0 && (
-              <div className="border-t-2 border-gray-300 my-6"></div>
+              <div className="border-t-2 my-6" style={{ borderColor: 'var(--border-color)' }}></div>
             )}
-            
+
             <div className="space-y-4">
               {/* Group Header */}
-              <div className="bg-gray-50 rounded-lg border-l-4 border-blue-500">
-                <h3 className="font-bold text-lg mb-2">
+              <div className="rounded-lg border-l-4 p-4" style={{ backgroundColor: 'var(--card-background)', borderLeftColor: '#3b82f6' }}>
+                <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
                   Questions {group.startNumber}
                   {group.endNumber !== group.startNumber && `–${group.endNumber}`}
                 </h3>
                 {/* Use instruction from questionGroups if available, otherwise use default */}
                 {currentPart.questionGroups && currentPart.questionGroups[groupIndex]?.instruction ? (
-                  <div 
-                    className="text-sm text-gray-600 mb-4 prose prose-sm max-w-none"
+                  <div
+                    className="text-sm mb-4 prose prose-sm max-w-none"
+                    style={{ color: 'var(--text-secondary)' }}
                     dangerouslySetInnerHTML={{ __html: currentPart.questionGroups[groupIndex].instruction }}
                   />
                 ) : (
@@ -349,7 +363,7 @@ const QuestionPanel = observer(() => {
               {/* Display image for this question group if available */}
               {currentPart.questionGroups && currentPart.questionGroups[groupIndex]?.imageUrl && (
                 <div className="mb-6">
-                  <div className="border rounded-lg p-1 bg-gray-50">
+                  <div className="border rounded-lg p-1" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--card-background)' }}>
                     <AuthenticatedImage
                       src={currentPart.questionGroups[groupIndex].imageUrl}
                       alt={`Question group ${groupIndex + 1} illustration`}

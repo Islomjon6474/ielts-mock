@@ -85,9 +85,15 @@ export const UserMenu = observer(() => {
           <div className="hidden md:block">
             <Text strong>{authStore.user.firstName}</Text>
             {authStore.isAdmin && (
-              <Text type="secondary" className="text-xs ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 rounded">
+              <span
+                className="text-xs ml-2 px-2 py-0.5 rounded font-semibold"
+                style={{
+                  backgroundColor: 'var(--primary)',
+                  color: 'var(--button-text)'
+                }}
+              >
                 Admin
-              </Text>
+              </span>
             )}
           </div>
         </Space>

@@ -254,7 +254,7 @@ const GradeWritingResultPage = () => {
 
   if (loading) {
     return (
-      <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+      <Layout style={{ minHeight: '100vh', background: 'var(--background)' }}>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
           <Spin size="large" />
         </div>
@@ -263,11 +263,11 @@ const GradeWritingResultPage = () => {
   }
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+    <Layout style={{ minHeight: '100vh', background: 'var(--background)' }}>
       {/* Header */}
-      <Header style={{ 
-        background: '#fff', 
-        borderBottom: '1px solid #f0f0f0', 
+      <Header style={{
+        background: 'var(--header-background)',
+        borderBottom: '1px solid var(--border-color)', 
         padding: '20px 48px',
         display: 'flex',
         alignItems: 'center',
@@ -297,9 +297,9 @@ const GradeWritingResultPage = () => {
         </div>
       </Header>
 
-      <Content style={{ 
-        padding: '48px', 
-        background: '#f5f5f5', 
+      <Content style={{
+        padding: '48px',
+        background: 'var(--background)', 
         minHeight: 'calc(100vh - 64px)'
       }}>
         <div className="max-w-7xl mx-auto" style={{ width: '100%' }}>
@@ -370,7 +370,7 @@ const GradeWritingResultPage = () => {
                   {/* Question */}
                   <div style={{ marginBottom: 16 }}>
                     <Text strong style={{ display: 'block', marginBottom: 8 }}>Question:</Text>
-                    <Card size="small" style={{ background: '#f5f5f5' }}>
+                    <Card size="small" style={{ background: 'var(--card-background)' }}>
                       <div 
                         style={{ marginBottom: 0 }}
                         className="prose prose-sm max-w-none"
@@ -382,7 +382,7 @@ const GradeWritingResultPage = () => {
                   {/* Answer */}
                   <div style={{ marginBottom: 16 }}>
                     <Text strong style={{ display: 'block', marginBottom: 8 }}>Student's Answer:</Text>
-                    <Card size="small" style={{ background: '#fafafa' }}>
+                    <Card size="small" style={{ background: 'var(--card-background)' }}>
                       <Paragraph style={{ marginBottom: 0, whiteSpace: 'pre-wrap' }}>
                         {part.answer}
                       </Paragraph>
@@ -396,13 +396,13 @@ const GradeWritingResultPage = () => {
                       
                       <Row gutter={16} style={{ marginBottom: 16 }}>
                         <Col span={24}>
-                          <Card style={{ background: '#f6ffed', borderColor: '#b7eb8f' }}>
+                          <Card style={{ background: 'var(--card-background)', borderColor: 'var(--border-color)' }}>
                             <Statistic
                               title="Score"
                               value={gradeResult.score}
                               precision={1}
                               suffix="/ 9.0"
-                              valueStyle={{ color: '#52c41a', fontSize: '32px' }}
+                              valueStyle={{ color: '#52c41a', fontSize: '2rem' }}
                               prefix={<TrophyOutlined />}
                             />
                           </Card>

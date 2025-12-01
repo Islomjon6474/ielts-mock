@@ -111,8 +111,8 @@ const SentenceCompletionQuestion = observer(({
 
   return (
     <div className="space-y-4">
-      {title && <h3 className="font-bold text-base mb-2">{title}</h3>}
-      {instruction && <p className="text-sm mb-4">{instruction}</p>}
+      {title && <h3 style={{ color: 'var(--text-primary)' }} className="font-bold text-base mb-2">{title}</h3>}
+      {instruction && <p style={{ color: 'var(--text-primary)' }} className="text-sm mb-4">{instruction}</p>}
       
       {/* Display image if available */}
       {imageUrl && (
@@ -132,28 +132,89 @@ const SentenceCompletionQuestion = observer(({
           <div className="space-y-2">
             {questions.map((question, index) => {
               const questionNumber = questionNumbers[index]
-              const answer = listeningStore.getAnswer(question.id) as string || ''
-              
+
               // Parse the text to extract the sentence and placeholder
               const textContent = question.text
               // Extract placeholder like [21], [22], etc.
               const placeholderMatch = textContent.match(/\[(\d+)\]/)
               const placeholderNum = placeholderMatch ? placeholderMatch[1] : questionNumber.toString()
-              
+
               // Split HTML by placeholder to show it inline
               const parts = textContent.split(`[${placeholderNum}]`)
-              
+
+              // In preview mode with submitted answers, show submitted answer with correctness styling
+              if (isPreviewMode) {
+                const submittedAnswer = listeningStore.getSubmittedAnswer(question.id)
+                const isCorrect = listeningStore.isAnswerCorrect(question.id)
+
+                // Determine border and background color based on correctness
+                let borderColor = 'var(--border-color)'
+                let backgroundColor = 'transparent'
+
+                if (submittedAnswer) {
+                  if (isCorrect === true) {
+                    borderColor = '#52c41a' // Green for correct
+                    backgroundColor = '#f6ffed' // Light green background
+                  } else if (isCorrect === false) {
+                    borderColor = '#ff4d4f' // Red for incorrect
+                    backgroundColor = '#fff2f0' // Light red background
+                  }
+                }
+
+                // Get clean answer text for display
+                const cleanAnswer = submittedAnswer ? (() => {
+                  const tmp = document.createElement('DIV')
+                  tmp.innerHTML = submittedAnswer as string
+                  return tmp.textContent || tmp.innerText || ''
+                })() : ''
+
+                return (
+                  <div
+                    key={question.id}
+                    className="flex items-start gap-3 text-sm mb-4"
+                    data-question-id={questionNumber}
+                    ref={(el) => { if (el) questionRefs.current[questionNumber] = el }}
+                  >
+                    <strong className="whitespace-nowrap mt-1 text-base">{questionNumber}</strong>
+                    <div className="flex-1">
+                      <div className="space-y-2">
+                        {parts[0] && renderHtmlWithStyledArrows(parts[0])}
+                        {/* Drop zone for answer - disabled in preview */}
+                        <div
+                          style={{
+                            borderColor,
+                            backgroundColor,
+                            borderWidth: '2px'
+                          }}
+                          className="inline-flex items-center border-2 border-dashed rounded px-3 py-1 min-w-[120px]"
+                        >
+                          {submittedAnswer ? (
+                            <span style={{ color: 'var(--text-primary)' }} className="text-sm font-medium">{cleanAnswer}</span>
+                          ) : (
+                            <span style={{ color: 'var(--text-secondary)' }} className="text-xs font-bold">{placeholderNum}</span>
+                          )}
+                        </div>
+                        {parts[1] && renderHtmlWithStyledArrows(parts[1])}
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+
+              // Normal mode - editable
+              const answer = listeningStore.getAnswer(question.id) as string || ''
+
               // Get clean answer text for display
               const cleanAnswer = answer ? (() => {
                 const tmp = document.createElement('DIV')
                 tmp.innerHTML = answer
                 return tmp.textContent || tmp.innerText || ''
               })() : ''
-              
+
               return (
-                <div 
-                  key={question.id} 
-                  className="flex items-start gap-3 text-sm mb-4" 
+                <div
+                  key={question.id}
+                  className="flex items-start gap-3 text-sm mb-4"
                   data-question-id={questionNumber}
                   ref={(el) => { if (el) questionRefs.current[questionNumber] = el }}
                 >
@@ -164,27 +225,28 @@ const SentenceCompletionQuestion = observer(({
                       {parts[0] && renderHtmlWithStyledArrows(parts[0])}
                       {/* Drop zone for answer */}
                       <div
-                        onDragOver={!isPreviewMode ? handleDragOver : undefined}
-                        onDrop={!isPreviewMode ? (e) => handleDrop(e, question.id) : undefined}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, question.id)}
                         tabIndex={0}
-                        className={`inline-flex items-center border-2 border-dashed rounded px-3 py-1 min-w-[120px] ${
-                          answer ? 'border-blue-400 bg-blue-50' : 'border-gray-300'
-                        }`}
+                        style={{
+                          borderColor: answer ? 'var(--primary)' : 'var(--border-color)',
+                          backgroundColor: answer ? 'var(--secondary)' : 'transparent'
+                        }}
+                        className="inline-flex items-center border-2 border-dashed rounded px-3 py-1 min-w-[120px]"
                       >
                         {answer ? (
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">{cleanAnswer}</span>
-                            {!isPreviewMode && (
-                              <button
-                                onClick={() => handleRemove(question.id)}
-                                className="text-gray-400 hover:text-gray-600 text-xs font-bold"
-                              >
-                                ✕
-                              </button>
-                            )}
+                            <span style={{ color: 'var(--text-primary)' }} className="text-sm font-medium">{cleanAnswer}</span>
+                            <button
+                              onClick={() => handleRemove(question.id)}
+                              style={{ color: 'var(--text-secondary)' }}
+                              className="hover:opacity-70 text-xs font-bold"
+                            >
+                              ✕
+                            </button>
                           </div>
                         ) : (
-                          <span className="text-gray-400 text-xs font-bold">{placeholderNum}</span>
+                          <span style={{ color: 'var(--text-secondary)' }} className="text-xs font-bold">{placeholderNum}</span>
                         )}
                       </div>
                       {parts[1] && renderHtmlWithStyledArrows(parts[1])}
@@ -198,23 +260,30 @@ const SentenceCompletionQuestion = observer(({
 
         {/* Options Section */}
         <div>
-          <h4 className="font-semibold text-sm mb-3">Features</h4>
+          <h4 style={{ color: 'var(--text-primary)' }} className="font-semibold text-sm mb-3">Features</h4>
           <div className="grid grid-cols-2 gap-3">
             {options.map((option, index) => {
               const isUsed = usedOptions.includes(option)
               const cleanOption = stripHtml(option)
-              
+
               return (
                 <div
                   key={index}
                   draggable={!isUsed && !isPreviewMode}
                   onDragStart={!isPreviewMode ? (e) => handleDragStart(e, option) : undefined}
+                  style={{
+                    backgroundColor: isUsed ? 'var(--secondary)' : 'var(--card-background)',
+                    borderColor: isUsed ? 'var(--text-secondary)' : 'var(--border-color)',
+                    color: isUsed ? 'var(--text-secondary)' : 'var(--text-primary)',
+                    textDecoration: isUsed ? 'line-through' : 'none',
+                    opacity: isUsed ? 0.5 : 1
+                  }}
                   className={`px-4 py-3 border-2 rounded-md text-sm transition-all shadow-sm ${
                     isUsed
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed line-through border-gray-500'
+                      ? 'cursor-not-allowed'
                       : isPreviewMode
-                      ? 'bg-gray-200 border-gray-700 cursor-default'
-                      : 'bg-gray-200 border-gray-700 cursor-move hover:bg-blue-50 hover:border-blue-500 hover:shadow-md'
+                      ? 'cursor-default'
+                      : 'cursor-move hover:opacity-80'
                   }`}
                 >
                   {cleanOption}

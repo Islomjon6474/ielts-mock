@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { Checkbox } from 'antd'
+import { Checkbox, Card } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import AuthenticatedImage from '@/components/common/AuthenticatedImage'
@@ -31,15 +31,33 @@ const MultipleChoiceQuestion = observer(({ question, questionNumber, isPreviewMo
   }, [listeningStore.currentQuestionNumber, questionNumber])
 
   const handleChange = (checkedValues: string[]) => {
-    listeningStore.setAnswer(question.id, checkedValues)
+    // Limit to max answers
+    if (checkedValues.length <= maxAnswers) {
+      listeningStore.setAnswer(question.id, checkedValues)
+    }
   }
 
+  // In preview mode, get submitted answer for styling
+  const submittedAnswer = isPreviewMode ? listeningStore.getSubmittedAnswer(question.id) : null
+  const isCorrect = isPreviewMode ? listeningStore.isAnswerCorrect(question.id) : null
+  const displayAnswer = isPreviewMode && submittedAnswer ? (Array.isArray(submittedAnswer) ? submittedAnswer : [submittedAnswer]) : answer
+
   return (
-    <div className="mb-6" data-question-id={questionNumber} ref={containerRef}>
+    <Card
+      className="mb-4"
+      ref={containerRef}
+      style={{
+        backgroundColor: 'var(--card-background)',
+        borderColor: isPreviewMode && submittedAnswer ?
+          (isCorrect ? '#52c41a' : '#ff4d4f') :
+          'var(--border-color)',
+        borderWidth: isPreviewMode && submittedAnswer ? '2px' : '1px'
+      }}
+    >
       <div className="flex items-start gap-4">
         <div className="flex-1">
-          <p className="mb-3 font-medium text-sm"><strong>{questionNumber}</strong> {question.text}</p>
-          
+          <p style={{ color: 'var(--text-primary)' }} className="mb-3 font-medium text-sm"><strong>{questionNumber}</strong> {question.text}</p>
+
           {/* Display image if available */}
           {question.imageUrl && (
             <div className="mb-4">
@@ -51,10 +69,12 @@ const MultipleChoiceQuestion = observer(({ question, questionNumber, isPreviewMo
               />
             </div>
           )}
-          
+
           <Checkbox.Group
+            value={displayAnswer}
             onChange={(checkedValues) => handleChange(checkedValues as string[])}
             className="w-full"
+            disabled={isPreviewMode}
           >
             <div className="space-y-2">
               {question.options?.map((option: string, index: number) => {
@@ -75,12 +95,12 @@ const MultipleChoiceQuestion = observer(({ question, questionNumber, isPreviewMo
             </div>
           </Checkbox.Group>
 
-          <div className="mt-2 text-xs text-gray-500">
-            Selected: {answer.length} / {maxAnswers}
+          <div style={{ color: 'var(--text-secondary)' }} className="mt-2 text-xs">
+            Selected: {displayAnswer.length} / {maxAnswers}
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   )
 })
 

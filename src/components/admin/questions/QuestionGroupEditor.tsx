@@ -7,6 +7,7 @@ import { TrueFalseQuestion } from './TrueFalseQuestion'
 import { SentenceCompletionQuestion } from './SentenceCompletionQuestion'
 import { MatchHeadingQuestion } from './MatchHeadingQuestion'
 import { ShortAnswerQuestion } from './ShortAnswerQuestion'
+import { MultipleCorrectAnswersQuestion } from './MultipleCorrectAnswersQuestion'
 import { questionTypes } from './index'
 import { ImageInputsQuestion } from './ImageInputsQuestion'
 import { ImageUpload } from '../ImageUpload'
@@ -116,6 +117,9 @@ export const QuestionGroupEditor = ({
       case 'SENTENCE_COMPLETION':
         newQuestion = { text: '', correctAnswer: '', wordLimit: 'THREE' }
         break
+      case 'MULTIPLE_CORRECT_ANSWERS':
+        newQuestion = { text: '', correctAnswers: [] }
+        break
       default:
         newQuestion = { text: '', answer: '' }
     }
@@ -203,6 +207,8 @@ export const QuestionGroupEditor = ({
         return <ImageInputsQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} />
       case 'SENTENCE_COMPLETION':
         return <SentenceCompletionQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
+      case 'MULTIPLE_CORRECT_ANSWERS':
+        return <MultipleCorrectAnswersQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
       default:
         return null
     }

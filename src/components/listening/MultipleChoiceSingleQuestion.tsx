@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { Radio } from 'antd'
+import { Radio, Card } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import AuthenticatedImage from '@/components/common/AuthenticatedImage'
@@ -33,12 +33,26 @@ const MultipleChoiceSingleQuestion = observer(({ question, questionNumber, isPre
     listeningStore.setAnswer(question.id, value)
   }
 
+  // In preview mode, get submitted answer for styling
+  const submittedAnswer = isPreviewMode ? listeningStore.getSubmittedAnswer(question.id) as string : null
+  const isCorrect = isPreviewMode ? listeningStore.isAnswerCorrect(question.id) : null
+
   return (
-    <div className="border-b pb-4" data-question-id={questionNumber} ref={containerRef}>
+    <Card
+      className="mb-4"
+      ref={containerRef}
+      style={{
+        backgroundColor: 'var(--card-background)',
+        borderColor: isPreviewMode && submittedAnswer ?
+          (isCorrect ? '#52c41a' : '#ff4d4f') :
+          'var(--border-color)',
+        borderWidth: isPreviewMode && submittedAnswer ? '2px' : '1px'
+      }}
+    >
       <div className="flex items-start gap-4">
         <div className="flex-1">
-          <p className="mb-3 font-medium text-sm"><strong>{questionNumber}</strong> {question.text}</p>
-          
+          <p style={{ color: 'var(--text-primary)' }} className="mb-3 font-medium text-sm"><strong>{questionNumber}</strong> {question.text}</p>
+
           {/* Display image if available */}
           {question.imageUrl && (
             <div className="mb-4">
@@ -50,11 +64,12 @@ const MultipleChoiceSingleQuestion = observer(({ question, questionNumber, isPre
               />
             </div>
           )}
-          
+
           <Radio.Group
-            value={answer}
+            value={isPreviewMode ? submittedAnswer : answer}
             onChange={(e) => handleChange(e.target.value)}
             className="w-full"
+            disabled={isPreviewMode}
           >
             <div className="space-y-2">
               {question.options?.map((option: string, index: number) => {
@@ -64,7 +79,6 @@ const MultipleChoiceSingleQuestion = observer(({ question, questionNumber, isPre
                     <Radio
                       value={optionLabel}
                       className="whitespace-normal"
-                      disabled={isPreviewMode}
                     >
                       <span className="font-semibold mr-2">{optionLabel}.</span>
                       <span className="text-sm">{option}</span>
@@ -76,7 +90,7 @@ const MultipleChoiceSingleQuestion = observer(({ question, questionNumber, isPre
           </Radio.Group>
         </div>
       </div>
-    </div>
+    </Card>
   )
 })
 

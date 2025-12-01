@@ -1,12 +1,14 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, Suspense, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import ReadingTestLayout from '@/components/reading/ReadingTestLayout'
 import { mockSubmissionApi, fileApi } from '@/services/testManagementApi'
 import { safeMultiParseJson } from '@/utils/json'
+import { enterFullscreen, exitFullscreen, onFullscreenChange } from '@/utils/fullscreen'
+import { playWarningSound } from '@/utils/audioAlert'
 
 const ReadingPageContent = observer(() => {
   const { readingStore } = useStore()
@@ -15,6 +17,7 @@ const ReadingPageContent = observer(() => {
   const urlTestId = searchParams.get('testId')
   const urlMockId = searchParams.get('mockId')
   const isPreviewMode = searchParams.get('preview') === 'true'
+  const isSubmittingRef = useRef(false) // Track if user is submitting
 
   useEffect(() => {
     const load = async () => {
@@ -242,6 +245,16 @@ const ReadingPageContent = observer(() => {
         console.log('📚 Total reading parts loaded:', allParts.length)
         readingStore.setParts(allParts)
 
+        // 6.5) Enter fullscreen mode if not in preview mode
+        if (!readingStore.isPreviewMode) {
+          try {
+            await enterFullscreen()
+            console.log('✅ Entered fullscreen mode')
+          } catch (error) {
+            console.log('⚠️ Could not enter fullscreen (may need user interaction):', error)
+          }
+        }
+
         // 7) Start timer (60 minutes)
         readingStore.startTimer(async () => {
           console.log('⏰ Time is up! Auto-submitting...')
@@ -286,7 +299,41 @@ const ReadingPageContent = observer(() => {
       }
     }
     load()
+
+    // Cleanup: exit fullscreen when component unmounts
+    return () => {
+      exitFullscreen().catch(() => {
+        // Ignore errors on cleanup
+      })
+    }
   }, [urlTestId])
+
+  // Listen for fullscreen changes and play warning sound if exited via ESC
+  useEffect(() => {
+    if (readingStore.isPreviewMode) return // Don't monitor in preview mode
+
+    const cleanup = onFullscreenChange((isFullscreen) => {
+      // If user exited fullscreen (not in fullscreen) and they're NOT submitting
+      if (!isFullscreen && !isSubmittingRef.current) {
+        console.log('⚠️ User exited fullscreen without submitting!')
+        playWarningSound()
+      }
+    })
+
+    // Cleanup listener
+    return cleanup
+  }, [readingStore.isPreviewMode])
+
+  // Pass the submitting ref to the layout so it can set it when submitting
+  useEffect(() => {
+    // Expose a method to mark as submitting
+    ;(window as any).__markReadingAsSubmitting = () => {
+      isSubmittingRef.current = true
+    }
+    return () => {
+      delete (window as any).__markReadingAsSubmitting
+    }
+  }, [])
 
   if (loading) return null
   // Use the store's preview mode which gets automatically set when viewing finished mocks

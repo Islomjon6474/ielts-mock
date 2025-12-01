@@ -31,20 +31,26 @@ const SubmitModal = ({ visible, onClose, onConfirm, loading = false }: SubmitMod
         size: 'large',
         style: { minWidth: '100px' }
       }}
+      styles={{
+        content: {
+          backgroundColor: 'var(--card-background)',
+          color: 'var(--text-primary)'
+        }
+      }}
     >
       <div className="py-4">
         <div className="flex items-center gap-3 mb-4">
           <ExclamationCircleOutlined className="text-orange-500 text-3xl" />
-          <h2 className="text-xl font-bold m-0">Submit Section</h2>
+          <h2 className="text-xl font-bold m-0" style={{ color: 'var(--text-primary)' }}>Submit Section</h2>
         </div>
-        <p className="text-gray-700 mb-3 text-base">
+        <p className="mb-3 text-base" style={{ color: 'var(--text-primary)' }}>
           Are you sure you want to submit this section?
         </p>
-        <div className="bg-gray-50 p-3 rounded border border-gray-200">
-          <p className="text-sm text-gray-600 mb-2">
+        <div className="p-3 rounded border" style={{ backgroundColor: 'var(--background)', borderColor: 'var(--border-color)' }}>
+          <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
             <strong>Please note:</strong>
           </p>
-          <ul className="text-sm text-gray-600 pl-5 mb-0 space-y-1">
+          <ul className="text-sm pl-5 mb-0 space-y-1" style={{ color: 'var(--text-secondary)' }}>
             <li>Your answers will be saved and submitted</li>
             <li>You cannot change your answers after submission</li>
             <li>Make sure you have reviewed all questions</li>

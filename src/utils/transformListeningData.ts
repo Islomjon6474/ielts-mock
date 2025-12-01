@@ -75,7 +75,7 @@ export function transformAdminToListeningPart(
         // If question doesn't have imageUrl, use group's imageUrl
         imageUrl = questionToGroupImageUrl[q.id] || ''
       }
-      
+
       return {
         ...q,
         imageUrl,
@@ -84,7 +84,9 @@ export function transformAdminToListeningPart(
         // Add groupIndex to properly separate different question groups
         groupIndex: questionToGroupIndex[q.id] !== undefined ? questionToGroupIndex[q.id] : q.groupIndex,
         // Convert FILL_IN_BLANK back to the type expected by listening components
-        type: q.type
+        type: q.type,
+        // Include correctAnswer if available (from admin format)
+        correctAnswer: q.answer || q.correctAnswer || undefined
       }
     })
   } else {

@@ -19,9 +19,11 @@ import FlowChartQuestion from './FlowChartQuestion'
 import FillInBlankQuestion from './FillInBlankQuestion'
 import MultipleChoiceQuestion from './MultipleChoiceQuestion'
 import MultipleChoiceSingleQuestion from './MultipleChoiceSingleQuestion'
+import MultipleCorrectAnswersQuestion from './MultipleCorrectAnswersQuestion'
 import TrueFalseQuestion from './TrueFalseQuestion'
 import SentenceCompletionQuestion from './SentenceCompletionQuestion'
 import SubmitModal from '@/components/common/SubmitModal'
+import { exitFullscreen } from '@/utils/fullscreen'
 
 const { Content } = Layout
 
@@ -141,15 +143,59 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
   }
 
   const handleModalConfirm = async () => {
+    // Mark as submitting so warning sound doesn't play
+    if ((window as any).__markListeningAsSubmitting) {
+      (window as any).__markListeningAsSubmitting()
+    }
+
     try {
       await listeningStore.finishSection()
       setShowSubmitModal(false)
+      // Exit fullscreen before redirecting
+      await exitFullscreen().catch(() => {})
+
+      // Navigate to reading section
+      const mockId = listeningStore.mockId
+      const searchParams = new URLSearchParams(window.location.search)
+      const testId = searchParams.get('testId')
+
+      if (mockId && testId) {
+        // Import the API here to avoid circular dependencies
+        const { mockSubmissionApi } = await import('@/services/testManagementApi')
+
+        // Get sections to find reading section
+        const sectionsResp = await mockSubmissionApi.getAllSections(testId, mockId)
+        const sections = sectionsResp.data
+
+        // Find reading section
+        const readingSection = sections.find((s: any) =>
+          String(s.sectionType).toLowerCase() === 'reading'
+        )
+
+        if (readingSection) {
+          // Start reading section
+          await mockSubmissionApi.startSection(mockId, readingSection.id)
+          console.log('✅ Started reading section:', readingSection.id)
+
+          // Navigate to reading page
+          router.push(`/reading?testId=${testId}&mockId=${mockId}`)
+          return
+        }
+      }
+
+      // Fallback: go home if no reading section found
       router.push('/')
     } catch (error) {
       console.error('Failed to submit test:', error)
-      // Still close modal and redirect even if submission fails
-      setShowSubmitModal(false)
-      router.push('/')
+      // On error, still try to go to reading or home
+      const searchParams = new URLSearchParams(window.location.search)
+      const testId = searchParams.get('testId')
+      const mockId = searchParams.get('mockId')
+      if (testId && mockId) {
+        router.push(`/reading?testId=${testId}&mockId=${mockId}`)
+      } else {
+        router.push('/')
+      }
     }
   }
 
@@ -286,20 +332,20 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
       </Header>
       
       {/* Part Title and Status */}
-      <div className="bg-gray-50 px-4 py-1.5 border-b">
-        <h2 className="font-semibold text-sm text-black inline-block mr-4">{currentPart.title}</h2>
-        <span className="text-xs text-gray-600" dangerouslySetInnerHTML={{ __html: currentPart.instruction || '' }} />
+      <div style={{ backgroundColor: 'var(--card-background)', borderBottomColor: 'var(--border-color)' }} className="px-4 py-1.5 border-b">
+        <h2 style={{ color: 'var(--text-primary)' }} className="font-semibold text-sm inline-block mr-4">{currentPart.title}</h2>
+        <span style={{ color: 'var(--text-secondary)' }} className="text-xs" dangerouslySetInnerHTML={{ __html: currentPart.instruction || '' }} />
         {listeningStore.isPlaying && (
           <div className="flex items-center gap-1.5 inline-flex ml-4">
             <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
-            <span className="text-xs text-gray-700">Audio is playing</span>
+            <span style={{ color: 'var(--text-primary)' }} className="text-xs">Audio is playing</span>
           </div>
         )}
       </div>
 
       {/* Main Content */}
-      <Content className="flex-1 overflow-hidden bg-gray-200 flex justify-center py-6 px-6">
-        <div className="w-full bg-white p-8 rounded shadow overflow-y-auto">
+      <Content style={{ backgroundColor: 'var(--background)' }} className="flex-1 overflow-hidden flex justify-center py-6 px-6">
+        <div style={{ backgroundColor: 'var(--card-background)' }} className="w-full p-8 rounded shadow overflow-y-auto">
           {/* Render questions based on part */}
           {/* Dynamic generic renderer: if questions are provided, show them; otherwise fall back to legacy hardcoded UI */}
           {Array.isArray(currentPart.questions) && currentPart.questions.length > 0 && (
@@ -351,12 +397,12 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                     
                     return (
                       <div key={`group-${groupIdx}`} className="mb-8">
-                        <div className="bg-gray-50 rounded-lg border-l-4 border-blue-500 px-4 py-2 mb-4">
-                          <h3 className="font-bold text-base mb-1">
+                        <div style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }} className="rounded-lg border-l-4 border-blue-500 px-4 py-2 mb-4">
+                          <h3 style={{ color: 'var(--text-primary)' }} className="font-bold text-base mb-1">
                             Questions {startNum}{endNum !== startNum && `–${endNum}`}
                           </h3>
                           {group.instruction && (
-                            <div className="text-sm text-gray-600 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: group.instruction }} />
+                            <div style={{ color: 'var(--text-secondary)' }} className="text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: group.instruction }} />
                           )}
                         </div>
                         
@@ -374,13 +420,13 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                   return (
                   <div key={`group-${groupIdx}`} className="mb-6">
                     {/* Question range header - like in reading */}
-                    <div className="bg-gray-50 rounded-lg border-l-4 border-blue-500 px-4 py-2 mb-4">
-                      <h3 className="font-bold text-base mb-1">
+                    <div style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }} className="rounded-lg border-l-4 border-blue-500 px-4 py-2 mb-4">
+                      <h3 style={{ color: 'var(--text-primary)' }} className="font-bold text-base mb-1">
                         Questions {startNum}{endNum !== startNum && `–${endNum}`}
                       </h3>
                       {/* Show instruction if available */}
                       {group.instruction && (
-                        <div className="text-sm text-gray-600 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: group.instruction }} />
+                        <div style={{ color: 'var(--text-secondary)' }} className="text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: group.instruction }} />
                       )}
                     </div>
                     
@@ -428,17 +474,20 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                                 case 'FILL_IN_BLANK':
                                 case 'SHORT_ANSWER':
                                   return <FillInBlankQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
-                                
+
+                                case 'MULTIPLE_CORRECT_ANSWERS':
+                                  return <MultipleCorrectAnswersQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
+
                                 case 'IMAGE_INPUTS':
                                   return (
                                     <div key={q.id} className="flex items-center gap-2 mb-3" data-question-id={q.id}>
-                                      <span className="font-semibold text-gray-700">{q.id}.</span>
+                                      <span style={{ color: 'var(--text-primary)' }} className="font-semibold">{q.id}.</span>
                                       <Input
                                         value={(listeningStore.getAnswer(q.id) as string) || ''}
                                         onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
                                         placeholder="Your answer"
                                         className="inline-block"
-                                        style={{ width: '200px' }}
+                                        style={{ width: '200px', backgroundColor: 'var(--input-background)', borderColor: 'var(--input-border)', color: 'var(--text-primary)' }}
                                         disabled={isPreviewMode}
                                       />
                                     </div>
@@ -446,14 +495,14 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                                 
                                 default:
                                   return (
-                                    <div key={q.id} className="border-b pb-4" data-question-id={q.id}>
-                                      <p className="mb-2 text-sm"><strong>{q.id}.</strong> {q.text}</p>
+                                    <div key={q.id} style={{ borderBottomColor: 'var(--border-color)' }} className="border-b pb-4" data-question-id={q.id}>
+                                      <p style={{ color: 'var(--text-primary)' }} className="mb-2 text-sm"><strong>{q.id}.</strong> {q.text}</p>
                                       <Input
                                         value={(listeningStore.getAnswer(q.id) as string) || ''}
                                         onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
                                         placeholder="Your answer"
                                         className="inline-block text-center"
-                                        style={{ width: '200px' }}
+                                        style={{ width: '200px', backgroundColor: 'var(--input-background)', borderColor: 'var(--input-border)', color: 'var(--text-primary)' }}
                                         disabled={isPreviewMode}
                                       />
                                     </div>
@@ -495,17 +544,20 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                               case 'FILL_IN_BLANK':
                               case 'SHORT_ANSWER':
                                 return <FillInBlankQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
-                              
+
+                              case 'MULTIPLE_CORRECT_ANSWERS':
+                                return <MultipleCorrectAnswersQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
+
                               case 'IMAGE_INPUTS':
                                 return (
                                   <div key={q.id} className="flex items-center gap-2 mb-3" data-question-id={q.id}>
-                                    <span className="font-semibold text-gray-700">{q.id}.</span>
+                                    <span style={{ color: 'var(--text-primary)' }} className="font-semibold">{q.id}.</span>
                                     <Input
                                       value={(listeningStore.getAnswer(q.id) as string) || ''}
                                       onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
                                       placeholder="Your answer"
                                       className="inline-block"
-                                      style={{ width: '200px' }}
+                                      style={{ width: '200px', backgroundColor: 'var(--input-background)', borderColor: 'var(--input-border)', color: 'var(--text-primary)' }}
                                       disabled={isPreviewMode}
                                     />
                                   </div>
@@ -514,14 +566,14 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                               default:
                                 // Fallback: basic input with question number
                                 return (
-                                  <div key={q.id} className="border-b pb-4" data-question-id={q.id}>
-                                    <p className="mb-2 text-sm"><strong>{q.id}.</strong> {q.text}</p>
+                                  <div key={q.id} style={{ borderBottomColor: 'var(--border-color)' }} className="border-b pb-4" data-question-id={q.id}>
+                                    <p style={{ color: 'var(--text-primary)' }} className="mb-2 text-sm"><strong>{q.id}.</strong> {q.text}</p>
                                     <Input
                                       value={(listeningStore.getAnswer(q.id) as string) || ''}
                                       onChange={(e) => listeningStore.setAnswer(q.id, e.target.value)}
                                       placeholder="Your answer"
                                       className="inline-block text-center"
-                                      style={{ width: '200px' }}
+                                      style={{ width: '200px', backgroundColor: 'var(--input-background)', borderColor: 'var(--input-border)', color: 'var(--text-primary)' }}
                                       disabled={isPreviewMode}
                                     />
                                   </div>

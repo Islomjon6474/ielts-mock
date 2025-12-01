@@ -40,12 +40,27 @@ const MultipleChoiceQuestion = observer(({ question, questionNumber }: MultipleC
     }
   }
 
+  // In preview mode, get submitted answer for styling
+  const submittedAnswer = readingStore.isPreviewMode ? readingStore.getSubmittedAnswer(question.id) : null
+  const isCorrect = readingStore.isPreviewMode ? readingStore.isAnswerCorrect(question.id) : null
+  const displayAnswer = readingStore.isPreviewMode && submittedAnswer ? (Array.isArray(submittedAnswer) ? submittedAnswer : [submittedAnswer]) : answer
+
   return (
-    <Card className="mb-4" ref={containerRef}>
+    <Card
+      className="mb-4"
+      ref={containerRef}
+      style={{
+        backgroundColor: 'var(--card-background)',
+        borderColor: readingStore.isPreviewMode && submittedAnswer ?
+          (isCorrect ? '#52c41a' : '#ff4d4f') :
+          'var(--border-color)',
+        borderWidth: readingStore.isPreviewMode && submittedAnswer ? '2px' : '1px'
+      }}
+    >
       <div className="flex items-start gap-4">
         <div className="flex-1">
-          <p className="mb-4 font-medium"><strong>{questionNumber}</strong> {question.text}</p>
-          
+          <p className="mb-4 font-medium" style={{ color: 'var(--text-primary)' }}><strong>{questionNumber}</strong> {question.text}</p>
+
           {/* Display image if available */}
           {question.imageUrl && (
             <div className="mb-4">
@@ -57,9 +72,9 @@ const MultipleChoiceQuestion = observer(({ question, questionNumber }: MultipleC
               />
             </div>
           )}
-          
+
           <Checkbox.Group
-            value={answer}
+            value={displayAnswer}
             onChange={(checkedValues) => handleChange(checkedValues as string[])}
             className="w-full"
             disabled={readingStore.isPreviewMode}
@@ -74,8 +89,8 @@ const MultipleChoiceQuestion = observer(({ question, questionNumber }: MultipleC
                       disabled={readingStore.isPreviewMode || (!answer.includes(option) && answer.length >= maxAnswers)}
                       className="whitespace-normal"
                     >
-                      <span className="font-semibold mr-2">{optionLabel}.</span>
-                      <span>{option}</span>
+                      <span className="font-semibold mr-2" style={{ color: 'var(--text-primary)' }}>{optionLabel}.</span>
+                      <span style={{ color: 'var(--text-primary)' }}>{option}</span>
                     </Checkbox>
                   </div>
                 )
@@ -83,8 +98,8 @@ const MultipleChoiceQuestion = observer(({ question, questionNumber }: MultipleC
             </div>
           </Checkbox.Group>
 
-          <div className="mt-3 text-sm text-gray-500">
-            Selected: {answer.length} / {maxAnswers}
+          <div className="mt-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
+            Selected: {displayAnswer.length} / {maxAnswers}
           </div>
         </div>
       </div>

@@ -9,12 +9,14 @@ export type QuestionType =
   | 'SUMMARY_COMPLETION'
   | 'MATCH_HEADING'
   | 'SHORT_ANSWER'
+  | 'MULTIPLE_CORRECT_ANSWERS'
 
 export interface AdminQuestion {
   questionNumber?: number
   text?: string
   options?: string[] | string
   correctAnswer?: string
+  correctAnswers?: string[] // For MULTIPLE_CORRECT_ANSWERS type
 }
 
 export interface AdminQuestionGroup {

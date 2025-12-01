@@ -3,23 +3,29 @@
 @tailwind utilities;
 
 :root {
+  /* Default theme: Black on White */
   --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --foreground: #000000;
+  --card-background: #ffffff;
+  --border-color: #d9d9d9;
+  --primary: #1677ff;
+  --secondary: #f5f5f5;
+  --text-primary: #000000;
+  --text-secondary: #666666;
+  --button-background: #1677ff;
+  --button-text: #ffffff;
+  --input-background: #ffffff;
+  --input-border: #d9d9d9;
+  --header-background: #ffffff;
 }
 
 body {
-  color: var(--foreground);
+  color: var(--text-primary);
   background: var(--background);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   margin: 0;
   padding: 0;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 html {
@@ -47,18 +53,18 @@ html {
 .ant-radio-wrapper .ant-radio .ant-radio-inner {
   width: 18px !important;
   height: 18px !important;
-  border: 1.5px solid #6b7280 !important;
-  background-color: white !important;
+  border: 1.5px solid var(--border-color) !important;
+  background-color: var(--input-background) !important;
 }
 
 .ant-radio-wrapper:hover .ant-radio .ant-radio-inner {
-  border-color: #1677ff !important;
+  border-color: var(--primary) !important;
 }
 
 .ant-radio-wrapper .ant-radio-checked .ant-radio-inner {
-  border-color: #1677ff !important;
+  border-color: var(--primary) !important;
   border-width: 1.5px !important;
-  background-color: white !important;
+  background-color: var(--input-background) !important;
 }
 
 .ant-radio-wrapper .ant-radio-checked .ant-radio-inner::after {
@@ -66,47 +72,48 @@ html {
   height: 10px !important;
   margin-top: -5px !important;
   margin-left: -5px !important;
-  background-color: #1677ff !important;
+  background-color: var(--primary) !important;
 }
 
 /* Checkbox styling */
 .ant-checkbox-wrapper .ant-checkbox .ant-checkbox-inner {
   width: 18px !important;
   height: 18px !important;
-  border: 1.5px solid #6b7280 !important;
-  background-color: white !important;
+  border: 1.5px solid var(--border-color) !important;
+  background-color: var(--input-background) !important;
 }
 
 .ant-checkbox-wrapper:hover .ant-checkbox .ant-checkbox-inner {
-  border-color: #1677ff !important;
+  border-color: var(--primary) !important;
 }
 
 .ant-checkbox-wrapper .ant-checkbox-checked .ant-checkbox-inner {
-  background-color: #1677ff !important;
-  border-color: #1677ff !important;
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
 }
 
 /* Input fields styling - make them more visible */
 .ant-input {
-  border: 1.5px solid #6b7280 !important;
+  border: 1.5px solid var(--input-border) !important;
   border-radius: 6px !important;
   padding: 4px 10px !important;
-  font-size: 14px !important;
-  color: #1f2937 !important;
+  font-size: 1rem !important;
+  color: var(--text-primary) !important;
+  background-color: var(--input-background) !important;
   min-height: 32px !important;
 }
 
 .ant-input:hover {
-  border-color: #1677ff !important;
+  border-color: var(--primary) !important;
 }
 
 .ant-input:focus {
-  border-color: #1677ff !important;
-  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1) !important;
+  border-color: var(--primary) !important;
+  box-shadow: none !important;
 }
 
 .ant-input::placeholder {
-  color: #9ca3af !important;
+  color: var(--text-secondary) !important;
   font-weight: 700 !important;
 }
 
@@ -120,7 +127,7 @@ html {
 .test-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
-  border-color: #1677ff !important;
+  border-color: var(--primary) !important;
 }
 
 .test-card:active {
@@ -129,7 +136,6 @@ html {
 
 /* Button hover effects for Start Test button */
 .test-card .ant-btn-primary:hover {
-  background: #0958d9 !important;
   transform: translateX(2px);
   transition: all 0.2s ease;
 }
@@ -158,4 +164,45 @@ html {
   .paper-container {
     width: 50% !important;
   }
+}
+
+/* Override Tailwind font sizes to use rem for scalability */
+.text-xs {
+  font-size: 0.75rem !important;
+  line-height: 1rem !important;
+}
+
+.text-sm {
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+}
+
+.text-base {
+  font-size: 1rem !important;
+  line-height: 1.5rem !important;
+}
+
+.text-lg {
+  font-size: 1.125rem !important;
+  line-height: 1.75rem !important;
+}
+
+.text-xl {
+  font-size: 1.25rem !important;
+  line-height: 1.75rem !important;
+}
+
+.text-2xl {
+  font-size: 1.5rem !important;
+  line-height: 2rem !important;
+}
+
+.text-3xl {
+  font-size: 1.875rem !important;
+  line-height: 2.25rem !important;
+}
+
+.text-4xl {
+  font-size: 2.25rem !important;
+  line-height: 2.5rem !important;
 }

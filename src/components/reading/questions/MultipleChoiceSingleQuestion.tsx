@@ -36,12 +36,26 @@ const MultipleChoiceSingleQuestion = observer(({ question, questionNumber }: Mul
     readingStore.setAnswer(question.id, value)
   }
 
+  // In preview mode, get submitted answer for styling
+  const submittedAnswer = readingStore.isPreviewMode ? readingStore.getSubmittedAnswer(question.id) as string : null
+  const isCorrect = readingStore.isPreviewMode ? readingStore.isAnswerCorrect(question.id) : null
+
   return (
-    <Card className="mb-4" ref={containerRef}>
+    <Card
+      className="mb-4"
+      ref={containerRef}
+      style={{
+        backgroundColor: 'var(--card-background)',
+        borderColor: readingStore.isPreviewMode && submittedAnswer ?
+          (isCorrect ? '#52c41a' : '#ff4d4f') :
+          'var(--border-color)',
+        borderWidth: readingStore.isPreviewMode && submittedAnswer ? '2px' : '1px'
+      }}
+    >
       <div className="flex items-start gap-4">
         <div className="flex-1">
-          <p className="mb-4 font-medium"><strong>{questionNumber}</strong> {question.text}</p>
-          
+          <p className="mb-4 font-medium" style={{ color: 'var(--text-primary)' }}><strong>{questionNumber}</strong> {question.text}</p>
+
           {/* Display image if available */}
           {question.imageUrl && (
             <div className="mb-4">
@@ -53,9 +67,9 @@ const MultipleChoiceSingleQuestion = observer(({ question, questionNumber }: Mul
               />
             </div>
           )}
-          
+
           <Radio.Group
-            value={answer}
+            value={readingStore.isPreviewMode && submittedAnswer ? submittedAnswer : answer}
             onChange={(e) => handleChange(e.target.value)}
             className="w-full"
             disabled={readingStore.isPreviewMode}
@@ -69,8 +83,8 @@ const MultipleChoiceSingleQuestion = observer(({ question, questionNumber }: Mul
                       value={optionLabel}
                       className="whitespace-normal"
                     >
-                      <span className="font-semibold mr-2">{optionLabel}.</span>
-                      <span>{option}</span>
+                      <span className="font-semibold mr-2" style={{ color: 'var(--text-primary)' }}>{optionLabel}.</span>
+                      <span style={{ color: 'var(--text-primary)' }}>{option}</span>
                     </Radio>
                   </div>
                 )

@@ -3,11 +3,12 @@ import { mockSubmissionApi } from '@/services/testManagementApi'
 
 export interface ListeningQuestion {
   id: number
-  type: 'FILL_IN_BLANK' | 'MULTIPLE_CHOICE' | 'MULTIPLE_CHOICE_SINGLE' | 'MATCHING' | 'TABLE' | 'IMAGE_INPUTS' | 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN' | 'SENTENCE_COMPLETION' | 'SHORT_ANSWER'
+  type: 'FILL_IN_BLANK' | 'MULTIPLE_CHOICE' | 'MULTIPLE_CHOICE_SINGLE' | 'MATCHING' | 'TABLE' | 'IMAGE_INPUTS' | 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN' | 'SENTENCE_COMPLETION' | 'SHORT_ANSWER' | 'MULTIPLE_CORRECT_ANSWERS'
   text: string
   options?: string[]
   // For IMAGE_INPUTS questions, we repeat imageUrl per question id; UI will render image once per imageUrl group
   imageUrl?: string
+  correctAnswer?: string | string[] // Correct answer(s) for the question
 }
 
 export interface ListeningPart {
@@ -36,7 +37,11 @@ export class ListeningStore {
   sectionId: string | null = null
   isSubmitting: boolean = false
   isPreviewMode: boolean = false
-  
+
+  // Answer review properties (for admin result viewing)
+  submittedAnswers: Map<number, string | string[]> = new Map() // User's submitted answers
+  answerCorrectness: Map<number, boolean> = new Map() // Whether each answer is correct
+
   // Timer properties (audio duration + 10 minutes)
   audioDuration: number = 0 // Will be set based on actual audio duration
   timeRemaining: number = 0
@@ -209,11 +214,77 @@ export class ListeningStore {
     }
   }
 
+  // Load submitted answers and calculate correctness
+  loadSubmittedAnswers(submittedAnswers: Array<{ questionOrd: number, answer: string }>) {
+    this.submittedAnswers.clear()
+    this.answerCorrectness.clear()
+
+    submittedAnswers.forEach((submitted) => {
+      const questionId = submitted.questionOrd
+      const userAnswer = submitted.answer
+
+      // Store the submitted answer
+      this.submittedAnswers.set(questionId, userAnswer)
+
+      // Find the question to get correct answer
+      const question = this.allQuestions.find(q => q.id === questionId)
+      if (question && question.correctAnswer) {
+        // Check if answer is correct
+        const isCorrect = this.checkAnswerCorrectness(userAnswer, question.correctAnswer, question.type)
+        this.answerCorrectness.set(questionId, isCorrect)
+      }
+    })
+  }
+
+  // Check if a user answer matches the correct answer
+  private checkAnswerCorrectness(
+    userAnswer: string | string[],
+    correctAnswer: string | string[],
+    questionType: string
+  ): boolean {
+    // Normalize answers for comparison (trim, lowercase)
+    const normalize = (str: string) => str.trim().toLowerCase()
+
+    if (questionType === 'MULTIPLE_CHOICE' || questionType === 'MULTIPLE_CORRECT_ANSWERS') {
+      // For multiple choice with multiple answers
+      const userAnswers = Array.isArray(userAnswer) ? userAnswer : [userAnswer]
+      const correctAnswers = Array.isArray(correctAnswer) ? correctAnswer : [correctAnswer]
+
+      if (userAnswers.length !== correctAnswers.length) return false
+
+      const normalizedUser = userAnswers.map(normalize).sort()
+      const normalizedCorrect = correctAnswers.map(normalize).sort()
+
+      return normalizedUser.every((ans, i) => ans === normalizedCorrect[i])
+    } else {
+      // For single answer questions
+      const userAns = Array.isArray(userAnswer) ? userAnswer[0] : userAnswer
+      const correctAns = Array.isArray(correctAnswer) ? correctAnswer[0] : correctAnswer
+
+      if (!userAns || !correctAns) return false
+
+      return normalize(userAns) === normalize(correctAns)
+    }
+  }
+
+  // Get submitted answer for a question
+  getSubmittedAnswer(questionId: number): string | string[] | null {
+    return this.submittedAnswers.get(questionId) || null
+  }
+
+  // Check if a submitted answer is correct
+  isAnswerCorrect(questionId: number): boolean | null {
+    if (!this.answerCorrectness.has(questionId)) return null
+    return this.answerCorrectness.get(questionId) || false
+  }
+
   reset() {
     this.stopTimer()
     this.currentPart = 1
     this.currentQuestionIndex = 0
     this.answers.clear()
+    this.submittedAnswers.clear()
+    this.answerCorrectness.clear()
     this.parts = []
     this.audioUrls = []
     this.isPlaying = false

@@ -95,7 +95,7 @@ const ResultPreviewPage = () => {
 
   if (loading) {
     return (
-      <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+      <Layout style={{ minHeight: '100vh', background: 'var(--background)' }}>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
           <Spin size="large" />
         </div>
@@ -104,11 +104,11 @@ const ResultPreviewPage = () => {
   }
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+    <Layout style={{ minHeight: '100vh', background: 'var(--background)' }}>
       {/* Header */}
-      <Header style={{ 
-        background: '#fff', 
-        borderBottom: '1px solid #f0f0f0', 
+      <Header style={{
+        background: 'var(--header-background)',
+        borderBottom: '1px solid var(--border-color)', 
         padding: '20px 48px',
         display: 'flex',
         alignItems: 'center',
@@ -138,9 +138,9 @@ const ResultPreviewPage = () => {
         </div>
       </Header>
 
-      <Content style={{ 
-        padding: '48px', 
-        background: '#f5f5f5', 
+      <Content style={{
+        padding: '48px',
+        background: 'var(--background)', 
         minHeight: 'calc(100vh - 64px)'
       }}>
         <div className="max-w-7xl mx-auto" style={{ width: '100%' }}>

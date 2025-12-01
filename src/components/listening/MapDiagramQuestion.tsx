@@ -29,19 +29,19 @@ const MapDiagramQuestion = observer(({ mapUrl, inputPositions, instruction }: Ma
   return (
     <div className="space-y-4">
       {instruction && (
-        <p className="text-sm mb-4">{instruction}</p>
+        <p style={{ color: 'var(--text-primary)' }} className="text-sm mb-4">{instruction}</p>
       )}
-      
+
       {/* Map Container */}
-      <div className="relative border-2 border-gray-300 rounded-lg overflow-hidden bg-white">
+      <div style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--card-background)' }} className="relative border-2 rounded-lg overflow-hidden">
         {/* SVG Map */}
-        <AuthenticatedImage 
-          src={mapUrl} 
-          alt="Diagram" 
+        <AuthenticatedImage
+          src={mapUrl}
+          alt="Diagram"
           className="w-full h-auto"
           style={{ maxHeight: '600px', objectFit: 'contain' }}
         />
-        
+
         {/* Positioned Input Fields */}
         {inputPositions.map((position: MapInputPosition) => {
           const answer = listeningStore.getAnswer(position.questionId) as string || ''
@@ -57,7 +57,7 @@ const MapDiagramQuestion = observer(({ mapUrl, inputPositions, instruction }: Ma
             >
               <div className="flex items-center gap-1">
                 {position.label && (
-                  <span className="text-xs font-semibold text-gray-700 bg-white px-1 rounded">
+                  <span style={{ color: 'var(--text-primary)', backgroundColor: 'var(--card-background)' }} className="text-xs font-semibold px-1 rounded">
                     {position.label}
                   </span>
                 )}
@@ -66,6 +66,7 @@ const MapDiagramQuestion = observer(({ mapUrl, inputPositions, instruction }: Ma
                   onChange={(e) => handleInputChange(position.questionId, e.target.value)}
                   placeholder={position.questionNumber.toString()}
                   className="w-24 text-center font-medium"
+                  style={{ backgroundColor: 'var(--input-background)', borderColor: 'var(--input-border)', color: 'var(--text-primary)' }}
                   size="small"
                 />
               </div>

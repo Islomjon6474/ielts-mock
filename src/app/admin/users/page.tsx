@@ -131,13 +131,13 @@ const UserManagementPage = () => {
       title: 'First Name',
       dataIndex: 'firstName',
       key: 'firstName',
-      render: (text: string) => <Text strong>{text}</Text>
+      render: (text: string) => <Text strong style={{ color: 'var(--text-primary)' }}>{text}</Text>
     },
     {
       title: 'Last Name',
       dataIndex: 'lastName',
       key: 'lastName',
-      render: (text: string) => <Text strong>{text}</Text>
+      render: (text: string) => <Text strong style={{ color: 'var(--text-primary)' }}>{text}</Text>
     },
     {
       title: 'Username',
@@ -146,7 +146,7 @@ const UserManagementPage = () => {
       render: (text: string) => (
         <Space>
           <UserOutlined style={{ color: '#1677ff' }} />
-          <Text>{text}</Text>
+          <Text style={{ color: 'var(--text-primary)' }}>{text}</Text>
         </Space>
       )
     },
@@ -223,11 +223,11 @@ const UserManagementPage = () => {
   ]
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+    <Layout style={{ minHeight: '100vh', backgroundColor: 'var(--background)' }}>
       {/* Header */}
-      <Header style={{ 
-        background: '#fff', 
-        borderBottom: '1px solid #f0f0f0', 
+      <Header style={{
+        backgroundColor: 'var(--header-background)',
+        borderBottom: '1px solid var(--border-color)',
         padding: '20px 48px',
         display: 'flex',
         alignItems: 'center',
@@ -250,9 +250,9 @@ const UserManagementPage = () => {
         </div>
       </Header>
 
-      <Content style={{ 
-        padding: '48px', 
-        background: '#f5f5f5', 
+      <Content style={{
+        padding: '48px',
+        backgroundColor: 'var(--background)',
         minHeight: 'calc(100vh - 64px)'
       }}>
         <div className="max-w-7xl mx-auto" style={{ width: '100%' }}>
@@ -264,10 +264,10 @@ const UserManagementPage = () => {
             marginBottom: '24px'
           }}>
             <div>
-              <Title level={2} style={{ marginBottom: '8px' }}>
+              <Title level={2} style={{ marginBottom: '8px', color: 'var(--text-primary)' }}>
                 Student Management
               </Title>
-              <Text type="secondary" style={{ fontSize: '16px' }}>
+              <Text type="secondary" style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>
                 Manage student accounts, create new students, and change passwords
               </Text>
             </div>
@@ -292,7 +292,7 @@ const UserManagementPage = () => {
                   paddingLeft: 24,
                   paddingRight: 24,
                   borderRadius: '8px',
-                  fontSize: '16px',
+                  fontSize: '1rem',
                   fontWeight: 500
                 }}
               >
@@ -302,8 +302,10 @@ const UserManagementPage = () => {
           </div>
 
           {/* Students Table */}
-          <Card 
-            style={{ 
+          <Card
+            style={{
+              backgroundColor: 'var(--card-background)',
+              borderColor: 'var(--border-color)',
               borderRadius: '12px',
               boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
             }}
@@ -454,12 +456,12 @@ const UserManagementPage = () => {
         width={500}
       >
         {selectedStudent && (
-          <div style={{ marginBottom: '16px', padding: '12px', background: '#f5f5f5', borderRadius: '8px' }}>
-            <Text strong>Student: </Text>
-            <Text>{selectedStudent.firstName} {selectedStudent.lastName}</Text>
+          <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'var(--background)', borderRadius: '8px' }}>
+            <Text strong style={{ color: 'var(--text-primary)' }}>Student: </Text>
+            <Text style={{ color: 'var(--text-primary)' }}>{selectedStudent.firstName} {selectedStudent.lastName}</Text>
             <br />
-            <Text strong>Username: </Text>
-            <Text>{selectedStudent.username}</Text>
+            <Text strong style={{ color: 'var(--text-primary)' }}>Username: </Text>
+            <Text style={{ color: 'var(--text-primary)' }}>{selectedStudent.username}</Text>
           </div>
         )}
         

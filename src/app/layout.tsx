@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import { AntdRegistry } from '@/components/AntdRegistry'
-import { ConfigProvider } from 'antd'
 import './globals.css'
 import StoreProvider from '@/components/providers/StoreProvider'
+import { ThemeProvider } from '@/components/providers/ThemeProvider'
 
 export const metadata: Metadata = {
   title: 'IELTS Mock Assessment',
@@ -18,18 +18,11 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AntdRegistry>
-          <ConfigProvider
-            theme={{
-              token: {
-                colorPrimary: '#1677ff',
-                borderRadius: 6,
-              },
-            }}
-          >
-            <StoreProvider>
+          <StoreProvider>
+            <ThemeProvider>
               {children}
-            </StoreProvider>
-          </ConfigProvider>
+            </ThemeProvider>
+          </StoreProvider>
         </AntdRegistry>
       </body>
     </html>

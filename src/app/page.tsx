@@ -175,19 +175,40 @@ const HomePage = observer(() => {
 
   const handleConfirmStart = async () => {
     if (!selectedTest) return
-    
+
     const id = selectedTest.id || selectedTest.testId || selectedTest?.uuid || selectedTest?.ID
     if (!id) return
-    
+
     try {
       setStartingTest(true)
       // Start the mock test
       const response = await mockSubmissionApi.startMock(id)
       const mockId = response.data // Get the mockId from response
       console.log('✅ Mock test started:', mockId)
-      
-      // Navigate to test page with mockId
-      router.push(`/test/${id}?mockId=${mockId}`)
+
+      // Get sections to find listening section
+      const sectionsResp = await mockSubmissionApi.getAllSections(id, mockId)
+      const sections = sectionsResp.data
+
+      // Find listening section
+      const listeningSection = sections.find((s: any) =>
+        String(s.sectionType).toLowerCase() === 'listening'
+      )
+
+      if (!listeningSection) {
+        Modal.error({
+          title: 'Section Not Found',
+          content: 'Listening section not found for this test.',
+        })
+        return
+      }
+
+      // Start listening section
+      await mockSubmissionApi.startSection(mockId, listeningSection.id)
+      console.log('✅ Started listening section:', listeningSection.id)
+
+      // Navigate directly to listening page
+      router.push(`/listening?testId=${id}&mockId=${mockId}`)
     } catch (error) {
       console.error('Error starting test:', error)
       Modal.error({
@@ -205,11 +226,38 @@ const HomePage = observer(() => {
     setSelectedTest(null)
   }
 
-  const handleContinueTest = (mock: any) => {
-    // Navigate to test page with existing mockId
+  const handleContinueTest = async (mock: any) => {
+    // Find the first unfinished section and navigate to it
     const testId = mock.testId
     const mockId = mock.id
-    router.push(`/test/${testId}?mockId=${mockId}`)
+
+    try {
+      const sectionsResp = await mockSubmissionApi.getAllSections(testId, mockId)
+      const sections = sectionsResp.data
+
+      // Find first unfinished section (isFinished !== 1)
+      const unfinishedSection = sections.find((s: any) => s.isFinished !== 1)
+
+      if (!unfinishedSection) {
+        // All sections finished, go to first section in preview mode
+        const firstSection = sections[0]
+        if (firstSection) {
+          const sectionType = String(firstSection.sectionType).toLowerCase()
+          router.push(`/${sectionType}?testId=${testId}&mockId=${mockId}&preview=true`)
+        } else {
+          router.push('/')
+        }
+        return
+      }
+
+      // Navigate to the unfinished section
+      const sectionType = String(unfinishedSection.sectionType).toLowerCase()
+      router.push(`/${sectionType}?testId=${testId}&mockId=${mockId}`)
+    } catch (error) {
+      console.error('Error continuing test:', error)
+      // Fallback to test page
+      router.push(`/test/${testId}?mockId=${mockId}`)
+    }
   }
 
   const handleTabChange = (key: string) => {
@@ -229,7 +277,7 @@ const HomePage = observer(() => {
   })
   
   return (
-    <div className="min-h-screen" style={{ background: '#f5f5f5' }}>
+    <div className="min-h-screen" style={{ background: 'var(--background)' }}>
       <div className="max-w-7xl mx-auto py-12 px-6">
         <div className="mb-8">
           <div key={`header-${renderKey}-${authStore.user?.role}`} className="flex justify-end items-center gap-3 mb-6">
@@ -251,36 +299,37 @@ const HomePage = observer(() => {
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '24px', marginBottom: '16px' }}>
             {/* Last Unfinished Mock - Compact Card */}
             {lastUnfinishedMock && (
-              <Card 
-                style={{ 
+              <Card
+                style={{
                   width: '240px',
                   borderRadius: '8px',
                   border: '2px solid #faad14',
                   boxShadow: '0 2px 6px rgba(250, 173, 20, 0.15)',
-                  background: '#fffbf0'
+                  backgroundColor: 'var(--card-background)',
+                  color: 'var(--text-primary)'
                 }}
                 bodyStyle={{ padding: '12px', textAlign: 'center' }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '8px' }}>
                   <ClockCircleOutlined style={{ fontSize: '16px', color: '#faad14' }} />
-                  <Text strong style={{ fontSize: '12px', color: '#d46b08' }}>
+                  <Text strong style={{ fontSize: '0.75rem', color: '#d46b08' }}>
                     Continue Last Test
                   </Text>
                 </div>
-                <Title 
-                  level={5} 
-                  style={{ 
+                <Title
+                  level={5}
+                  style={{
                     margin: '0 0 8px 0',
-                    fontSize: '13px',
+                    fontSize: '0.8125rem',
                     fontWeight: 600,
-                    color: '#262626',
+                    color: 'var(--text-primary)',
                     textAlign: 'center'
                   }}
                   ellipsis={{ rows: 1 }}
                 >
                   {testNamesMap[lastUnfinishedMock.testId] || `Test ${lastUnfinishedMock.testId?.substring(0, 8)}`}
                 </Title>
-                <Text type="secondary" style={{ fontSize: '11px', display: 'block', marginBottom: '10px' }}>
+                <Text type="secondary" style={{ fontSize: '0.6875rem', display: 'block', marginBottom: '10px' }}>
                   {lastUnfinishedMock.startDate}
                 </Text>
                 <Button 
@@ -295,7 +344,7 @@ const HomePage = observer(() => {
                     fontWeight: 500,
                     background: '#faad14',
                     borderColor: '#faad14',
-                    fontSize: '12px'
+                    fontSize: '0.75rem'
                   }}
                 >
                   Continue
@@ -305,10 +354,10 @@ const HomePage = observer(() => {
             
             {/* Title Section */}
             <div style={{ flex: 1, textAlign: 'center' }}>
-              <Title level={1} style={{ marginBottom: '12px', fontSize: '36px', fontWeight: 700 }}>
+              <Title level={1} style={{ marginBottom: '12px', fontSize: '2.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                 IELTS Mock Assessment Platform
               </Title>
-              <Paragraph style={{ fontSize: '18px', color: '#595959', marginBottom: 0 }}>
+              <Paragraph style={{ fontSize: '1.125rem', color: 'var(--text-secondary)', marginBottom: 0 }}>
                 Prepare for your IELTS exam with realistic practice tests
               </Paragraph>
             </div>
@@ -316,10 +365,11 @@ const HomePage = observer(() => {
         </div>
 
         {/* Tabs for Available Tests and My Mock Exams */}
-        <Card style={{ 
+        <Card style={{
           marginBottom: '24px',
           borderRadius: '12px',
-          border: '1px solid #e8e8e8',
+          backgroundColor: 'var(--card-background)',
+          borderColor: 'var(--border-color)',
           boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
         }}>
           <Tabs 
@@ -343,10 +393,11 @@ const HomePage = observer(() => {
           <Row gutter={[24, 24]}>
             {Array.from({ length: Math.min(pageSize, 6) }).map((_, index) => (
               <Col xs={24} sm={12} lg={8} key={`skeleton-${index}`}>
-                <Card style={{ 
+                <Card style={{
                   borderRadius: '12px',
                   height: '180px',
-                  border: '1px solid #e8e8e8',
+                  backgroundColor: 'var(--card-background)',
+                  borderColor: 'var(--border-color)',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
                 }}>
                   <Skeleton active paragraph={{ rows: 4 }} />
@@ -355,42 +406,44 @@ const HomePage = observer(() => {
             ))}
           </Row>
         ) : activeTab === 'available' && tests.length === 0 ? (
-          <Card 
-            style={{ 
+          <Card
+            style={{
               padding: '80px 40px',
               borderRadius: '12px',
               textAlign: 'center',
-              border: '1px solid #e8e8e8',
+              backgroundColor: 'var(--card-background)',
+              borderColor: 'var(--border-color)',
               boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
             }}
           >
-            <div style={{ fontSize: 64, color: '#d9d9d9', marginBottom: 24 }}>
+            <div style={{ fontSize: 64, color: 'var(--text-secondary)', marginBottom: 24 }}>
               📝
             </div>
-            <Title level={3} style={{ marginBottom: 12 }}>
+            <Title level={3} style={{ marginBottom: 12, color: 'var(--text-primary)' }}>
               No tests available yet
             </Title>
-            <Paragraph style={{ fontSize: '16px', color: '#8c8c8c', marginBottom: 0 }}>
+            <Paragraph style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: 0 }}>
               Tests will appear here once they are created by administrators.
             </Paragraph>
           </Card>
         ) : activeTab === 'my-mocks' && mocks.length === 0 ? (
-          <Card 
-            style={{ 
+          <Card
+            style={{
               padding: '80px 40px',
               borderRadius: '12px',
               textAlign: 'center',
-              border: '1px solid #e8e8e8',
+              backgroundColor: 'var(--card-background)',
+              borderColor: 'var(--border-color)',
               boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
             }}
           >
-            <div style={{ fontSize: 64, color: '#d9d9d9', marginBottom: 24 }}>
+            <div style={{ fontSize: 64, color: 'var(--text-secondary)', marginBottom: 24 }}>
               📋
             </div>
-            <Title level={3} style={{ marginBottom: 12 }}>
+            <Title level={3} style={{ marginBottom: 12, color: 'var(--text-primary)' }}>
               No mock exams yet
             </Title>
-            <Paragraph style={{ fontSize: '16px', color: '#8c8c8c', marginBottom: 0 }}>
+            <Paragraph style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: 0 }}>
               Start a test from "Available Mock Exams" to see your progress here.
             </Paragraph>
           </Card>
@@ -401,15 +454,16 @@ const HomePage = observer(() => {
                 <Card
                   hoverable
                   className="test-card"
-                  style={{ 
+                  style={{
                     borderRadius: '12px',
-                    border: '1px solid #e8e8e8',
+                    backgroundColor: 'var(--card-background)',
+                    borderColor: 'var(--border-color)',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                     height: '70%',
                     display: 'flex',
                     flexDirection: 'column'
                   }}
-                  bodyStyle={{ 
+                  bodyStyle={{
                     padding: '20px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -418,12 +472,13 @@ const HomePage = observer(() => {
                 >
                   {/* Header: Title */}
                   <div style={{ marginBottom: '20px' }}>
-                    <Title 
-                      level={4} 
-                      style={{ 
+                    <Title
+                      level={4}
+                      style={{
                         margin: 0,
-                        fontSize: '18px',
-                        fontWeight: 600
+                        fontSize: '1.125rem',
+                        fontWeight: 600,
+                        color: 'var(--text-primary)'
                       }}
                       ellipsis={{ rows: 1 }}
                     >
@@ -434,20 +489,20 @@ const HomePage = observer(() => {
                   {/* Metadata */}
                   <Space direction="vertical" size={10} style={{ width: '100%', marginBottom: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FileTextOutlined style={{ color: '#8c8c8c', fontSize: '14px' }} />
-                      <span style={{ fontSize: '14px', color: '#595959' }}>
+                      <FileTextOutlined style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }} />
+                      <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                         {t.description || 'Full IELTS Mock Test'}
                       </span>
                     </div>
-                    
+
                     {t.createdDate && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <CalendarOutlined style={{ color: '#8c8c8c', fontSize: '14px' }} />
-                        <span style={{ fontSize: '14px', color: '#52c41a', fontWeight: 500 }}>
-                          Created {new Date(t.createdDate).toLocaleDateString('en-US', { 
-                            month: 'short', 
-                            day: 'numeric', 
-                            year: 'numeric' 
+                        <CalendarOutlined style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }} />
+                        <span style={{ fontSize: '0.875rem', color: '#52c41a', fontWeight: 500 }}>
+                          Created {new Date(t.createdDate).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
                           })}
                         </span>
                       </div>
@@ -461,9 +516,9 @@ const HomePage = observer(() => {
                   </Space>
 
                   {/* Footer: Button */}
-                  <div style={{ 
+                  <div style={{
                     paddingTop: '16px',
-                    borderTop: '1px solid #f0f0f0',
+                    borderTop: '1px solid var(--border-color)',
                     marginTop: 'auto'
                   }}>
                     <Button 
@@ -495,15 +550,16 @@ const HomePage = observer(() => {
                 <Card
                   hoverable
                   className="mock-card"
-                  style={{ 
+                  style={{
                     borderRadius: '12px',
-                    border: '1px solid #e8e8e8',
+                    backgroundColor: 'var(--card-background)',
+                    borderColor: 'var(--border-color)',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column'
                   }}
-                  bodyStyle={{ 
+                  bodyStyle={{
                     padding: '20px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -512,10 +568,10 @@ const HomePage = observer(() => {
                 >
                   {/* Header: Status Badge */}
                   <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Tag 
+                    <Tag
                       icon={mock.isFinished === 1 ? <CheckCircleOutlined /> : <ClockCircleOutlined />}
                       color={mock.isFinished === 1 ? 'success' : 'processing'}
-                      style={{ fontSize: '14px', padding: '4px 12px' }}
+                      style={{ fontSize: '0.875rem', padding: '4px 12px' }}
                     >
                       {mock.isFinished === 1 ? 'Completed' : 'In Progress'}
                     </Tag>
@@ -523,12 +579,13 @@ const HomePage = observer(() => {
                   </div>
 
                   {/* Test Title */}
-                  <Title 
-                    level={4} 
-                    style={{ 
+                  <Title
+                    level={4}
+                    style={{
                       margin: '0 0 16px 0',
-                      fontSize: '18px',
-                      fontWeight: 600
+                      fontSize: '1.125rem',
+                      fontWeight: 600,
+                      color: 'var(--text-primary)'
                     }}
                     ellipsis={{ rows: 1 }}
                   >
@@ -539,34 +596,34 @@ const HomePage = observer(() => {
                   {mock.sections && mock.sections.length > 0 && (
                     <Space direction="vertical" size={8} style={{ width: '100%', marginBottom: '16px' }}>
                       {mock.sections.map((section: any) => (
-                        <div 
+                        <div
                           key={section.id}
-                          style={{ 
+                          style={{
                             padding: '8px 12px',
-                            background: '#f5f5f5',
+                            backgroundColor: 'var(--secondary)',
                             borderRadius: '6px'
                           }}
                         >
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                            <Text strong style={{ fontSize: '13px' }}>
+                            <Text strong style={{ fontSize: '0.8125rem', color: 'var(--text-primary)' }}>
                               {section.sectionType}
                             </Text>
-                            <Tag 
+                            <Tag
                               color={section.status === 'FINISHED' ? 'success' : section.status === 'IN_PROGRESS' ? 'processing' : 'default'}
-                              style={{ fontSize: '11px', padding: '0 6px', margin: 0 }}
+                              style={{ fontSize: '0.6875rem', padding: '0 6px', margin: 0 }}
                             >
                               {section.status || 'N/A'}
                             </Tag>
                           </div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Text type="secondary" style={{ fontSize: '12px' }}>
-                              {section.correctAnswers !== undefined && section.correctAnswers !== null 
-                                ? `Correct: ${section.correctAnswers}` 
+                            <Text type="secondary" style={{ fontSize: '0.75rem' }}>
+                              {section.correctAnswers !== undefined && section.correctAnswers !== null
+                                ? `Correct: ${section.correctAnswers}`
                                 : ''}
                             </Text>
-                            <Text style={{ fontSize: '13px', color: '#52c41a', fontWeight: 500 }}>
-                              {section.score !== undefined && section.score !== null 
-                                ? `${section.score}/9.0` 
+                            <Text style={{ fontSize: '0.8125rem', color: '#52c41a', fontWeight: 500 }}>
+                              {section.score !== undefined && section.score !== null
+                                ? `${section.score}/9.0`
                                 : 'Not graded'}
                             </Text>
                           </div>
@@ -576,9 +633,9 @@ const HomePage = observer(() => {
                   )}
 
                   {/* Footer: Action Button */}
-                  <div style={{ 
+                  <div style={{
                     paddingTop: '16px',
-                    borderTop: '1px solid #f0f0f0',
+                    borderTop: '1px solid var(--border-color)',
                     marginTop: 'auto'
                   }}>
                     {mock.isFinished === 0 ? (
@@ -623,20 +680,20 @@ const HomePage = observer(() => {
 
         {/* Pagination */}
         {!loading && ((activeTab === 'available' && tests.length > 0) || (activeTab === 'my-mocks' && mocks.length > 0)) && (
-          <div style={{ 
+          <div style={{
             marginTop: '24px',
             padding: '24px',
-            background: '#fff',
+            backgroundColor: 'var(--card-background)',
             borderRadius: '12px',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             flexWrap: 'wrap',
             gap: '16px',
-            border: '1px solid #e8e8e8',
+            borderColor: 'var(--border-color)',
             boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
           }}>
-            <Text type="secondary" style={{ fontSize: '14px' }}>
+            <Text type="secondary" style={{ fontSize: '0.875rem' }}>
               Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, activeTab === 'available' ? totalTests : totalMocks)} of {activeTab === 'available' ? totalTests : totalMocks} {activeTab === 'available' ? 'tests' : 'mocks'}
             </Text>
             <Pagination
@@ -664,13 +721,14 @@ const HomePage = observer(() => {
 
         {activeTab === 'available' && tests.length > 0 && (
           <div className="mt-6 text-center">
-            <Card style={{ 
+            <Card style={{
               borderRadius: '12px',
-              border: '1px solid #e8e8e8',
+              backgroundColor: 'var(--card-background)',
+              borderColor: 'var(--border-color)',
               boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
             }}>
-              <Title level={4} style={{ marginBottom: '12px' }}>Welcome to IELTS Mock Assessment</Title>
-              <Paragraph style={{ marginBottom: 0, fontSize: '16px', color: '#595959' }}>
+              <Title level={4} style={{ marginBottom: '12px', color: 'var(--text-primary)' }}>Welcome to IELTS Mock Assessment</Title>
+              <Paragraph style={{ marginBottom: 0, fontSize: '1rem', color: 'var(--text-secondary)' }}>
                 This platform helps you prepare for all four modules of the IELTS exam.
                 Select a test above to start your practice session.
               </Paragraph>
@@ -703,16 +761,16 @@ const HomePage = observer(() => {
         }}
       >
         <div style={{ padding: '16px 0' }}>
-          <Paragraph style={{ fontSize: '16px', marginBottom: '12px' }}>
+          <Paragraph style={{ fontSize: '1rem', marginBottom: '12px', color: 'var(--text-primary)' }}>
             You are about to start:
           </Paragraph>
           <Title level={5} style={{ marginBottom: '16px', color: '#1677ff' }}>
             {selectedTest?.name || selectedTest?.title || 'IELTS Mock Test'}
           </Title>
-          <Paragraph style={{ fontSize: '14px', color: '#595959', marginBottom: '8px' }}>
+          <Paragraph style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
             Once you start the test:
           </Paragraph>
-          <ul style={{ fontSize: '14px', color: '#595959', paddingLeft: '20px', marginBottom: 0 }}>
+          <ul style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', paddingLeft: '20px', marginBottom: 0 }}>
             <li>Your test session will begin</li>
             <li>You can complete sections at your own pace</li>
             <li>Your answers will be automatically saved</li>

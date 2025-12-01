@@ -127,30 +127,51 @@ const SentenceCompletionQuestion = observer(({
           {questions.map((question, index) => {
             const questionNumber = questionNumbers[index]
             const answer = readingStore.getAnswer(question.id) as string || ''
-            
+
+            // In preview mode, get submitted answer for styling
+            const submittedAnswer = readingStore.isPreviewMode ? readingStore.getSubmittedAnswer(question.id) : null
+            const isCorrect = readingStore.isPreviewMode ? readingStore.isAnswerCorrect(question.id) : null
+
+            // Use submitted answer in preview mode, otherwise use current answer
+            const displayAnswer = readingStore.isPreviewMode ? (submittedAnswer as string || '') : answer
+
             // Parse the text to extract the sentence and placeholder
             const textContent = question.text
             // Extract placeholder like [21], [22], etc.
             const placeholderMatch = textContent.match(/\[(\d+)\]/)
             const placeholderNum = placeholderMatch ? placeholderMatch[1] : questionNumber.toString()
-            
+
             // Split HTML by placeholder to show it inline
             const parts = textContent.split(`[${placeholderNum}]`)
-            
+
             // Get clean answer text for display
-            const cleanAnswer = answer ? (() => {
+            const cleanAnswer = displayAnswer ? (() => {
               const tmp = document.createElement('DIV')
-              tmp.innerHTML = answer
+              tmp.innerHTML = displayAnswer
               return tmp.textContent || tmp.innerText || ''
             })() : ''
-            
+
+            // Determine border and background color based on correctness
+            let borderColor = displayAnswer ? 'var(--primary)' : 'var(--border-color)'
+            let backgroundColor = displayAnswer ? 'var(--secondary)' : 'transparent'
+
+            if (readingStore.isPreviewMode && submittedAnswer) {
+              if (isCorrect === true) {
+                borderColor = '#52c41a' // Green for correct
+                backgroundColor = '#f6ffed' // Light green background
+              } else if (isCorrect === false) {
+                borderColor = '#ff4d4f' // Red for incorrect
+                backgroundColor = '#fff2f0' // Light red background
+              }
+            }
+
             return (
-              <div 
-                key={question.id} 
+              <div
+                key={question.id}
                 className="flex items-start gap-3 text-sm mb-4"
                 ref={(el) => { if (el) questionRefs.current[questionNumber] = el }}
               >
-                <strong className="whitespace-nowrap mt-1 text-base">{questionNumber}</strong>
+                <strong className="whitespace-nowrap mt-1 text-base" style={{ color: 'var(--text-primary)' }}>{questionNumber}</strong>
                 <div className="flex-1">
                   {/* Render content with preserved formatting */}
                   <div className="space-y-2">
@@ -160,24 +181,28 @@ const SentenceCompletionQuestion = observer(({
                       onDragOver={!readingStore.isPreviewMode ? handleDragOver : undefined}
                       onDrop={!readingStore.isPreviewMode ? (e) => handleDrop(e, question.id) : undefined}
                       tabIndex={0}
-                      className={`inline-flex items-center border-2 border-dashed rounded px-3 py-1 min-w-[120px] ${
-                        answer ? 'border-blue-400 bg-blue-50' : 'border-gray-300'
-                      }`}
+                      className="inline-flex items-center border-2 border-dashed rounded px-3 py-1 min-w-[120px]"
+                      style={{
+                        borderColor,
+                        backgroundColor,
+                        borderWidth: '2px'
+                      }}
                     >
-                      {answer ? (
+                      {displayAnswer ? (
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">{cleanAnswer}</span>
+                          <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{cleanAnswer}</span>
                           {!readingStore.isPreviewMode && (
                             <button
                               onClick={() => handleRemove(question.id)}
-                              className="text-gray-400 hover:text-gray-600 text-xs font-bold"
+                              className="text-xs font-bold"
+                              style={{ color: 'var(--text-secondary)' }}
                             >
                               ✕
                             </button>
                           )}
                         </div>
                       ) : (
-                        <span className="text-gray-400 text-xs font-bold">{placeholderNum}</span>
+                        <span className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>{placeholderNum}</span>
                       )}
                     </div>
                     {parts[1] && renderHtmlWithStyledArrows(parts[1])}
@@ -191,24 +216,26 @@ const SentenceCompletionQuestion = observer(({
 
       {/* Options Section */}
       <div>
-        <h4 className="font-semibold text-sm mb-3">Features</h4>
+        <h4 className="font-semibold text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Features</h4>
         <div className="grid grid-cols-2 gap-3">
           {options.map((option, index) => {
             const isUsed = usedOptions.includes(option)
             const cleanOption = stripHtml(option)
-            
+
             return (
               <div
                 key={index}
                 draggable={!isUsed && !readingStore.isPreviewMode}
                 onDragStart={!readingStore.isPreviewMode ? (e) => handleDragStart(e, option) : undefined}
-                className={`px-4 py-3 border-2 rounded-md text-sm transition-all shadow-sm ${
-                  isUsed
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed line-through border-gray-500'
-                    : readingStore.isPreviewMode
-                    ? 'bg-gray-200 border-gray-700 cursor-default'
-                    : 'bg-gray-200 border-gray-700 cursor-move hover:bg-blue-50 hover:border-blue-500 hover:shadow-md'
-                }`}
+                className="px-4 py-3 border-2 rounded-md text-sm transition-all shadow-sm"
+                style={{
+                  backgroundColor: isUsed ? 'var(--secondary)' : 'var(--card-background)',
+                  color: isUsed ? 'var(--text-secondary)' : 'var(--text-primary)',
+                  borderColor: isUsed ? 'var(--text-secondary)' : 'var(--border-color)',
+                  cursor: isUsed ? 'not-allowed' : readingStore.isPreviewMode ? 'default' : 'move',
+                  textDecoration: isUsed ? 'line-through' : 'none',
+                  opacity: isUsed ? 0.5 : 1
+                }}
               >
                 {cleanOption}
               </div>

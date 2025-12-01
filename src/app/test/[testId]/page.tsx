@@ -127,10 +127,10 @@ function TestSectionsContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
       <div className="max-w-6xl mx-auto py-12">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-          <Title level={2} style={{ margin: 0 }}>{testName}</Title>
+          <Title level={2} style={{ margin: 0, color: 'var(--text-primary)' }}>{testName}</Title>
           {isFinished && (
             <Tag icon={<EyeOutlined />} color="blue">
               Preview Mode
@@ -145,10 +145,12 @@ function TestSectionsContent() {
           <Row gutter={[24, 24]}>
             {sections.map((s: any) => (
               <Col xs={24} md={12} lg={8} key={s.id}>
-                <Card 
-                  hoverable 
+                <Card
+                  hoverable
                   onClick={() => go(s)}
-                  style={{ 
+                  style={{
+                    backgroundColor: 'var(--card-background)',
+                    borderColor: 'var(--border-color)',
                     cursor: startingSection ? 'not-allowed' : 'pointer',
                     opacity: startingSection ? 0.6 : 1
                   }}
@@ -159,7 +161,7 @@ function TestSectionsContent() {
                     {`${s.sectionType}`.toLowerCase() === 'writing' && <EditOutlined className="text-2xl text-purple-600" />}
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <Title level={4} className="m-0">{String(s.sectionType)}</Title>
+                        <Title level={4} className="m-0" style={{ color: 'var(--text-primary)' }}>{String(s.sectionType)}</Title>
                         {s.isStarted === 1 && (
                           <Tag icon={<CheckCircleOutlined />} color="success" style={{ margin: 0 }}>
                             Started
@@ -171,10 +173,10 @@ function TestSectionsContent() {
                           </Tag>
                         )}
                       </div>
-                      <Paragraph className="m-0 text-gray-600">
-                        {startingSection ? 'Starting...' : 
+                      <Paragraph className="m-0" style={{ color: 'var(--text-secondary)' }}>
+                        {startingSection ? 'Starting...' :
                          isFinished ? 'View your answers' :
-                         s.isStarted === 1 ? 'Continue section' : 
+                         s.isStarted === 1 ? 'Continue section' :
                          'Start practicing this section'}
                       </Paragraph>
                     </div>
@@ -195,7 +197,7 @@ function TestSectionsContent() {
 export default function TestSectionsPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--background)' }}>
         <Spin size="large" />
       </div>
     }>

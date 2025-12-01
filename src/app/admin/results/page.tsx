@@ -90,8 +90,8 @@ const ResultsManagementPage = () => {
       key: 'testName',
       render: (text: string, record: MockResultDto) => (
         <Space direction="vertical" size={0}>
-          <Text strong>{text || 'Unnamed Test'}</Text>
-          <Text type="secondary" style={{ fontSize: '12px' }}>
+          <Text strong style={{ color: 'var(--text-primary)' }}>{text || 'Unnamed Test'}</Text>
+          <Text type="secondary" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
             ID: {record.testId?.substring(0, 8)}...
           </Text>
         </Space>
@@ -102,7 +102,7 @@ const ResultsManagementPage = () => {
       dataIndex: 'firstName',
       key: 'firstName',
       render: (text: string, record: MockResultDto) => (
-        <Text>{text || record.userFirstName || record.userName?.split(' ')[0] || '-'}</Text>
+        <Text style={{ color: 'var(--text-primary)' }}>{text || record.userFirstName || record.userName?.split(' ')[0] || '-'}</Text>
       )
     },
     {
@@ -110,7 +110,7 @@ const ResultsManagementPage = () => {
       dataIndex: 'lastName',
       key: 'lastName',
       render: (text: string, record: MockResultDto) => (
-        <Text>{text || record.userLastName || record.userName?.split(' ')[1] || '-'}</Text>
+        <Text style={{ color: 'var(--text-primary)' }}>{text || record.userLastName || record.userName?.split(' ')[1] || '-'}</Text>
       )
     },
     {
@@ -131,7 +131,7 @@ const ResultsManagementPage = () => {
           <Space direction="vertical" size={0} style={{ textAlign: 'center' }}>
             {getStatusTag(section.status)}
             {section.correctAnswers !== null && section.correctAnswers !== undefined && (
-              <Text type="secondary" style={{ fontSize: '12px' }}>
+              <Text type="secondary" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                 Correct: {section.correctAnswers}
               </Text>
             )}
@@ -156,7 +156,7 @@ const ResultsManagementPage = () => {
           <Space direction="vertical" size={0} style={{ textAlign: 'center' }}>
             {getStatusTag(section.status)}
             {section.correctAnswers !== null && section.correctAnswers !== undefined && (
-              <Text type="secondary" style={{ fontSize: '12px' }}>
+              <Text type="secondary" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                 Correct: {section.correctAnswers}
               </Text>
             )}
@@ -195,21 +195,21 @@ const ResultsManagementPage = () => {
       key: 'startDate',
       render: (date: string, record: MockResultDto) => {
         console.log('Start Date - Raw value:', date, 'Record:', record)
-        
-        if (!date) return <Text type="secondary">N/A</Text>
-        
+
+        if (!date) return <Text type="secondary" style={{ color: 'var(--text-secondary)' }}>N/A</Text>
+
         const dateObj = parseCustomDate(date)
         console.log('Start Date - Parsed:', dateObj)
-        
-        if (!dateObj) return <Text type="secondary">Invalid Date</Text>
-        
+
+        if (!dateObj) return <Text type="secondary" style={{ color: 'var(--text-secondary)' }}>Invalid Date</Text>
+
         return (
           <Space>
-            <CalendarOutlined style={{ color: '#8c8c8c' }} />
-            <Text>
-              {dateObj.toLocaleDateString('en-GB', { 
+            <CalendarOutlined style={{ color: 'var(--text-secondary)' }} />
+            <Text style={{ color: 'var(--text-primary)' }}>
+              {dateObj.toLocaleDateString('en-GB', {
                 day: 'numeric',
-                month: 'short', 
+                month: 'short',
                 year: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit'
@@ -223,11 +223,11 @@ const ResultsManagementPage = () => {
 
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+    <Layout style={{ minHeight: '100vh', backgroundColor: 'var(--background)' }}>
       {/* Header */}
-      <Header style={{ 
-        background: '#fff', 
-        borderBottom: '1px solid #f0f0f0', 
+      <Header style={{
+        backgroundColor: 'var(--header-background)',
+        borderBottom: '1px solid var(--border-color)',
         padding: '20px 48px',
         display: 'flex',
         alignItems: 'center',
@@ -250,9 +250,9 @@ const ResultsManagementPage = () => {
         </div>
       </Header>
 
-      <Content style={{ 
-        padding: '48px', 
-        background: '#f5f5f5', 
+      <Content style={{
+        padding: '48px',
+        backgroundColor: 'var(--background)',
         minHeight: 'calc(100vh - 64px)'
       }}>
         <div className="max-w-7xl mx-auto" style={{ width: '100%' }}>
@@ -264,10 +264,10 @@ const ResultsManagementPage = () => {
             marginBottom: '24px'
           }}>
             <div>
-              <Title level={2} style={{ marginBottom: '8px' }}>
+              <Title level={2} style={{ marginBottom: '8px', color: 'var(--text-primary)' }}>
                 Mock Test Results
               </Title>
-              <Text type="secondary" style={{ fontSize: '16px' }}>
+              <Text type="secondary" style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>
                 View and analyze student test results and performance
               </Text>
             </div>
@@ -282,8 +282,10 @@ const ResultsManagementPage = () => {
           </div>
 
           {/* Results Table */}
-          <Card 
-            style={{ 
+          <Card
+            style={{
+              backgroundColor: 'var(--card-background)',
+              borderColor: 'var(--border-color)',
               borderRadius: '12px',
               boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
             }}

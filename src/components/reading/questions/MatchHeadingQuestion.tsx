@@ -75,50 +75,73 @@ const MatchHeadingQuestion = observer(({
           {questions.map((question, index) => {
             const questionNumber = questionNumbers[index]
             const answer = readingStore.getAnswer(question.id) as string || ''
-            
+
+            // In preview mode, get submitted answer for styling
+            const submittedAnswer = readingStore.isPreviewMode ? readingStore.getSubmittedAnswer(question.id) : null
+            const isCorrect = readingStore.isPreviewMode ? readingStore.isAnswerCorrect(question.id) : null
+
+            // Use submitted answer in preview mode, otherwise use current answer
+            const displayAnswer = readingStore.isPreviewMode ? (submittedAnswer as string || '') : answer
+
             // Parse the text to extract the section and placeholder
             const textContent = question.text
             const placeholderMatch = textContent.match(/\[(\d+)\]/)
             const placeholderNum = placeholderMatch ? placeholderMatch[1] : questionNumber.toString()
-            
+
             const cleanText = stripHtml(textContent)
             const parts = cleanText.split(`[${placeholderNum}]`)
-            
+
             // Get clean answer text if answer exists
-            const cleanAnswer = answer ? stripHtml(answer) : ''
-            
+            const cleanAnswer = displayAnswer ? stripHtml(displayAnswer) : ''
+
+            // Determine border color based on correctness
+            let cardBorderColor = 'var(--border-color)'
+            let cardBorderWidth = '2px'
+
+            if (readingStore.isPreviewMode && submittedAnswer) {
+              if (isCorrect === true) {
+                cardBorderColor = '#52c41a' // Green for correct
+              } else if (isCorrect === false) {
+                cardBorderColor = '#ff4d4f' // Red for incorrect
+              }
+            }
+
             return (
-              <div key={question.id} className="border-2 border-gray-300 rounded-lg p-4 bg-white">
+              <div key={question.id} className="border-2 rounded-lg p-4" style={{ borderColor: cardBorderColor, backgroundColor: 'var(--card-background)', borderWidth: cardBorderWidth }}>
                 <div className="text-sm mb-3">
-                  <div 
+                  <div
                     className="prose prose-sm max-w-none"
+                    style={{ color: 'var(--text-primary)' }}
                     dangerouslySetInnerHTML={{ __html: parts[0] || cleanText }}
                   />
                 </div>
-                
+
                 <div className="flex items-center gap-2">
-                  <strong className="text-sm">{questionNumber}.</strong>
+                  <strong className="text-sm" style={{ color: 'var(--text-primary)' }}>{questionNumber}.</strong>
                   <div
                     onDragOver={!isPreviewMode ? handleDragOver : undefined}
                     onDrop={!isPreviewMode ? (e) => handleDrop(e, question.id) : undefined}
-                    className={`flex-1 border-2 border-dashed rounded px-4 py-3 min-h-[50px] flex items-center ${
-                      answer ? 'border-blue-400 bg-blue-50' : 'border-gray-400'
-                    }`}
+                    className="flex-1 border-2 border-dashed rounded px-4 py-3 min-h-[50px] flex items-center"
+                    style={{
+                      borderColor: displayAnswer ? '#60a5fa' : 'var(--border-color)',
+                      backgroundColor: displayAnswer ? '#dbeafe' : 'transparent'
+                    }}
                   >
-                    {answer ? (
+                    {displayAnswer ? (
                       <div className="flex items-center justify-between w-full">
-                        <span className="text-sm font-medium">{cleanAnswer}</span>
+                        <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{cleanAnswer}</span>
                         {!isPreviewMode && (
                           <button
                             onClick={() => handleRemove(question.id)}
-                            className="text-gray-400 hover:text-gray-600 text-sm font-bold ml-2"
+                            className="text-sm font-bold ml-2"
+                            style={{ color: 'var(--text-secondary)' }}
                           >
                             ✕
                           </button>
                         )}
                       </div>
                     ) : (
-                      <span className="text-gray-400 text-sm">Drag heading here</span>
+                      <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Drag heading here</span>
                     )}
                   </div>
                 </div>
@@ -130,24 +153,25 @@ const MatchHeadingQuestion = observer(({
 
       {/* Headings Section */}
       <div>
-        <h4 className="font-semibold text-sm mb-3">Available Headings</h4>
+        <h4 className="font-semibold text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Available Headings</h4>
         <div className="grid grid-cols-1 gap-3">
           {headings.map((heading, index) => {
             const isUsed = usedHeadings.includes(heading)
             const cleanHeading = stripHtml(heading)
-            
+
             return (
               <div
                 key={index}
                 draggable={!isUsed && !isPreviewMode}
                 onDragStart={!isPreviewMode ? (e) => handleDragStart(e, heading) : undefined}
-                className={`px-4 py-3 border-2 rounded-md text-sm transition-all shadow-sm ${
-                  isUsed
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed line-through border-gray-500'
-                    : isPreviewMode
-                    ? 'bg-gray-200 border-gray-700 cursor-default'
-                    : 'bg-gray-200 border-gray-700 cursor-move hover:bg-blue-50 hover:border-blue-500 hover:shadow-md'
-                }`}
+                className="px-4 py-3 border-2 rounded-md text-sm transition-all shadow-sm"
+                style={{
+                  backgroundColor: isUsed ? '#d1d5db' : 'var(--card-background)',
+                  color: isUsed ? '#6b7280' : 'var(--text-primary)',
+                  borderColor: isUsed ? '#9ca3af' : 'var(--border-color)',
+                  cursor: isUsed ? 'not-allowed' : isPreviewMode ? 'default' : 'move',
+                  textDecoration: isUsed ? 'line-through' : 'none'
+                }}
               >
                 <span className="font-medium mr-2">{String.fromCharCode(105 + index)}.</span>
                 {cleanHeading}

@@ -19,7 +19,7 @@ export const ImageInputsQuestion = ({ groupPath, questionIndex, questionNumber, 
   }
   
   return (
-    <div className="rounded border p-2 mb-1">
+    <div className="rounded border p-2 mb-1" style={{ borderColor: 'var(--border-color)' }}>
       <div className="flex items-center justify-between mb-1">
         <div className="font-bold text-sm">Question {questionNumber}</div>
         <Button size="small" danger icon={<DeleteOutlined />} onClick={onRemove}>

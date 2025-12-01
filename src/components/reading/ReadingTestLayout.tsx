@@ -12,6 +12,7 @@ import ReadingPassage from './ReadingPassage'
 import QuestionPanel from './QuestionPanel'
 import BottomNavigation from './BottomNavigation'
 import SubmitModal from '@/components/common/SubmitModal'
+import { exitFullscreen } from '@/utils/fullscreen'
 
 const { Content } = Layout
 
@@ -107,15 +108,59 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
   }
 
   const handleModalConfirm = async () => {
+    // Mark as submitting so warning sound doesn't play
+    if ((window as any).__markReadingAsSubmitting) {
+      (window as any).__markReadingAsSubmitting()
+    }
+
     try {
       await readingStore.finishSection()
       setShowSubmitModal(false)
+      // Exit fullscreen before redirecting
+      await exitFullscreen().catch(() => {})
+
+      // Navigate to writing section
+      const mockId = readingStore.mockId
+      const searchParams = new URLSearchParams(window.location.search)
+      const testId = searchParams.get('testId')
+
+      if (mockId && testId) {
+        // Import the API here to avoid circular dependencies
+        const { mockSubmissionApi } = await import('@/services/testManagementApi')
+
+        // Get sections to find writing section
+        const sectionsResp = await mockSubmissionApi.getAllSections(testId, mockId)
+        const sections = sectionsResp.data
+
+        // Find writing section
+        const writingSection = sections.find((s: any) =>
+          String(s.sectionType).toLowerCase() === 'writing'
+        )
+
+        if (writingSection) {
+          // Start writing section
+          await mockSubmissionApi.startSection(mockId, writingSection.id)
+          console.log('✅ Started writing section:', writingSection.id)
+
+          // Navigate to writing page
+          router.push(`/writing?testId=${testId}&mockId=${mockId}`)
+          return
+        }
+      }
+
+      // Fallback: go home if no writing section found
       router.push('/')
     } catch (error) {
       console.error('Failed to submit test:', error)
-      // Still close modal and redirect even if submission fails
-      setShowSubmitModal(false)
-      router.push('/')
+      // On error, still try to go to writing or home
+      const searchParams = new URLSearchParams(window.location.search)
+      const testId = searchParams.get('testId')
+      const mockId = searchParams.get('mockId')
+      if (testId && mockId) {
+        router.push(`/writing?testId=${testId}&mockId=${mockId}`)
+      } else {
+        router.push('/')
+      }
     }
   }
 
@@ -132,10 +177,11 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
       </Header>
 
       {/* Part Title - Compact */}
-      <div className="bg-gray-50 px-4 py-1.5 border-b">
-        <h2 className="font-semibold text-sm text-black inline-block mr-4">{currentPart.title}</h2>
-        <span 
-          className="text-xs text-gray-600 prose prose-xs max-w-none inline"
+      <div className="px-4 py-1.5 border-b" style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }}>
+        <h2 className="font-semibold text-sm inline-block mr-4" style={{ color: 'var(--text-primary)' }}>{currentPart.title}</h2>
+        <span
+          className="text-xs prose prose-xs max-w-none inline"
+          style={{ color: 'var(--text-secondary)' }}
           dangerouslySetInnerHTML={{ __html: currentPart.instruction }}
         />
       </div>
@@ -144,8 +190,11 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
       <Content className="flex-1 flex overflow-hidden relative" ref={containerRef}>
         {/* Left Pane - Reading Passage */}
         <div
-          className="overflow-y-auto bg-white"
-          style={{ width: `${leftWidth}%` }}
+          className="overflow-y-auto"
+          style={{
+            width: `${leftWidth}%`,
+            backgroundColor: 'var(--background)'
+          }}
         >
           <ReadingPassage
             passage={currentPart.passage}
@@ -160,18 +209,22 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
 
         {/* Resizable Divider */}
         <div
-          className="w-1 bg-gray-400 cursor-col-resize hover:bg-gray-600 transition-colors flex-shrink-0"
+          className="w-1 cursor-col-resize transition-colors flex-shrink-0"
           onMouseDown={handleMouseDown}
-          style={{ 
+          style={{
             cursor: isDragging ? 'col-resize' : 'col-resize',
-            backgroundColor: isDragging ? '#4B5563' : '#9CA3AF'
+            backgroundColor: 'var(--border-color)',
+            opacity: isDragging ? 0.8 : 0.5
           }}
         />
 
         {/* Right Pane - Questions */}
         <div
-          className="overflow-y-auto bg-gray-50 flex-1"
-          style={{ width: `${100 - leftWidth}%` }}
+          className="overflow-y-auto flex-1"
+          style={{
+            width: `${100 - leftWidth}%`,
+            backgroundColor: 'var(--card-background)'
+          }}
         >
           <QuestionPanel />
         </div>

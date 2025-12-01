@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { Radio } from 'antd'
+import { Radio, Card } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import AuthenticatedImage from '@/components/common/AuthenticatedImage'
@@ -32,16 +32,33 @@ const TrueFalseQuestion = observer(({ question, questionNumber, type = 'TRUE_FAL
     }
   }, [listeningStore.currentQuestionNumber, questionNumber])
 
-  const options = type === 'YES_NO_NOT_GIVEN' 
+  const options = type === 'YES_NO_NOT_GIVEN'
     ? ['YES', 'NO', 'NOT GIVEN']
     : ['TRUE', 'FALSE', 'NOT GIVEN']
 
+  // In preview mode, get submitted answer for styling
+  const submittedAnswer = isPreviewMode ? listeningStore.getSubmittedAnswer(question.id) as string : null
+  const isCorrect = isPreviewMode ? listeningStore.isAnswerCorrect(question.id) : null
+
+  // Convert submitted answer format (with underscores) to display format (with spaces)
+  const displaySubmittedAnswer = submittedAnswer?.replace(/_/g, ' ')
+
   return (
-    <div className="border-b pb-4" data-question-id={questionNumber} ref={containerRef}>
+    <Card
+      className="mb-4"
+      ref={containerRef}
+      style={{
+        backgroundColor: 'var(--card-background)',
+        borderColor: isPreviewMode && submittedAnswer ?
+          (isCorrect ? '#52c41a' : '#ff4d4f') :
+          'var(--border-color)',
+        borderWidth: isPreviewMode && submittedAnswer ? '2px' : '1px'
+      }}
+    >
       <div className="flex items-start gap-4">
         <div className="flex-1">
-          <p className="mb-3 text-sm"><strong>{questionNumber}</strong> {question.text}</p>
-          
+          <p style={{ color: 'var(--text-primary)' }} className="mb-3 text-sm"><strong>{questionNumber}</strong> {question.text}</p>
+
           {/* Display image if available */}
           {question.imageUrl && (
             <div className="mb-4">
@@ -53,25 +70,26 @@ const TrueFalseQuestion = observer(({ question, questionNumber, type = 'TRUE_FAL
               />
             </div>
           )}
-          
+
           <Radio.Group
-            value={answer}
+            value={isPreviewMode ? displaySubmittedAnswer : answer}
             onChange={(e) => {
               // Normalize the value by replacing spaces with underscores to match admin format
               const normalizedValue = e.target.value.replace(/ /g, '_')
               listeningStore.setAnswer(question.id, normalizedValue)
             }}
             className="flex gap-4"
+            disabled={isPreviewMode}
           >
             {options.map((opt: string) => (
-              <Radio key={opt} value={opt} className="text-sm" disabled={isPreviewMode}>
+              <Radio key={opt} value={opt} className="text-sm">
                 {opt}
               </Radio>
             ))}
           </Radio.Group>
         </div>
       </div>
-    </div>
+    </Card>
   )
 })
 

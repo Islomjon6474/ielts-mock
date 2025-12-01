@@ -81,11 +81,11 @@ const TestPreviewPage = () => {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: '#f5f5f5' }}>
+    <div className="min-h-screen" style={{ background: 'var(--background)' }}>
       {/* Header */}
-      <div style={{ 
-        background: '#fff', 
-        borderBottom: '1px solid #f0f0f0',
+      <div style={{
+        background: 'var(--header-background)',
+        borderBottom: '1px solid var(--border-color)',
         padding: '16px 48px',
         display: 'flex',
         alignItems: 'center',
@@ -109,9 +109,9 @@ const TestPreviewPage = () => {
       {/* Content */}
       <div style={{ padding: '48px' }}>
         <div className="max-w-5xl mx-auto">
-          <div style={{ 
-            background: '#fff3cd', 
-            border: '1px solid #ffc107',
+          <div style={{
+            background: 'var(--card-background)',
+            border: '1px solid var(--border-color)',
             borderRadius: '8px',
             padding: '16px 24px',
             marginBottom: 32,
@@ -168,7 +168,7 @@ const TestPreviewPage = () => {
                     <Title level={2} style={{ marginBottom: '12px', textAlign: 'center' }}>
                       {section.sectionType.charAt(0).toUpperCase() + section.sectionType.slice(1).toLowerCase()}
                     </Title>
-                    <Text type="secondary" style={{ textAlign: 'center', fontSize: '14px' }}>
+                    <Text type="secondary" style={{ textAlign: 'center', fontSize: '0.875rem' }}>
                       {getSectionDescription(section.sectionType)}
                     </Text>
                   </Card>

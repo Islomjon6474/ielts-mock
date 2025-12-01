@@ -57,9 +57,9 @@ const PartEditorPage = () => {
   }
 
   return (
-    <Layout className="min-h-screen" style={{ background: '#fff' }}>
+    <Layout className="min-h-screen" style={{ background: 'var(--background)' }}>
       {/* Header */}
-      <Header style={{ background: '#fff', borderBottom: '1px solid #f0f0f0', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <Header style={{ background: 'var(--header-background)', borderBottom: '1px solid var(--border-color)', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div className="flex items-center gap-4">
           <Button
             type="text"
@@ -73,7 +73,7 @@ const PartEditorPage = () => {
         </Button>
       </Header>
 
-      <Content style={{ padding: '24px', background: '#f5f5f5' }}>
+      <Content style={{ padding: '24px', background: 'var(--background)' }}>
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Passage Section */}
           <Card title="Reading Passage">

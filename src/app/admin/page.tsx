@@ -134,11 +134,11 @@ const AdminPage = () => {
   }
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+    <Layout style={{ minHeight: '100vh', background: 'var(--background)' }}>
       {/* Header */}
-      <Header style={{ 
-        background: '#fff', 
-        borderBottom: '1px solid #f0f0f0', 
+      <Header style={{
+        backgroundColor: 'var(--header-background)',
+        borderBottom: '1px solid var(--border-color)',
         padding: '20px 48px',
         display: 'flex',
         alignItems: 'center',
@@ -177,9 +177,9 @@ const AdminPage = () => {
         </div>
       </Header>
 
-      <Content style={{ 
-        padding: '48px', 
-        background: '#f5f5f5', 
+      <Content style={{
+        padding: '48px',
+        background: 'var(--background)',
         minHeight: 'calc(100vh - 64px)',
         display: 'flex',
         flexDirection: 'column'
@@ -192,10 +192,10 @@ const AdminPage = () => {
         }}>
           {/* Page Title and Create Button - Only show button when tests exist */}
           <div className="text-center mb-12">
-            <Title level={2} style={{ marginBottom: '8px', fontSize: '32px', fontWeight: 700 }}>
+            <Title level={2} style={{ marginBottom: '8px', fontSize: '2rem', fontWeight: 700, color: 'var(--text-primary)' }}>
               Available Mock Examinations
             </Title>
-            <Text type="secondary" style={{ fontSize: '16px' }}>
+            <Text type="secondary" style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>
               Practice with realistic IELTS mock exams from your test library
             </Text>
             {!loading && tests.length > 0 && (
@@ -205,14 +205,14 @@ const AdminPage = () => {
                   size="large"
                   icon={<PlusOutlined />}
                   onClick={() => setIsCreateModalOpen(true)}
-                  style={{ 
+                  style={{
                     background: '#1677ff',
                     borderColor: '#1677ff',
                     height: 48,
                     paddingLeft: 32,
                     paddingRight: 32,
                     borderRadius: '8px',
-                    fontSize: '16px',
+                    fontSize: '1rem',
                     fontWeight: 500
                   }}
                 >
@@ -229,9 +229,11 @@ const AdminPage = () => {
                 // Loading skeleton - show minimum of 6 cards for better UX
                 Array.from({ length: Math.min(pageSize, 6) }).map((_, index) => (
                   <Col xs={24} sm={12} lg={8} key={`skeleton-${index}`}>
-                    <Card style={{ 
+                    <Card style={{
                       borderRadius: '12px',
-                      height: '280px'
+                      height: '280px',
+                      backgroundColor: 'var(--card-background)',
+                      borderColor: 'var(--border-color)'
                     }}>
                       <Skeleton active paragraph={{ rows: 4 }} />
                     </Card>
@@ -242,32 +244,34 @@ const AdminPage = () => {
               <Col xs={24} sm={12} lg={8} key={test.id}>
                 <Card
                   hoverable
-                  style={{ 
+                  style={{
                     borderRadius: '12px',
-                    border: '1px solid #e8e8e8',
+                    backgroundColor: 'var(--card-background)',
+                    borderColor: 'var(--border-color)',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                     height: '100%'
                   }}
-                  bodyStyle={{ 
+                  bodyStyle={{
                     padding: '20px'
                   }}
                   className="test-card"
                 >
                   {/* Header: Title and Delete Button */}
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
                     alignItems: 'flex-start',
                     marginBottom: '20px'
                   }}>
-                    <Title 
-                      level={4} 
-                      style={{ 
+                    <Title
+                      level={4}
+                      style={{
                         margin: 0,
-                        fontSize: '18px',
+                        fontSize: '1.125rem',
                         fontWeight: 600,
                         flex: 1,
-                        paddingRight: '12px'
+                        paddingRight: '12px',
+                        color: 'var(--text-primary)'
                       }}
                       ellipsis={{ rows: 1 }}
                     >
@@ -283,7 +287,7 @@ const AdminPage = () => {
                       }}
                       style={{
                         color: '#ff4d4f',
-                        fontSize: '16px'
+                        fontSize: '1rem'
                       }}
                       title="Delete test"
                     />
@@ -292,29 +296,29 @@ const AdminPage = () => {
                   {/* Metadata */}
                   <Space direction="vertical" size={10} style={{ width: '100%', marginBottom: '20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FileTextOutlined style={{ color: '#8c8c8c', fontSize: '14px' }} />
-                      <Text type="secondary" style={{ fontSize: '14px' }}>
+                      <FileTextOutlined style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }} />
+                      <Text type="secondary" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                         Available Tests: 3 sections
                       </Text>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <CalendarOutlined style={{ color: '#8c8c8c', fontSize: '14px' }} />
-                      <Text style={{ fontSize: '14px', color: '#52c41a', fontWeight: 500 }}>
+                      <CalendarOutlined style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }} />
+                      <Text style={{ fontSize: '0.875rem', color: '#52c41a', fontWeight: 500 }}>
                         Created {(() => {
                           if (!test.createdDate) return 'N/A'
                           const date = parseCustomDate(test.createdDate)
                           if (!date) return 'Invalid Date'
                           // Format as "7 Nov 2025" (day first, then month) to match DD.MM.YYYY format
-                          return date.toLocaleDateString('en-GB', { 
+                          return date.toLocaleDateString('en-GB', {
                             day: 'numeric',
-                            month: 'short', 
-                            year: 'numeric' 
+                            month: 'short',
+                            year: 'numeric'
                           })
                         })()}
                       </Text>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Text style={{ fontSize: '14px', fontWeight: 500 }}>
+                      <Text style={{ fontSize: '0.875rem', fontWeight: 500 }}>
                         Status:
                       </Text>
                       <div 
@@ -332,11 +336,11 @@ const AdminPage = () => {
                   </Space>
 
                   {/* Footer: Buttons */}
-                  <div style={{ 
-                    display: 'flex', 
+                  <div style={{
+                    display: 'flex',
                     gap: '12px',
                     paddingTop: '16px',
-                    borderTop: '1px solid #f0f0f0'
+                    borderTop: '1px solid var(--border-color)'
                   }}>
                     <Button 
                       onClick={() => window.open(`/admin/reading/preview/${test.id}`, '_blank')}
@@ -371,10 +375,10 @@ const AdminPage = () => {
 
           {/* Pagination */}
           {!loading && tests.length > 0 && (
-            <div style={{ 
+            <div style={{
               marginTop: 'auto',
               padding: '24px',
-              background: '#fff',
+              backgroundColor: 'var(--card-background)',
               borderRadius: '8px',
               display: 'flex',
               justifyContent: 'space-between',
@@ -382,7 +386,7 @@ const AdminPage = () => {
               flexWrap: 'wrap',
               gap: '16px'
             }}>
-              <Text type="secondary" style={{ fontSize: '14px' }}>
+              <Text type="secondary" style={{ fontSize: '0.875rem' }}>
                 Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalTests)} of {totalTests} tests
               </Text>
               <Pagination
@@ -410,29 +414,31 @@ const AdminPage = () => {
 
           {/* Empty State */}
           {!loading && tests.length === 0 && (
-            <Card 
-              className="text-center" 
-              style={{ 
+            <Card
+              className="text-center"
+              style={{
                 padding: '80px 40px',
                 borderRadius: '12px',
                 flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                backgroundColor: 'var(--card-background)',
+                borderColor: 'var(--border-color)'
               }}
             >
-              <div style={{ 
-                fontSize: 64, 
-                color: '#d9d9d9', 
-                marginBottom: 24 
+              <div style={{
+                fontSize: 64,
+                color: 'var(--text-secondary)',
+                marginBottom: 24
               }}>
                 📝
               </div>
-              <Title level={3} style={{ marginBottom: 12 }}>
+              <Title level={3} style={{ marginBottom: 12, color: 'var(--text-primary)' }}>
                 No tests yet
               </Title>
-              <Text type="secondary" style={{ fontSize: '16px', display: 'block', marginBottom: 32 }}>
+              <Text type="secondary" style={{ fontSize: '1rem', display: 'block', marginBottom: 32, color: 'var(--text-secondary)' }}>
                 Create your first test to get started with your IELTS mock examinations
               </Text>
               <Button
@@ -440,14 +446,14 @@ const AdminPage = () => {
                 size="large"
                 icon={<PlusOutlined />}
                 onClick={() => setIsCreateModalOpen(true)}
-                style={{ 
+                style={{
                   background: '#1677ff',
                   borderColor: '#1677ff',
                   height: 48,
                   paddingLeft: 32,
                   paddingRight: 32,
                   borderRadius: '8px',
-                  fontSize: '16px',
+                  fontSize: '1rem',
                   fontWeight: 500
                 }}
               >

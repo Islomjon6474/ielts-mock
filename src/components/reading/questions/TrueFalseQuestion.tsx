@@ -40,18 +40,35 @@ const TrueFalseQuestion = observer(({ question, questionNumber, type = 'TRUE_FAL
     const normalizedValue = value.replace(/ /g, '_')
     readingStore.setAnswer(question.id, normalizedValue)
   }
-  
+
   const isYesNo = type === 'YES_NO_NOT_GIVEN'
-  const options = isYesNo 
+  const options = isYesNo
     ? ['YES', 'NO', 'NOT GIVEN']
     : ['TRUE', 'FALSE', 'NOT GIVEN']
 
+  // In preview mode, get submitted answer for styling
+  const submittedAnswer = readingStore.isPreviewMode ? readingStore.getSubmittedAnswer(question.id) as string : null
+  const isCorrect = readingStore.isPreviewMode ? readingStore.isAnswerCorrect(question.id) : null
+
+  // Convert submitted answer format (with underscores) to display format (with spaces)
+  const displaySubmittedAnswer = submittedAnswer?.replace(/_/g, ' ')
+
   return (
-    <Card className="mb-4" ref={containerRef}>
+    <Card
+      className="mb-4"
+      ref={containerRef}
+      style={{
+        backgroundColor: 'var(--card-background)',
+        borderColor: readingStore.isPreviewMode && submittedAnswer ?
+          (isCorrect ? '#52c41a' : '#ff4d4f') :
+          'var(--border-color)',
+        borderWidth: readingStore.isPreviewMode && submittedAnswer ? '2px' : '1px'
+      }}
+    >
       <div className="flex items-start gap-4">
         <div className="flex-1">
-          <p className="mb-4"><strong>{questionNumber}</strong> {question.text}</p>
-          
+          <p className="mb-4" style={{ color: 'var(--text-primary)' }}><strong>{questionNumber}</strong> {question.text}</p>
+
           {/* Display image if available */}
           {question.imageUrl && (
             <div className="mb-4">
@@ -63,16 +80,18 @@ const TrueFalseQuestion = observer(({ question, questionNumber, type = 'TRUE_FAL
               />
             </div>
           )}
-          
+
           <Radio.Group
-            value={answer}
+            value={readingStore.isPreviewMode ? displaySubmittedAnswer : answer}
             onChange={(e) => handleChange(e.target.value)}
             className="w-full"
             disabled={readingStore.isPreviewMode}
           >
             <Space direction="vertical" className="w-full">
               {options.map(option => (
-                <Radio key={option} value={option}>{option}</Radio>
+                <Radio key={option} value={option}>
+                  <span style={{ color: 'var(--text-primary)' }}>{option}</span>
+                </Radio>
               ))}
             </Space>
           </Radio.Group>

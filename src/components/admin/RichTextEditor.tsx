@@ -146,9 +146,9 @@ export const RichTextEditor = ({
   }
 
   return (
-    <div className="border rounded-md">
+    <div className="border rounded-md" style={{ borderColor: 'var(--border-color)' }}>
       {/* Toolbar */}
-      <div className="border-b p-2 bg-gray-50 flex flex-wrap gap-2">
+      <div className="border-b p-2 flex flex-wrap gap-2" style={{ borderColor: 'var(--border-color)', background: 'var(--card-background)' }}>
         <Space.Compact>
           <Button
             size="small"
@@ -234,14 +234,17 @@ export const RichTextEditor = ({
       </div>
 
       {/* Editor Content */}
-      <EditorContent
-        editor={editor}
-        className="prose max-w-none p-3 min-h-[120px] focus:outline-none"
-      />
+      <div style={{ background: 'var(--input-background)' }}>
+        <EditorContent
+          editor={editor}
+          className="prose max-w-none p-3 min-h-[120px] focus:outline-none"
+        />
+      </div>
 
       <style jsx global>{`
         .ProseMirror {
           outline: none;
+          color: var(--text-primary);
         }
         .ProseMirror p {
           margin: 0.5em 0;

@@ -211,7 +211,7 @@ const SectionPartsPage = observer(() => {
       key: 'questionCount',
       align: 'center' as const,
       render: (count: number) => (
-        <Text style={{ fontSize: '16px' }}>
+        <Text style={{ fontSize: '1rem' }}>
           {count || 0}
         </Text>
       ),
@@ -232,11 +232,11 @@ const SectionPartsPage = observer(() => {
   ]
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+    <Layout style={{ minHeight: '100vh', background: 'var(--background)' }}>
       {/* Header */}
-      <Header style={{ 
-        background: '#fff', 
-        borderBottom: '1px solid #f0f0f0', 
+      <Header style={{
+        background: 'var(--header-background)',
+        borderBottom: '1px solid var(--border-color)',
         padding: '16px 48px',
         display: 'flex',
         alignItems: 'center',
@@ -254,13 +254,13 @@ const SectionPartsPage = observer(() => {
           <Title level={3} style={{ margin: 0, marginBottom: '4px', lineHeight: '1.3' }}>
             {sectionType.charAt(0).toUpperCase() + sectionType.slice(1)}
           </Title>
-          <Text type="secondary" style={{ fontSize: '14px', display: 'block' }}>
+          <Text type="secondary" style={{ fontSize: '0.875rem', display: 'block' }}>
             {isListening ? 'Manage parts, questions, and audio files' : 'Manage parts and questions'}
           </Text>
         </div>
       </Header>
 
-      <Content style={{ padding: '48px', background: '#f5f5f5', minHeight: 'calc(100vh - 64px)' }}>
+      <Content style={{ padding: '48px', background: 'var(--background)', minHeight: 'calc(100vh - 64px)' }}>
         <div className="max-w-4xl mx-auto">
           {isListening ? (
             <Card>
@@ -327,11 +327,11 @@ const SectionPartsPage = observer(() => {
                             </Button>
                           </Upload>
 
-                          <div style={{ 
-                            padding: '16px', 
-                            background: '#f6f8fa', 
+                          <div style={{
+                            padding: '16px',
+                            background: 'var(--card-background)',
                             borderRadius: '6px',
-                            border: '1px solid #e8e8e8'
+                            border: '1px solid var(--border-color)'
                           }}>
                             <Text strong>📝 Audio Guidelines:</Text>
                             <ul style={{ marginTop: '8px', paddingLeft: '20px', marginBottom: 0 }}>

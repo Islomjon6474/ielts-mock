@@ -275,10 +275,19 @@ const PartEditorPage = observer(() => {
                   const questionNum = startNum + questionIndex
                   const answers = answersMap.get(questionNum)
                   if (answers) {
-                    form.setFieldValue(
-                      ['questionGroups', groupIndex, 'questions', questionIndex, 'correctAnswer'],
-                      answers.join(', ')
-                    )
+                    // For MULTIPLE_CORRECT_ANSWERS, set the array directly
+                    if (group.type === 'MULTIPLE_CORRECT_ANSWERS') {
+                      form.setFieldValue(
+                        ['questionGroups', groupIndex, 'questions', questionIndex, 'correctAnswers'],
+                        answers
+                      )
+                    } else {
+                      // For other types, join answers as a string
+                      form.setFieldValue(
+                        ['questionGroups', groupIndex, 'questions', questionIndex, 'correctAnswer'],
+                        answers.join(', ')
+                      )
+                    }
                   }
                 }
               }
@@ -691,8 +700,8 @@ const PartEditorPage = observer(() => {
 
         if (group.questions) {
           const cleanQuestions = group.questions.map((question: any, index: number) => {
-            // Remove both correctAnswer and answers fields
-            const { correctAnswer, answers, ...questionWithoutAnswer } = question
+            // Remove correctAnswer, answers, and correctAnswers fields
+            const { correctAnswer, answers, correctAnswers, ...questionWithoutAnswer } = question
             
             // For SHORT_ANSWER type, expand ONLY the flat questions array (user-side)
             // Keep single question object in questionGroups (admin-side)
@@ -1008,7 +1017,7 @@ const PartEditorPage = observer(() => {
                 />
               </Form.Item>
               
-              <div style={{ padding: '16px', borderTop: '1px solid #f0f0f0' }}>
+              <div style={{ padding: '16px', borderTop: '1px solid var(--border-color)' }}>
                 <Form.Item
                   label="Passage Image (Optional)"
                   name="imageId"
@@ -1025,7 +1034,7 @@ const PartEditorPage = observer(() => {
           <div style={{ flex: 1 }}>
             <Card title="Question Groups" extra={
               questionOffset > 0 && (
-                <Text type="secondary" style={{ fontSize: '14px' }}>
+                <Text type="secondary" style={{ fontSize: '0.875rem' }}>
                   📊 Questions start from: <strong>{questionOffset + 1}</strong> (previous parts have {questionOffset} questions)
                 </Text>
               )
@@ -1117,7 +1126,7 @@ const PartEditorPage = observer(() => {
       return (
         <div>
           {questionOffset > 0 && (
-            <Card size="small" style={{ marginBottom: '16px', background: '#e6f7ff', borderColor: '#91d5ff' }}>
+            <Card size="small" style={{ marginBottom: '16px', background: 'var(--card-background)', borderColor: 'var(--border-color)' }}>
               <Text>
                 📊 <strong>Question Numbering:</strong> This part starts from question <strong>{questionOffset + 1}</strong> 
                 {' '}(previous parts have {questionOffset} questions)
@@ -1188,11 +1197,11 @@ const PartEditorPage = observer(() => {
             <AudioUpload label="Upload Audio File" />
           </Form.Item>
 
-          <div style={{ 
-            padding: '16px', 
-            background: '#f6f8fa', 
+          <div style={{
+            padding: '16px',
+            background: 'var(--card-background)',
             borderRadius: '6px',
-            border: '1px solid #e8e8e8'
+            border: '1px solid var(--border-color)'
           }}>
             <Text strong>📝 Audio Guidelines:</Text>
             <ul style={{ marginTop: '8px', paddingLeft: '20px' }}>
@@ -1237,11 +1246,11 @@ const PartEditorPage = observer(() => {
   })
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+    <Layout style={{ minHeight: '100vh', background: 'var(--background)' }}>
       {/* Header */}
-      <Header style={{ 
-        background: '#fff', 
-        borderBottom: '1px solid #f0f0f0', 
+      <Header style={{
+        background: 'var(--header-background)',
+        borderBottom: '1px solid var(--border-color)',
         padding: '16px 48px',
         display: 'flex',
         alignItems: 'center',
@@ -1263,7 +1272,7 @@ const PartEditorPage = observer(() => {
             <Title level={4} style={{ margin: 0, marginBottom: '4px', lineHeight: '1.3' }}>
               {sectionType.charAt(0).toUpperCase() + sectionType.slice(1)} - {partOrder !== null ? `Part ${partOrder}` : 'Loading...'}
             </Title>
-            <Text type="secondary" style={{ fontSize: '14px', display: 'block' }}>
+            <Text type="secondary" style={{ fontSize: '0.875rem', display: 'block' }}>
               Edit part content and questions
             </Text>
           </div>
@@ -1284,7 +1293,7 @@ const PartEditorPage = observer(() => {
         </Button>
       </Header>
 
-      <Content style={{ padding: '24px', background: '#f5f5f5', minHeight: 'calc(100vh - 64px)' }}>
+      <Content style={{ padding: '24px', background: 'var(--background)', minHeight: 'calc(100vh - 64px)' }}>
         {loading ? (
           <div className="text-center py-12">
             <Spin size="large" />
@@ -1302,7 +1311,7 @@ const PartEditorPage = observer(() => {
               margin: '0 auto'
             }} className="paper-container">
               <div style={{
-                background: '#fff',
+                background: 'var(--card-background)',
                 borderRadius: '8px',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                 padding: '32px'
@@ -1330,7 +1339,7 @@ const PartEditorPage = observer(() => {
             padding: '0 24px'
           }}>
             <div style={{
-              background: '#fff',
+              background: 'var(--card-background)',
               borderRadius: '8px',
               boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
               padding: '32px',

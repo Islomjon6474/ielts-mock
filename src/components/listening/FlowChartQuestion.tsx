@@ -53,7 +53,7 @@ const FlowChartQuestion = observer(({
 
   const DropZone = ({ questionId }: { questionId: number }) => {
     const answer = listeningStore.getAnswer(questionId) as string || ''
-    
+
     return (
       <span
         onDragOver={handleDragOver}
@@ -65,12 +65,13 @@ const FlowChartQuestion = observer(({
           onChange={(e) => listeningStore.setAnswer(questionId, e.target.value)}
           placeholder={questionId.toString()}
           className="text-center"
-          style={{ width: '80px' }}
+          style={{ width: '80px', backgroundColor: 'var(--input-background)', borderColor: 'var(--input-border)', color: 'var(--text-primary)' }}
         />
         {answer && (
           <button
             onClick={() => handleRemove(questionId)}
-            className="text-gray-400 hover:text-gray-600 text-sm font-bold"
+            style={{ color: 'var(--text-secondary)' }}
+            className="hover:opacity-70 text-sm font-bold"
           >
             ✕
           </button>
@@ -81,18 +82,18 @@ const FlowChartQuestion = observer(({
 
   return (
     <div className="space-y-4">
-      <h3 className="font-bold text-base mb-2">{title}</h3>
-      <p className="text-sm mb-4">{instruction}</p>
+      <h3 style={{ color: 'var(--text-primary)' }} className="font-bold text-base mb-2">{title}</h3>
+      <p style={{ color: 'var(--text-primary)' }} className="text-sm mb-4">{instruction}</p>
 
       <div className="flex gap-8">
         {/* Left side - Flow chart */}
         <div className="flex-1 max-w-2xl">
-          <h4 className="font-semibold text-sm mb-3">Procedure for detecting life on another planet</h4>
-          
+          <h4 style={{ color: 'var(--text-primary)' }} className="font-semibold text-sm mb-3">Procedure for detecting life on another planet</h4>
+
           <div className="space-y-0">
             {/* Step 1 */}
-            <div style={{ border: '1px solid #000' }} className="p-3 bg-white">
-              <p className="text-sm">A spacecraft lands on a planet and sends out a rover.</p>
+            <div style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--card-background)' }} className="p-3">
+              <p style={{ color: 'var(--text-primary)' }} className="text-sm">A spacecraft lands on a planet and sends out a rover.</p>
             </div>
             
             <div className="flex justify-center py-2">
@@ -102,74 +103,74 @@ const FlowChartQuestion = observer(({
             </div>
 
             {/* Step 2 */}
-            <div style={{ border: '1px solid #000' }} className="p-3 bg-white">
-              <p className="text-sm">The rover is directed to a <DropZone questionId={26} /> which has organic matter in it.</p>
+            <div style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--card-background)' }} className="p-3">
+              <p style={{ color: 'var(--text-primary)' }} className="text-sm">The rover is directed to a <DropZone questionId={26} /> which has organic matter in it.</p>
             </div>
-            
+
             <div className="flex justify-center py-2">
-              <svg width="16" height="16" viewBox="0 0 16 16" className="text-gray-500">
+              <svg width="16" height="16" viewBox="0 0 16 16" style={{ color: 'var(--text-secondary)' }}>
                 <polygon points="8,0 16,8 8,16 0,8" fill="currentColor"/>
               </svg>
             </div>
 
             {/* Step 3 */}
-            <div style={{ border: '1px solid #000' }} className="p-3 bg-white">
-              <p className="text-sm">It collects a sample from below the surface in order to avoid the effects of <DropZone questionId={27} />.</p>
+            <div style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--card-background)' }} className="p-3">
+              <p style={{ color: 'var(--text-primary)' }} className="text-sm">It collects a sample from below the surface in order to avoid the effects of <DropZone questionId={27} />.</p>
             </div>
-            
+
             <div className="flex justify-center py-2">
-              <svg width="16" height="16" viewBox="0 0 16 16" className="text-gray-500">
+              <svg width="16" height="16" viewBox="0 0 16 16" style={{ color: 'var(--text-secondary)' }}>
                 <polygon points="8,0 16,8 8,16 0,8" fill="currentColor"/>
               </svg>
             </div>
 
             {/* Step 4 */}
-            <div style={{ border: '1px solid #000' }} className="p-3 bg-white">
-              <p className="text-sm">The soil and rocks are checked to look for evidence of fossils.</p>
+            <div style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--card-background)' }} className="p-3">
+              <p style={{ color: 'var(--text-primary)' }} className="text-sm">The soil and rocks are checked to look for evidence of fossils.</p>
             </div>
-            
+
             <div className="flex justify-center py-2">
-              <svg width="16" height="16" viewBox="0 0 16 16" className="text-gray-500">
+              <svg width="16" height="16" viewBox="0 0 16 16" style={{ color: 'var(--text-secondary)' }}>
                 <polygon points="8,0 16,8 8,16 0,8" fill="currentColor"/>
               </svg>
             </div>
 
             {/* Step 5 */}
-            <div style={{ border: '1px solid #000' }} className="p-3 bg-white">
-              <p className="text-sm">The sample is converted to powder.</p>
+            <div style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--card-background)' }} className="p-3">
+              <p style={{ color: 'var(--text-primary)' }} className="text-sm">The sample is converted to powder.</p>
             </div>
-            
+
             <div className="flex justify-center py-2">
-              <svg width="16" height="16" viewBox="0 0 16 16" className="text-gray-500">
+              <svg width="16" height="16" viewBox="0 0 16 16" style={{ color: 'var(--text-secondary)' }}>
                 <polygon points="8,0 16,8 8,16 0,8" fill="currentColor"/>
               </svg>
             </div>
 
             {/* Step 6 */}
-            <div style={{ border: '1px solid #000' }} className="p-3 bg-white">
-              <p className="text-sm">The sample is subjected to <DropZone questionId={28} />.</p>
+            <div style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--card-background)' }} className="p-3">
+              <p style={{ color: 'var(--text-primary)' }} className="text-sm">The sample is subjected to <DropZone questionId={28} />.</p>
             </div>
-            
+
             <div className="flex justify-center py-2">
-              <svg width="16" height="16" viewBox="0 0 16 16" className="text-gray-500">
+              <svg width="16" height="16" viewBox="0 0 16 16" style={{ color: 'var(--text-secondary)' }}>
                 <polygon points="8,0 16,8 8,16 0,8" fill="currentColor"/>
               </svg>
             </div>
 
             {/* Step 7 */}
-            <div style={{ border: '1px solid #000' }} className="p-3 bg-white">
-              <p className="text-sm">It runs spectrometer to seek for potential proof of life e.g. <DropZone questionId={29} />.</p>
+            <div style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--card-background)' }} className="p-3">
+              <p style={{ color: 'var(--text-primary)' }} className="text-sm">It runs spectrometer to seek for potential proof of life e.g. <DropZone questionId={29} />.</p>
             </div>
-            
+
             <div className="flex justify-center py-2">
-              <svg width="16" height="16" viewBox="0 0 16 16" className="text-gray-500">
+              <svg width="16" height="16" viewBox="0 0 16 16" style={{ color: 'var(--text-secondary)' }}>
                 <polygon points="8,0 16,8 8,16 0,8" fill="currentColor"/>
               </svg>
             </div>
 
             {/* Step 8 */}
-            <div style={{ border: '1px solid #000' }} className="p-3 bg-white">
-              <p className="text-sm">The <DropZone questionId={30} /> are compared with existing data from Earth.</p>
+            <div style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--card-background)' }} className="p-3">
+              <p style={{ color: 'var(--text-primary)' }} className="text-sm">The <DropZone questionId={30} /> are compared with existing data from Earth.</p>
             </div>
           </div>
         </div>
@@ -179,16 +180,22 @@ const FlowChartQuestion = observer(({
           <div className="space-y-2">
             {options.map((option: string, index: number) => {
               const isUsed = usedOptions.includes(option)
-              
+
               return (
                 <div
                   key={index}
                   draggable={!isUsed}
                   onDragStart={(e) => !isUsed && handleDragStart(e, option)}
+                  style={{
+                    backgroundColor: 'var(--card-background)',
+                    borderColor: 'var(--border-color)',
+                    color: isUsed ? 'var(--text-secondary)' : 'var(--text-primary)',
+                    opacity: isUsed ? 0.5 : 1
+                  }}
                   className={`px-3 py-2 border rounded text-sm ${
                     isUsed
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
-                      : 'bg-white border-gray-300 cursor-move hover:bg-gray-50'
+                      ? 'cursor-not-allowed'
+                      : 'cursor-move hover:opacity-80'
                   }`}
                 >
                   {option}

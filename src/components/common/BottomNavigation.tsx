@@ -51,7 +51,7 @@ const BottomNavigation = observer(({
   }
 
   return (
-    <footer className="border-t bg-white">
+    <footer className="border-t" style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }}>
       <div className="flex items-center justify-between px-6 py-3">
         {/* Part Navigation with Question Numbers */}
         <div className="flex items-center gap-3 flex-1">
@@ -66,20 +66,17 @@ const BottomNavigation = observer(({
             return (
               <div
                 key={part.id}
-                className={`flex items-center gap-3 cursor-pointer justify-center px-3 py-2 rounded-lg ${
-                  isCurrentPart
-                    ? 'bg-gray-100'
-                    : 'bg-gray-50 hover:bg-gray-100'
-                }`}
-                style={{ width: getPartWidth(part.id) }}
+                className="flex items-center gap-3 cursor-pointer justify-center px-3 py-2 rounded-lg"
+                style={{
+                  width: getPartWidth(part.id),
+                  backgroundColor: isCurrentPart ? 'var(--background)' : 'var(--card-background)',
+                  opacity: isCurrentPart ? 1 : 0.8
+                }}
                 onClick={() => onPartClick(part.id)}
               >
                 <span
-                  className={`font-semibold whitespace-nowrap ${
-                    isCurrentPart
-                      ? 'text-black'
-                      : 'text-gray-500'
-                  }`}
+                  className="font-semibold whitespace-nowrap"
+                  style={{ color: isCurrentPart ? 'var(--text-primary)' : 'var(--text-secondary)' }}
                 >
                   {part.title}
                 </span>
@@ -106,20 +103,16 @@ const BottomNavigation = observer(({
                           }`} />
                           
                           {/* Question number */}
-                          <div className={`
-                            min-w-[32px] w-[32px] h-[32px] 
-                            flex items-center justify-center
-                            text-sm
-                            text-black
-                            border
-                            ${isCurrent 
-                              ? 'border-2 border-black font-bold' 
-                              : 'border-gray-300'
-                            }
-                            bg-white
-                            hover:bg-gray-50
-                            transition-colors
-                          `}>
+                          <div
+                            className="min-w-[32px] w-[32px] h-[32px] flex items-center justify-center text-sm border transition-colors"
+                            style={{
+                              color: 'var(--text-primary)',
+                              borderColor: isCurrent ? 'var(--text-primary)' : 'var(--border-color)',
+                              borderWidth: isCurrent ? '2px' : '1px',
+                              fontWeight: isCurrent ? 'bold' : 'normal',
+                              backgroundColor: 'var(--card-background)'
+                            }}
+                          >
                             {questionNum}
                           </div>
                         </div>
@@ -131,10 +124,10 @@ const BottomNavigation = observer(({
                 {/* Show count and range for non-current parts */}
                 {!isCurrentPart && (
                   <div className="flex flex-col items-center">
-                    <span className="text-xs text-gray-400 whitespace-nowrap">
+                    <span className="text-xs whitespace-nowrap" style={{ color: 'var(--text-secondary)', opacity: 0.7 }}>
                       {start}-{end}
                     </span>
-                    <span className="text-sm text-gray-500 whitespace-nowrap">
+                    <span className="text-sm whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
                       {answeredCount}/{totalCount}
                     </span>
                   </div>
@@ -142,7 +135,7 @@ const BottomNavigation = observer(({
               </div>
             )
           }) : (
-            <div className="text-gray-400 text-sm">Loading...</div>
+            <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading...</div>
           )}
         </div>
 
@@ -156,23 +149,23 @@ const BottomNavigation = observer(({
               onClick={onPrevious}
               disabled={!hasPrevious}
               className="w-12 h-12 flex items-center justify-center"
-              style={{ 
-                backgroundColor: hasPrevious ? '#3b82f6' : '#f3f4f6',
-                borderColor: hasPrevious ? '#2563eb' : '#e5e7eb',
-                color: hasPrevious ? '#ffffff' : '#9ca3af'
+              style={{
+                backgroundColor: hasPrevious ? 'var(--primary)' : 'var(--background)',
+                borderColor: hasPrevious ? 'var(--primary)' : 'var(--border-color)',
+                color: hasPrevious ? (getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() === '#ffff00' ? '#000000' : '#ffffff') : 'var(--text-secondary)'
               }}
             />
-            
+
             {/* Next Button */}
             <Button
               icon={<RightOutlined />}
               onClick={onNext}
               disabled={!hasNext}
               className="w-12 h-12 flex items-center justify-center"
-              style={{ 
-                backgroundColor: hasNext ? '#3b82f6' : '#f3f4f6',
-                borderColor: hasNext ? '#2563eb' : '#e5e7eb',
-                color: hasNext ? '#ffffff' : '#9ca3af'
+              style={{
+                backgroundColor: hasNext ? 'var(--primary)' : 'var(--background)',
+                borderColor: hasNext ? 'var(--primary)' : 'var(--border-color)',
+                color: hasNext ? (getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() === '#ffff00' ? '#000000' : '#ffffff') : 'var(--text-secondary)'
               }}
             />
           </div>

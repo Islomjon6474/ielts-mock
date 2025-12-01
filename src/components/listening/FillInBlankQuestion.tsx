@@ -71,24 +71,61 @@ const FillInBlankQuestion = observer(({ question, questionNumber, isPreviewMode 
   // Parse plain text to find blank markers like [1], [2], etc.
   const renderQuestionWithBlanks = () => {
     const parts = question.text.split(/(\[\d+\])/)
-    
+
     return parts.map((part: string, index: number) => {
       const blankMatch = part.match(/\[(\d+)\]/)
       if (blankMatch) {
         const blankNumber = parseInt(blankMatch[1])
-        
-        // Get the answer for this specific blank number (question ID)
+
+        // In preview mode with submitted answers, show submitted answer with correctness styling
+        if (isPreviewMode) {
+          const submittedAnswer = listeningStore.getSubmittedAnswer(blankNumber)
+          const isCorrect = listeningStore.isAnswerCorrect(blankNumber)
+
+          // Determine border and background color based on correctness
+          let borderColor = 'var(--input-border)'
+          let backgroundColor = 'var(--input-background)'
+
+          if (submittedAnswer) {
+            if (isCorrect === true) {
+              borderColor = '#52c41a' // Green for correct
+              backgroundColor = '#f6ffed' // Light green background
+            } else if (isCorrect === false) {
+              borderColor = '#ff4d4f' // Red for incorrect
+              backgroundColor = '#fff2f0' // Light red background
+            }
+          }
+
+          return (
+            <Input
+              key={index}
+              className="inline-block mx-2 text-center font-bold"
+              style={{
+                width: '120px',
+                backgroundColor,
+                borderColor,
+                borderWidth: '2px',
+                color: 'var(--text-primary)'
+              }}
+              value={submittedAnswer as string || ''}
+              placeholder={blankNumber.toString()}
+              disabled={true}
+            />
+          )
+        }
+
+        // Normal mode - editable
         const blankAnswer = listeningStore.getAnswer(blankNumber) as string | undefined
-        
+
         return (
           <Input
             key={index}
             className="inline-block mx-2 text-center font-bold"
-            style={{ width: '120px' }}
+            style={{ width: '120px', backgroundColor: 'var(--input-background)', borderColor: 'var(--input-border)', color: 'var(--text-primary)' }}
             value={blankAnswer || ''}
             onChange={(e) => listeningStore.setAnswer(blankNumber, e.target.value)}
             placeholder={blankNumber.toString()}
-            disabled={isPreviewMode}
+            disabled={false}
           />
         )
       }
@@ -111,19 +148,48 @@ const FillInBlankQuestion = observer(({ question, questionNumber, isPreviewMode 
               inputPlaceholders.forEach((placeholder) => {
                 const number = parseInt(placeholder.getAttribute('data-input-placeholder') || '0')
                 if (number > 0) {
-                  const blankAnswer = listeningStore.getAnswer(number) as string | undefined
-                  
                   const input = document.createElement('input')
                   input.type = 'text'
                   input.className = 'ant-input inline-block mx-2 text-center font-bold'
                   input.style.width = '120px'
-                  input.value = blankAnswer || ''
                   input.placeholder = number.toString()
-                  input.disabled = isPreviewMode
-                  input.addEventListener('change', (e) => {
-                    listeningStore.setAnswer(number, (e.target as HTMLInputElement).value)
-                  })
-                  
+
+                  // In preview mode with submitted answers, show submitted answer with correctness styling
+                  if (isPreviewMode) {
+                    const submittedAnswer = listeningStore.getSubmittedAnswer(number)
+                    const isCorrect = listeningStore.isAnswerCorrect(number)
+
+                    input.value = (submittedAnswer as string) || ''
+                    input.disabled = true
+
+                    // Style based on correctness
+                    if (submittedAnswer) {
+                      if (isCorrect === true) {
+                        input.style.borderColor = '#52c41a'
+                        input.style.backgroundColor = '#f6ffed'
+                        input.style.borderWidth = '2px'
+                      } else if (isCorrect === false) {
+                        input.style.borderColor = '#ff4d4f'
+                        input.style.backgroundColor = '#fff2f0'
+                        input.style.borderWidth = '2px'
+                      }
+                    } else {
+                      input.style.backgroundColor = 'var(--input-background)'
+                      input.style.borderColor = 'var(--input-border)'
+                    }
+                  } else {
+                    // Normal mode - editable
+                    const blankAnswer = listeningStore.getAnswer(number) as string | undefined
+                    input.value = blankAnswer || ''
+                    input.disabled = false
+                    input.style.backgroundColor = 'var(--input-background)'
+                    input.style.borderColor = 'var(--input-border)'
+                    input.addEventListener('change', (e) => {
+                      listeningStore.setAnswer(number, (e.target as HTMLInputElement).value)
+                    })
+                  }
+
+                  input.style.color = 'var(--text-primary)'
                   placeholder.replaceWith(input)
                 }
               })
@@ -137,7 +203,7 @@ const FillInBlankQuestion = observer(({ question, questionNumber, isPreviewMode 
   }
 
   return (
-    <div className="border-b pb-4" data-question-id={questionNumber} ref={containerRef}>
+    <div style={{ borderBottomColor: 'var(--border-color)', color: 'var(--text-primary)' }} className="border-b pb-4" data-question-id={questionNumber} ref={containerRef}>
       {/* Display image if available */}
       {question.imageUrl && (
         <div className="mb-4">

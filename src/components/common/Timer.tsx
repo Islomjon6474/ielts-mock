@@ -13,7 +13,7 @@ const Timer = observer(({ timeRemaining, isTimeUp }: TimerProps) => {
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
     const secs = seconds % 60
-    
+
     if (hours > 0) {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
     }
@@ -26,6 +26,12 @@ const Timer = observer(({ timeRemaining, isTimeUp }: TimerProps) => {
     return '#52c41a' // green
   }
 
+  const getBgColor = () => {
+    if (isTimeUp) return '#fff1f0' // light red
+    if (timeRemaining < 300) return '#fffbe6' // light orange
+    return '#f6ffed' // light green
+  }
+
   return (
     <div
       style={{
@@ -33,15 +39,15 @@ const Timer = observer(({ timeRemaining, isTimeUp }: TimerProps) => {
         alignItems: 'center',
         gap: '8px',
         padding: '8px 16px',
-        backgroundColor: isTimeUp ? '#fff1f0' : '#f6ffed',
+        backgroundColor: getBgColor(),
         border: `2px solid ${getColor()}`,
         borderRadius: '8px',
         fontWeight: 'bold',
-        fontSize: '18px',
+        fontSize: '1.125rem',
         color: getColor(),
       }}
     >
-      <ClockCircleOutlined style={{ fontSize: '20px' }} />
+      <ClockCircleOutlined style={{ fontSize: '1.25rem' }} />
       <span>{isTimeUp ? 'Time Up!' : formatTime(timeRemaining)}</span>
     </div>
   )

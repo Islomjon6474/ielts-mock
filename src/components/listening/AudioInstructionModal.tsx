@@ -35,7 +35,7 @@ const AudioInstructionModal = ({ visible, onStart, loading, ready, error }: Audi
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="text-gray-700"
+            style={{ color: 'var(--text-primary)' }}
           >
             <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
             <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
@@ -43,18 +43,18 @@ const AudioInstructionModal = ({ visible, onStart, loading, ready, error }: Audi
         </div>
 
         {/* Text */}
-        <p className="text-base text-gray-800 mb-4 max-w-md leading-relaxed">
+        <p style={{ color: 'var(--text-primary)' }} className="text-base mb-4 max-w-md leading-relaxed">
           You will be listening to an audio clip during this test. You will not be permitted to pause or rewind the audio while answering the questions.
         </p>
 
         {error ? (
           <p className="text-sm text-red-600 mb-6">{error}</p>
         ) : loading ? (
-          <p className="text-sm text-gray-600 mb-6">Preparing audio files…</p>
+          <p style={{ color: 'var(--text-secondary)' }} className="text-sm mb-6">Preparing audio files…</p>
         ) : ready ? (
-          <p className="text-sm text-gray-600 mb-6">All audios are ready. Click Play to start.</p>
+          <p style={{ color: 'var(--text-secondary)' }} className="text-sm mb-6">All audios are ready. Click Play to start.</p>
         ) : (
-          <p className="text-sm text-gray-600 mb-6">Preparing audio files…</p>
+          <p style={{ color: 'var(--text-secondary)' }} className="text-sm mb-6">Preparing audio files…</p>
         )}
 
         {/* Play Button */}

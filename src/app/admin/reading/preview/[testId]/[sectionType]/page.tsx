@@ -202,7 +202,22 @@ const SectionPreviewPage = observer(() => {
 
         if (listeningParts.length > 0) {
           listeningStore.setParts(listeningParts)
-          // listeningStore has no preview mode; ListeningTestLayout renders read-only by design
+          listeningStore.setPreviewMode(true) // Enable preview mode
+
+          console.log('🔍 DEBUG: All listening parts loaded:', listeningParts.length)
+          console.log('🔍 DEBUG: All listening questions:', listeningStore.allQuestions.map(q => ({ id: q.id, type: q.type, correctAnswer: q.correctAnswer })))
+          console.log('🔍 DEBUG: Listening user answers from API:', userAnswers)
+
+          // Load submitted answers if available
+          if (userAnswers && userAnswers.length > 0) {
+            listeningStore.loadSubmittedAnswers(userAnswers)
+            console.log('🔍 DEBUG: Loaded submitted answers into listening store')
+            console.log('🔍 DEBUG: Listening submitted answers map:', Array.from(listeningStore.submittedAnswers.entries()))
+            console.log('🔍 DEBUG: Listening answer correctness map:', Array.from(listeningStore.answerCorrectness.entries()))
+          } else {
+            console.log('🔍 DEBUG: No listening user answers to load')
+          }
+
           contentFound = true
           setHasContent(true)
         } else {
@@ -233,6 +248,9 @@ const SectionPreviewPage = observer(() => {
               }))
             }
 
+            // Get admin format for correct answers (if available)
+            const adminData = partData?.admin || null
+
             // Map questions with options and add groupIndex from questionGroups
             const mappedQuestions = (dataToUse.questions || []).map((q: any) => {
               // Find which group this question belongs to based on question range
@@ -251,11 +269,21 @@ const SectionPreviewPage = observer(() => {
                   }
                 })
               }
-              
+
+              // Extract correct answer from admin format
+              let correctAnswer = undefined
+              if (adminData && adminData.questions) {
+                const adminQuestion = adminData.questions.find((aq: any) => aq.id === q.id)
+                if (adminQuestion && adminQuestion.answer) {
+                  correctAnswer = adminQuestion.answer
+                }
+              }
+
               return {
                 ...q,
                 options: q.options || [],
-                groupIndex: groupIndex
+                groupIndex: groupIndex,
+                correctAnswer: correctAnswer
               }
             })
             
@@ -291,6 +319,22 @@ const SectionPreviewPage = observer(() => {
         if (allParts.length > 0) {
           readingStore.setParts(allParts)
           readingStore.setPreviewMode(true) // Enable preview mode to disable inputs
+
+          console.log('🔍 DEBUG: All parts loaded:', allParts.length)
+          console.log('🔍 DEBUG: All questions:', readingStore.allQuestions.map(q => ({ id: q.id, type: q.type, correctAnswer: q.correctAnswer })))
+          console.log('🔍 DEBUG: User answers from API:', userAnswers)
+          console.log('🔍 DEBUG: Preview mode:', readingStore.isPreviewMode)
+
+          // Load submitted answers if available
+          if (userAnswers && userAnswers.length > 0) {
+            readingStore.loadSubmittedAnswers(userAnswers)
+            console.log('🔍 DEBUG: Loaded submitted answers into store')
+            console.log('🔍 DEBUG: Submitted answers map:', Array.from(readingStore.submittedAnswers.entries()))
+            console.log('🔍 DEBUG: Answer correctness map:', Array.from(readingStore.answerCorrectness.entries()))
+          } else {
+            console.log('🔍 DEBUG: No user answers to load')
+          }
+
           contentFound = true
           setHasContent(true)
         } else {
@@ -380,10 +424,10 @@ const SectionPreviewPage = observer(() => {
 
   if (!hasContent) {
     return (
-      <div className="min-h-screen" style={{ background: '#f5f5f5' }}>
-        <div style={{ 
-          background: '#fff', 
-          borderBottom: '1px solid #f0f0f0',
+      <div className="min-h-screen" style={{ background: 'var(--background)' }}>
+        <div style={{
+          background: 'var(--header-background)',
+          borderBottom: '1px solid var(--border-color)',
           padding: '16px 24px'
         }}>
           <Button
@@ -424,56 +468,9 @@ const SectionPreviewPage = observer(() => {
 
   return (
     <div>
-      {/* Show user answers if viewing a result */}
-      {resultId ? (
-        <div style={{ background: '#f5f5f5', minHeight: '100vh' }}>
-          <div style={{ background: '#fff', padding: '24px 48px', borderBottom: '1px solid #f0f0f0' }}>
-            <Button
-              icon={<ArrowLeftOutlined />}
-              onClick={handleBackClick}
-              size="large"
-              style={{ marginBottom: 16 }}
-            >
-              Back to Result Preview
-            </Button>
-            <Title level={3} style={{ marginBottom: 16 }}>Student Answers - {sectionType.toUpperCase()}</Title>
-          </div>
-          <div style={{ padding: '24px 48px' }}>
-            {userAnswers.length > 0 ? (
-              <Card>
-                {userAnswers.map((answer: any, index: number) => (
-                  <div key={answer.id || index} style={{ marginBottom: 16, paddingBottom: 16, borderBottom: index < userAnswers.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
-                    <Text strong>Question {answer.questionNumber || index + 1}: </Text>
-                    <span style={{ marginLeft: 8 }} dangerouslySetInnerHTML={{ __html: answer.userAnswer || answer.answer || '(No answer)' }} />
-                    {answer.isCorrect !== undefined && (
-                      <Text style={{ marginLeft: 16, color: answer.isCorrect ? '#52c41a' : '#ff4d4f' }}>
-                        {answer.isCorrect ? '✓ Correct' : '✗ Incorrect'}
-                      </Text>
-                    )}
-                    {answer.correctAnswer && (
-                      <span style={{ marginLeft: 16, color: 'rgba(0, 0, 0, 0.45)' }}>
-                        (Correct: <span dangerouslySetInnerHTML={{ __html: answer.correctAnswer }} />)
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </Card>
-            ) : (
-              <Card>
-                <div style={{ textAlign: 'center', padding: '40px' }}>
-                  <Text type="secondary">No answers found for this section</Text>
-                </div>
-              </Card>
-            )}
-          </div>
-        </div>
-      ) : (
-        <>
-          {isReading && <ReadingTestLayout isPreviewMode={true} onBackClick={handleBackClick} />}
-          {isListening && <ListeningTestLayout isPreviewMode={true} onBackClick={handleBackClick} />}
-          {isWriting && <WritingTestLayout isPreviewMode={true} onBackClick={handleBackClick} />}
-        </>
-      )}
+      {isReading && <ReadingTestLayout isPreviewMode={true} onBackClick={handleBackClick} />}
+      {isListening && <ListeningTestLayout isPreviewMode={true} onBackClick={handleBackClick} />}
+      {isWriting && <WritingTestLayout isPreviewMode={true} onBackClick={handleBackClick} />}
     </div>
   )
 })

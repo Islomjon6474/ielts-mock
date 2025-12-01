@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, Suspense, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
@@ -8,6 +8,8 @@ import ListeningTestLayout from '@/components/listening/ListeningTestLayout'
 import { mockSubmissionApi, fileApi } from '@/services/testManagementApi'
 import { safeMultiParseJson } from '@/utils/json'
 import { transformAdminPartsToListening } from '@/utils/transformListeningData'
+import { enterFullscreen, exitFullscreen, onFullscreenChange } from '@/utils/fullscreen'
+import { playWarningSound } from '@/utils/audioAlert'
 
 const ListeningPageContent = observer(() => {
   const { listeningStore } = useStore()
@@ -16,6 +18,7 @@ const ListeningPageContent = observer(() => {
   const urlTestId = searchParams.get('testId')
   const urlMockId = searchParams.get('mockId')
   const isPreviewMode = searchParams.get('preview') === 'true'
+  const isSubmittingRef = useRef(false) // Track if user is submitting
 
   useEffect(() => {
     const load = async () => {
@@ -223,7 +226,17 @@ const ListeningPageContent = observer(() => {
           // 5) Transform and set to store
           const listeningParts = transformAdminPartsToListening(partsWithContent, audioUrlsMap)
           listeningStore.setParts(listeningParts)
-          
+
+          // 5.5) Enter fullscreen mode if not in preview mode
+          if (!listeningStore.isPreviewMode) {
+            try {
+              await enterFullscreen()
+              console.log('✅ Entered fullscreen mode')
+            } catch (error) {
+              console.log('⚠️ Could not enter fullscreen (may need user interaction):', error)
+            }
+          }
+
           // 6) Calculate total audio duration and start timer
           // Estimate: assume each audio is ~10 minutes (600 seconds)
           const estimatedAudioDuration = audioUrls.length * 600 // 10 min per audio
@@ -279,7 +292,41 @@ const ListeningPageContent = observer(() => {
       }
     }
     load()
+
+    // Cleanup: exit fullscreen when component unmounts
+    return () => {
+      exitFullscreen().catch(() => {
+        // Ignore errors on cleanup
+      })
+    }
   }, [urlTestId])
+
+  // Listen for fullscreen changes and play warning sound if exited via ESC
+  useEffect(() => {
+    if (listeningStore.isPreviewMode) return // Don't monitor in preview mode
+
+    const cleanup = onFullscreenChange((isFullscreen) => {
+      // If user exited fullscreen (not in fullscreen) and they're NOT submitting
+      if (!isFullscreen && !isSubmittingRef.current) {
+        console.log('⚠️ User exited fullscreen without submitting!')
+        playWarningSound()
+      }
+    })
+
+    // Cleanup listener
+    return cleanup
+  }, [listeningStore.isPreviewMode])
+
+  // Pass the submitting ref to the layout so it can set it when submitting
+  useEffect(() => {
+    // Expose a method to mark as submitting
+    ;(window as any).__markListeningAsSubmitting = () => {
+      isSubmittingRef.current = true
+    }
+    return () => {
+      delete (window as any).__markListeningAsSubmitting
+    }
+  }, [])
 
   if (loading) return null
   // Use the store's preview mode which gets automatically set when viewing finished mocks

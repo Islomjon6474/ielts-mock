@@ -88,11 +88,11 @@ const TestDetailPage = () => {
   }
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+    <Layout style={{ minHeight: '100vh', backgroundColor: 'var(--background)' }}>
       {/* Header */}
-      <Header style={{ 
-        background: '#fff', 
-        borderBottom: '1px solid #f0f0f0', 
+      <Header style={{
+        backgroundColor: 'var(--header-background)',
+        borderBottom: '1px solid var(--border-color)',
         padding: '16px 48px',
         display: 'flex',
         alignItems: 'center',
@@ -107,18 +107,18 @@ const TestDetailPage = () => {
           style={{ flexShrink: 0 }}
         />
         <div style={{ minWidth: 0 }}>
-          <Title level={3} style={{ margin: 0, marginBottom: '4px', lineHeight: '1.3' }}>
+          <Title level={3} style={{ margin: 0, marginBottom: '4px', lineHeight: '1.3', color: 'var(--text-primary)' }}>
             {testName || 'Test Details'}
           </Title>
-          <Text type="secondary" style={{ fontSize: '14px', display: 'block' }}>
+          <Text type="secondary" style={{ fontSize: '0.875rem', display: 'block', color: 'var(--text-secondary)' }}>
             Select a section to manage
           </Text>
         </div>
       </Header>
 
-      <Content style={{ padding: '48px', background: '#f5f5f5', minHeight: 'calc(100vh - 64px)' }}>
+      <Content style={{ padding: '48px', backgroundColor: 'var(--background)', minHeight: 'calc(100vh - 64px)' }}>
         <div className="max-w-5xl mx-auto">
-          <Title level={4} className="mb-6">Sections</Title>
+          <Title level={4} className="mb-6" style={{ color: 'var(--text-primary)' }}>Sections</Title>
 
           {loading ? (
             <div className="text-center py-12">
@@ -131,7 +131,9 @@ const TestDetailPage = () => {
                   <Card
                     hoverable
                     onClick={() => handleSectionClick(section.id, section.sectionType)}
-                    style={{ 
+                    style={{
+                      backgroundColor: 'var(--card-background)',
+                      borderColor: 'var(--border-color)',
                       cursor: 'pointer',
                       borderRadius: '8px',
                       height: '240px'
@@ -153,10 +155,10 @@ const TestDetailPage = () => {
                     >
                       {getSectionIcon(section.sectionType)}
                     </div>
-                    <Title level={3} style={{ marginBottom: '8px' }}>
+                    <Title level={3} style={{ marginBottom: '8px', color: 'var(--text-primary)' }}>
                       {section.sectionType.charAt(0).toUpperCase() + section.sectionType.slice(1).toLowerCase()}
                     </Title>
-                    <Text type="secondary">
+                    <Text type="secondary" style={{ color: 'var(--text-secondary)' }}>
                       {getSectionDescription(section.sectionType)}
                     </Text>
                   </Card>
@@ -166,9 +168,9 @@ const TestDetailPage = () => {
           )}
 
           {!loading && sections.length === 0 && (
-            <Card className="text-center py-12">
-              <Title level={4} type="secondary">No sections found</Title>
-              <Text type="secondary">
+            <Card className="text-center py-12" style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }}>
+              <Title level={4} type="secondary" style={{ color: 'var(--text-secondary)' }}>No sections found</Title>
+              <Text type="secondary" style={{ color: 'var(--text-secondary)' }}>
                 Sections should be automatically created when the test is created
               </Text>
             </Card>

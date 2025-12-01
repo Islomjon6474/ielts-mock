@@ -10,6 +10,7 @@ import Header from '@/components/common/Header'
 import Timer from '@/components/common/Timer'
 import AuthenticatedImage from '@/components/common/AuthenticatedImage'
 import SubmitModal from '@/components/common/SubmitModal'
+import { exitFullscreen } from '@/utils/fullscreen'
 
 const { Content, Footer } = Layout
 const { TextArea } = Input
@@ -98,14 +99,22 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
   }
 
   const handleModalConfirm = async () => {
+    // Mark as submitting so warning sound doesn't play
+    if ((window as any).__markWritingAsSubmitting) {
+      (window as any).__markWritingAsSubmitting()
+    }
+
     try {
       await writingStore.finishSection()
       setShowSubmitModal(false)
+      // Exit fullscreen before redirecting
+      await exitFullscreen().catch(() => {})
       router.push('/')
     } catch (error) {
       console.error('Failed to submit test:', error)
       // Still close modal and redirect even if submission fails
       setShowSubmitModal(false)
+      await exitFullscreen().catch(() => {})
       router.push('/')
     }
   }
@@ -123,9 +132,9 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
       </Header>
 
       {/* Task Info - Compact */}
-      <div className="bg-gray-50 px-4 py-1.5 border-b">
-        <h2 className="font-semibold text-sm text-black inline-block mr-3">{currentTask.title}</h2>
-        <span className="text-xs text-gray-600">
+      <div className="px-4 py-1.5 border-b" style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }}>
+        <h2 className="font-semibold text-sm inline-block mr-3" style={{ color: 'var(--text-primary)' }}>{currentTask.title}</h2>
+        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           Spend about <span className="text-blue-600 font-semibold">{currentTask.timeMinutes} min</span> • Write at least <span className="text-blue-600 font-semibold">{currentTask.minWords} words</span>
         </span>
       </div>
@@ -134,18 +143,20 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
       <Content ref={containerRef} className="flex-1 flex relative overflow-hidden">
         {/* Left Pane - Question */}
         <div
-          className="overflow-y-auto bg-white p-6"
-          style={{ width: `${leftWidth}%` }}
+          className="overflow-y-auto p-6"
+          style={{ width: `${leftWidth}%`, backgroundColor: 'var(--card-background)' }}
         >
           <div className="prose max-w-none">
             {currentTask.instruction && (
-              <div 
-                className="text-gray-700 mb-4 prose prose-sm max-w-none"
+              <div
+                className="mb-4 prose prose-sm max-w-none"
+                style={{ color: 'var(--text-secondary)' }}
                 dangerouslySetInnerHTML={{ __html: currentTask.instruction }}
               />
             )}
-            <div 
-              className="text-gray-800 leading-relaxed prose prose-sm max-w-none"
+            <div
+              className="leading-relaxed prose prose-sm max-w-none"
+              style={{ color: 'var(--text-primary)' }}
               dangerouslySetInnerHTML={{ __html: currentTask.question }}
             />
             {currentTask.image && (
@@ -158,18 +169,19 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
 
         {/* Resizable Divider */}
         <div
-          className="w-1 bg-gray-400 cursor-col-resize hover:bg-gray-600 transition-colors flex-shrink-0"
+          className="w-1 cursor-col-resize transition-colors flex-shrink-0"
           onMouseDown={handleMouseDown}
-          style={{ 
+          style={{
             cursor: 'col-resize',
-            backgroundColor: isDragging ? '#4B5563' : '#9CA3AF'
+            backgroundColor: isDragging ? 'var(--border-color)' : 'var(--border-color)',
+            opacity: isDragging ? 0.8 : 0.5
           }}
         />
 
         {/* Right Pane - Answer Input */}
         <div
-          className="bg-gray-50 flex flex-col p-6"
-          style={{ width: `${100 - leftWidth}%` }}
+          className="flex flex-col p-6"
+          style={{ width: `${100 - leftWidth}%`, backgroundColor: 'var(--background)' }}
         >
           <div className="flex-1 flex flex-col" style={{ minHeight: 0 }}>
             <TextArea
@@ -177,16 +189,19 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
               onChange={(e) => handleTextChange(e.target.value)}
               placeholder="Type your answer here..."
               className="w-full flex-1 resize-none text-base leading-relaxed"
-              style={{ 
+              style={{
                 height: '100%',
                 minHeight: '100%',
-                fontFamily: 'inherit'
+                fontFamily: 'inherit',
+                backgroundColor: 'var(--input-background)',
+                borderColor: 'var(--input-border)',
+                color: 'var(--text-primary)'
               }}
               autoSize={false}
             />
             <div className="mt-2 text-right">
-              <span className="text-sm text-gray-600">
-                Words: <span className="font-semibold text-gray-900">{wordCount}</span>
+              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                Words: <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{wordCount}</span>
               </span>
             </div>
           </div>
@@ -194,7 +209,7 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
       </Content>
 
       {/* Bottom Navigation */}
-      <Footer className="border-t bg-white p-0">
+      <Footer className="border-t p-0" style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }}>
         <div className="flex items-center px-6 gap-4">
           {/* Part Buttons - Full Width */}
           <div className="flex items-center gap-3 flex-1">
@@ -206,22 +221,22 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
               return (
                 <div
                   key={task.id}
-                  className={`flex-1 flex items-center justify-between cursor-pointer px-4 py-2 rounded-lg border ${
-                    isCurrentTask
-                      ? 'bg-gray-100 border-gray-300'
-                      : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300'
-                  }`}
+                  className="flex-1 flex items-center justify-between cursor-pointer px-4 py-2 rounded-lg border"
+                  style={{
+                    backgroundColor: isCurrentTask ? 'var(--background)' : 'var(--card-background)',
+                    borderColor: isCurrentTask ? 'var(--border-color)' : 'var(--border-color)',
+                    opacity: isCurrentTask ? 1 : 0.8
+                  }}
                   onClick={() => handleTaskChange(task.id)}
                 >
                   <span
-                    className={`font-semibold ${
-                      isCurrentTask ? 'text-black' : 'text-gray-500'
-                    }`}
+                    className="font-semibold"
+                    style={{ color: isCurrentTask ? 'var(--text-primary)' : 'var(--text-secondary)' }}
                   >
                     {task.title}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                       {taskWordCount} of {task.minWords}
                     </span>
                     {isComplete && <CheckOutlined className="text-green-500" />}
@@ -241,26 +256,28 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
                 onClick={() => handleTaskChange(writingStore.currentTask - 1)}
                 disabled={writingStore.currentTask === 1}
                 className="w-12 h-12 flex items-center justify-center"
-                style={{ 
-                  backgroundColor: writingStore.currentTask !== 1 ? '#d1d5db' : '#f3f4f6',
-                  borderColor: writingStore.currentTask !== 1 ? '#9ca3af' : '#e5e7eb'
+                style={{
+                  backgroundColor: writingStore.currentTask !== 1 ? 'var(--card-background)' : 'var(--background)',
+                  borderColor: 'var(--border-color)',
+                  color: writingStore.currentTask !== 1 ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  opacity: writingStore.currentTask !== 1 ? 1 : 0.5
                 }}
               />
-              
+
               {/* Next Button */}
               <Button
                 icon={<RightOutlined />}
                 onClick={() => handleTaskChange(writingStore.currentTask + 1)}
                 disabled={writingStore.currentTask === writingStore.tasks.length}
                 className="w-12 h-12 flex items-center justify-center"
-                style={{ 
-                  backgroundColor: writingStore.currentTask !== writingStore.tasks.length ? '#000000' : '#f3f4f6',
-                  borderColor: writingStore.currentTask !== writingStore.tasks.length ? '#000000' : '#e5e7eb',
-                  color: writingStore.currentTask !== writingStore.tasks.length ? '#ffffff' : '#9ca3af'
+                style={{
+                  backgroundColor: writingStore.currentTask !== writingStore.tasks.length ? 'var(--text-primary)' : 'var(--background)',
+                  borderColor: writingStore.currentTask !== writingStore.tasks.length ? 'var(--text-primary)' : 'var(--border-color)',
+                  color: writingStore.currentTask !== writingStore.tasks.length ? 'var(--card-background)' : 'var(--text-secondary)'
                 }}
               />
             </div>
-            
+
             {/* Submit Button Row */}
             <Button
               type="primary"

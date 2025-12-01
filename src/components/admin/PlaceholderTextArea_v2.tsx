@@ -252,7 +252,7 @@ export const PlaceholderTextArea: React.FC<PlaceholderTextAreaProps> = ({
         `}
         style={{
           minHeight,
-          fontSize: '14px',
+          fontSize: '1rem',
           lineHeight: '1.5715',
           outline: 'none',
         }}
