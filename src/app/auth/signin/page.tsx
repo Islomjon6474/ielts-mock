@@ -4,9 +4,8 @@ import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Form, Input, Button, Card, message, Typography, Space } from 'antd'
+import { Form, Input, Button, Card, message, Typography } from 'antd'
 import { UserOutlined, LockOutlined } from '@ant-design/icons'
-import Link from 'next/link'
 
 const { Title, Text } = Typography
 
@@ -94,15 +93,6 @@ const SignInPage = observer(() => {
               Sign In
             </Button>
           </Form.Item>
-
-          <div className="text-center">
-            <Text type="secondary" style={{ color: 'var(--text-secondary)' }}>
-              Don&apos;t have an account?{' '}
-              <Link href="/auth/signup" className="text-blue-600 hover:text-blue-700">
-                Sign up
-              </Link>
-            </Text>
-          </div>
         </Form>
       </Card>
     </div>
