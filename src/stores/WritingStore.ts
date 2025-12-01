@@ -19,12 +19,16 @@ export class WritingStore {
   sectionId: string | null = null
   isSubmitting: boolean = false
   isPreviewMode: boolean = false
-  
+
   // Timer properties
   timeLimit: number = 60 * 60 // 60 minutes in seconds
   timeRemaining: number = 60 * 60
   timerInterval: NodeJS.Timeout | null = null
   isTimeUp: boolean = false
+
+  // Auto-save properties
+  autoSaveInterval: NodeJS.Timeout | null = null
+  autoSaveIntervalTime: number = 10 * 1000 // 10 seconds in milliseconds
 
   constructor() {
     makeAutoObservable(this)
@@ -54,6 +58,61 @@ export class WritingStore {
     this.answers.set(taskId, text)
   }
 
+  /**
+   * Save all current answers to the server
+   */
+  async saveAnswers() {
+    if (!this.mockId || !this.sectionId || this.isPreviewMode) {
+      return
+    }
+
+    try {
+      // Send all answers to the server
+      const savePromises = Array.from(this.answers.entries()).map(([taskId, answer]) => {
+        // Only save if there's actual content
+        if (answer && answer.trim()) {
+          return mockSubmissionApi.sendAnswer(
+            this.mockId!,
+            this.sectionId!,
+            taskId,
+            answer
+          )
+        }
+        return Promise.resolve()
+      })
+
+      await Promise.all(savePromises)
+      console.log('✅ Writing answers saved successfully')
+    } catch (error) {
+      console.error('❌ Failed to save writing answers:', error)
+    }
+  }
+
+  /**
+   * Start auto-save interval
+   */
+  startAutoSave() {
+    if (this.isPreviewMode) return
+
+    this.stopAutoSave()
+
+    this.autoSaveInterval = setInterval(() => {
+      this.saveAnswers()
+    }, this.autoSaveIntervalTime)
+
+    console.log('✅ Auto-save started (every 10 seconds)')
+  }
+
+  /**
+   * Stop auto-save interval
+   */
+  stopAutoSave() {
+    if (this.autoSaveInterval) {
+      clearInterval(this.autoSaveInterval)
+      this.autoSaveInterval = null
+    }
+  }
+
   getAnswer(taskId: number): string {
     return this.answers.get(taskId) || ''
   }
@@ -76,6 +135,11 @@ export class WritingStore {
 
     try {
       this.isSubmitting = true
+
+      // Save all answers before finishing
+      await this.saveAnswers()
+
+      // Then finish the section
       await mockSubmissionApi.finishSection(this.mockId, this.sectionId)
       console.log('✅ Section finished successfully')
       return true
@@ -114,6 +178,7 @@ export class WritingStore {
 
   reset() {
     this.stopTimer()
+    this.stopAutoSave()
     this.currentTask = 1
     this.answers.clear()
     this.tasks = []

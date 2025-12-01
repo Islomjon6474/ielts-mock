@@ -199,6 +199,11 @@ const WritingPageContent = observer(() => {
           }
         })
 
+        // 5.5) Start auto-save (every 10 seconds)
+        if (!writingStore.isPreviewMode) {
+          writingStore.startAutoSave()
+        }
+
         // 6) Load previously submitted answers (if any)
         try {
           console.log('🔄 Loading previously submitted answers...')
