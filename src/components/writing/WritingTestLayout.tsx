@@ -146,17 +146,23 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
           className="overflow-y-auto p-6"
           style={{ width: `${leftWidth}%`, backgroundColor: 'var(--card-background)' }}
         >
-          <div className="prose max-w-none">
+          <div className="prose prose-base max-w-none">
             {currentTask.instruction && (
               <div
-                className="mb-4 prose prose-sm max-w-none"
-                style={{ color: 'var(--text-secondary)' }}
+                className="mb-4 prose prose-base max-w-none"
+                style={{
+                  color: 'var(--text-secondary)',
+                  whiteSpace: 'pre-wrap'
+                }}
                 dangerouslySetInnerHTML={{ __html: currentTask.instruction }}
               />
             )}
             <div
-              className="leading-relaxed prose prose-sm max-w-none"
-              style={{ color: 'var(--text-primary)' }}
+              className="leading-relaxed prose prose-base max-w-none"
+              style={{
+                color: 'var(--text-primary)',
+                whiteSpace: 'pre-wrap'
+              }}
               dangerouslySetInnerHTML={{ __html: currentTask.question }}
             />
             {currentTask.image && (

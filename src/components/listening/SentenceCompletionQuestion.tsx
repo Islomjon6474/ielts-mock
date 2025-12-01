@@ -171,32 +171,28 @@ const SentenceCompletionQuestion = observer(({
                 return (
                   <div
                     key={question.id}
-                    className="flex items-start gap-3 text-sm mb-4"
+                    className="flex items-center flex-wrap gap-2 text-sm mb-4"
                     data-question-id={questionNumber}
                     ref={(el) => { if (el) questionRefs.current[questionNumber] = el }}
                   >
-                    <strong className="whitespace-nowrap mt-1 text-base">{questionNumber}</strong>
-                    <div className="flex-1">
-                      <div className="space-y-2">
-                        {parts[0] && renderHtmlWithStyledArrows(parts[0])}
-                        {/* Drop zone for answer - disabled in preview */}
-                        <div
-                          style={{
-                            borderColor,
-                            backgroundColor,
-                            borderWidth: '2px'
-                          }}
-                          className="inline-flex items-center border-2 border-dashed rounded px-3 py-1 min-w-[120px]"
-                        >
-                          {submittedAnswer ? (
-                            <span style={{ color: 'var(--text-primary)' }} className="text-sm font-medium">{cleanAnswer}</span>
-                          ) : (
-                            <span style={{ color: 'var(--text-secondary)' }} className="text-xs font-bold">{placeholderNum}</span>
-                          )}
-                        </div>
-                        {parts[1] && renderHtmlWithStyledArrows(parts[1])}
-                      </div>
+                    <strong className="text-base">{questionNumber}</strong>
+                    {parts[0] && <span dangerouslySetInnerHTML={{ __html: parts[0].replace(/↓/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↓</span>').replace(/↑/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↑</span>').replace(/←/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">←</span>').replace(/→/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">→</span>') }} style={{ display: 'inline' }} />}
+                    {/* Drop zone for answer - disabled in preview */}
+                    <div
+                      style={{
+                        borderColor,
+                        backgroundColor,
+                        borderWidth: '2px'
+                      }}
+                      className="inline-flex items-center border-2 border-dashed rounded px-3 py-1 min-w-[120px]"
+                    >
+                      {submittedAnswer ? (
+                        <span style={{ color: 'var(--text-primary)' }} className="text-sm font-medium">{cleanAnswer}</span>
+                      ) : (
+                        <span style={{ color: 'var(--text-secondary)' }} className="text-xs font-bold">{placeholderNum}</span>
+                      )}
                     </div>
+                    {parts[1] && <span dangerouslySetInnerHTML={{ __html: parts[1].replace(/↓/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↓</span>').replace(/↑/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↑</span>').replace(/←/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">←</span>').replace(/→/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">→</span>') }} style={{ display: 'inline' }} />}
                   </div>
                 )
               }
@@ -214,44 +210,39 @@ const SentenceCompletionQuestion = observer(({
               return (
                 <div
                   key={question.id}
-                  className="flex items-start gap-3 text-sm mb-4"
+                  className="flex items-center flex-wrap gap-2 text-sm mb-4"
                   data-question-id={questionNumber}
                   ref={(el) => { if (el) questionRefs.current[questionNumber] = el }}
                 >
-                  <strong className="whitespace-nowrap mt-1 text-base">{questionNumber}</strong>
-                  <div className="flex-1">
-                    {/* Render content with preserved formatting */}
-                    <div className="space-y-2">
-                      {parts[0] && renderHtmlWithStyledArrows(parts[0])}
-                      {/* Drop zone for answer */}
-                      <div
-                        onDragOver={handleDragOver}
-                        onDrop={(e) => handleDrop(e, question.id)}
-                        tabIndex={0}
-                        style={{
-                          borderColor: answer ? 'var(--primary)' : 'var(--border-color)',
-                          backgroundColor: answer ? 'var(--secondary)' : 'transparent'
-                        }}
-                        className="inline-flex items-center border-2 border-dashed rounded px-3 py-1 min-w-[120px]"
-                      >
-                        {answer ? (
-                          <div className="flex items-center gap-2">
-                            <span style={{ color: 'var(--text-primary)' }} className="text-sm font-medium">{cleanAnswer}</span>
-                            <button
-                              onClick={() => handleRemove(question.id)}
-                              style={{ color: 'var(--text-secondary)' }}
-                              className="hover:opacity-70 text-xs font-bold"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ) : (
-                          <span style={{ color: 'var(--text-secondary)' }} className="text-xs font-bold">{placeholderNum}</span>
-                        )}
+                  <strong className="text-base">{questionNumber}</strong>
+                  {parts[0] && <span dangerouslySetInnerHTML={{ __html: parts[0].replace(/↓/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↓</span>').replace(/↑/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↑</span>').replace(/←/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">←</span>').replace(/→/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">→</span>') }} style={{ display: 'inline' }} />}
+                  {/* Drop zone for answer */}
+                  <div
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, question.id)}
+                    tabIndex={0}
+                    style={{
+                      borderColor: answer ? 'var(--primary)' : 'var(--border-color)',
+                      backgroundColor: answer ? 'var(--secondary)' : 'transparent'
+                    }}
+                    className="inline-flex items-center border-2 border-dashed rounded px-3 py-1 min-w-[120px]"
+                  >
+                    {answer ? (
+                      <div className="flex items-center gap-2">
+                        <span style={{ color: 'var(--text-primary)' }} className="text-sm font-medium">{cleanAnswer}</span>
+                        <button
+                          onClick={() => handleRemove(question.id)}
+                          style={{ color: 'var(--text-secondary)' }}
+                          className="hover:opacity-70 text-xs font-bold"
+                        >
+                          ✕
+                        </button>
                       </div>
-                      {parts[1] && renderHtmlWithStyledArrows(parts[1])}
-                    </div>
+                    ) : (
+                      <span style={{ color: 'var(--text-secondary)' }} className="text-xs font-bold">{placeholderNum}</span>
+                    )}
                   </div>
+                  {parts[1] && <span dangerouslySetInnerHTML={{ __html: parts[1].replace(/↓/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↓</span>').replace(/↑/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↑</span>').replace(/←/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">←</span>').replace(/→/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">→</span>') }} style={{ display: 'inline' }} />}
                 </div>
               )
             })}

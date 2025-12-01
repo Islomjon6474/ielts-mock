@@ -168,46 +168,41 @@ const SentenceCompletionQuestion = observer(({
             return (
               <div
                 key={question.id}
-                className="flex items-start gap-3 text-sm mb-4"
+                className="flex items-center flex-wrap gap-2 text-sm mb-4"
                 ref={(el) => { if (el) questionRefs.current[questionNumber] = el }}
               >
-                <strong className="whitespace-nowrap mt-1 text-base" style={{ color: 'var(--text-primary)' }}>{questionNumber}</strong>
-                <div className="flex-1">
-                  {/* Render content with preserved formatting */}
-                  <div className="space-y-2">
-                    {parts[0] && renderHtmlWithStyledArrows(parts[0])}
-                    {/* Drop zone for answer */}
-                    <div
-                      onDragOver={!readingStore.isPreviewMode ? handleDragOver : undefined}
-                      onDrop={!readingStore.isPreviewMode ? (e) => handleDrop(e, question.id) : undefined}
-                      tabIndex={0}
-                      className="inline-flex items-center border-2 border-dashed rounded px-3 py-1 min-w-[120px]"
-                      style={{
-                        borderColor,
-                        backgroundColor,
-                        borderWidth: '2px'
-                      }}
-                    >
-                      {displayAnswer ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{cleanAnswer}</span>
-                          {!readingStore.isPreviewMode && (
-                            <button
-                              onClick={() => handleRemove(question.id)}
-                              className="text-xs font-bold"
-                              style={{ color: 'var(--text-secondary)' }}
-                            >
-                              ✕
-                            </button>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>{placeholderNum}</span>
+                <strong className="text-base" style={{ color: 'var(--text-primary)' }}>{questionNumber}</strong>
+                {parts[0] && <span dangerouslySetInnerHTML={{ __html: parts[0].replace(/↓/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↓</span>').replace(/↑/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↑</span>').replace(/←/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">←</span>').replace(/→/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">→</span>') }} style={{ display: 'inline' }} />}
+                {/* Drop zone for answer */}
+                <div
+                  onDragOver={!readingStore.isPreviewMode ? handleDragOver : undefined}
+                  onDrop={!readingStore.isPreviewMode ? (e) => handleDrop(e, question.id) : undefined}
+                  tabIndex={0}
+                  className="inline-flex items-center border-2 border-dashed rounded px-3 py-1 min-w-[120px]"
+                  style={{
+                    borderColor,
+                    backgroundColor,
+                    borderWidth: '2px'
+                  }}
+                >
+                  {displayAnswer ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{cleanAnswer}</span>
+                      {!readingStore.isPreviewMode && (
+                        <button
+                          onClick={() => handleRemove(question.id)}
+                          className="text-xs font-bold"
+                          style={{ color: 'var(--text-secondary)' }}
+                        >
+                          ✕
+                        </button>
                       )}
                     </div>
-                    {parts[1] && renderHtmlWithStyledArrows(parts[1])}
-                  </div>
+                  ) : (
+                    <span className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>{placeholderNum}</span>
+                  )}
                 </div>
+                {parts[1] && <span dangerouslySetInnerHTML={{ __html: parts[1].replace(/↓/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↓</span>').replace(/↑/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↑</span>').replace(/←/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">←</span>').replace(/→/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">→</span>') }} style={{ display: 'inline' }} />}
               </div>
             )
           })}
