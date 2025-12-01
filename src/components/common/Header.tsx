@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { Button } from 'antd'
 import { WifiOutlined, BellOutlined, MenuOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
+import SettingsDrawer from './SettingsDrawer'
 
 interface HeaderProps {
   testTakerId?: string
@@ -12,19 +14,28 @@ interface HeaderProps {
   children?: React.ReactNode
 }
 
-const Header = ({ 
-  testTakerId = 'Test taker ID', 
+const Header = ({
+  testTakerId = 'Test taker ID',
   isPreviewMode = false,
   previewSectionType = '',
   onBackClick,
   children
 }: HeaderProps) => {
   const router = useRouter()
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const handleBackClick = () => {
     if (onBackClick) {
       onBackClick()
     }
+  }
+
+  const handleSettingsClick = () => {
+    setSettingsOpen(true)
+  }
+
+  const handleSettingsClose = () => {
+    setSettingsOpen(false)
   }
 
   return (
@@ -85,8 +96,12 @@ const Header = ({
           icon={<MenuOutlined />}
           size="small"
           style={{ color: 'var(--text-secondary)' }}
+          onClick={handleSettingsClick}
         />
       </div>
+
+      {/* Settings Drawer */}
+      <SettingsDrawer open={settingsOpen} onClose={handleSettingsClose} />
     </header>
   )
 }

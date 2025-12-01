@@ -91,6 +91,8 @@ const FillInBlankQuestion = observer(({ question, questionNumber }: FillInBlankQ
           const submittedAnswer = readingStore.getSubmittedAnswer(blankNumber)
           const isCorrect = readingStore.isAnswerCorrect(blankNumber)
 
+          console.log(`🔍 FillInBlank Q${blankNumber}: submittedAnswer=`, submittedAnswer, 'isCorrect=', isCorrect, 'previewMode=', readingStore.isPreviewMode)
+
           // Determine border and background color based on correctness
           let borderColor = 'var(--input-border)'
           let backgroundColor = 'var(--input-background)'

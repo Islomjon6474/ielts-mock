@@ -50,20 +50,21 @@ const ResultPreviewPage = () => {
 
   const handleSectionClick = (sectionType: string) => {
     // Get student name from result
-    const studentName = result?.userName || 
+    const studentName = result?.userName ||
       (result?.firstName && result?.lastName ? `${result.firstName} ${result.lastName}` : '') ||
       (result?.userFirstName && result?.userLastName ? `${result.userFirstName} ${result.userLastName}` : '') ||
       result?.userId || ''
-    
+
     const studentParam = studentName ? `&studentName=${encodeURIComponent(studentName)}` : ''
     const testNameParam = result?.testName ? `&testName=${encodeURIComponent(result.testName)}` : ''
-    
+    const mockIdParam = result?.mockId ? `&mockId=${result.mockId}` : ''
+
     if (sectionType === 'LISTENING') {
-      router.push(`/admin/reading/preview/${testId}/LISTENING?resultId=${resultId}${studentParam}${testNameParam}`)
+      router.push(`/admin/reading/preview/${testId}/LISTENING?resultId=${resultId}${mockIdParam}${studentParam}${testNameParam}`)
     } else if (sectionType === 'READING') {
-      router.push(`/admin/reading/preview/${testId}/READING?resultId=${resultId}${studentParam}${testNameParam}`)
+      router.push(`/admin/reading/preview/${testId}/READING?resultId=${resultId}${mockIdParam}${studentParam}${testNameParam}`)
     } else if (sectionType === 'WRITING') {
-      router.push(`/admin/results/${resultId}/grade-writing?testId=${testId}${studentParam}${testNameParam}`)
+      router.push(`/admin/results/${resultId}/grade-writing?testId=${testId}${mockIdParam}${studentParam}${testNameParam}`)
     }
   }
 

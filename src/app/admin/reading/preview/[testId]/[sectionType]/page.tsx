@@ -25,9 +25,10 @@ const SectionPreviewPage = observer(() => {
   const testId = params.testId as string
   const sectionType = params.sectionType as string
   const resultId = searchParams.get('resultId')
+  // Use resultId as mockId since they're the same thing
+  const mockId = searchParams.get('mockId') || resultId
   const [loading, setLoading] = useState(true)
   const [hasContent, setHasContent] = useState(false)
-  const [userAnswers, setUserAnswers] = useState<any[]>([])
   
   const isReading = sectionType.toLowerCase() === 'reading'
   const isListening = sectionType.toLowerCase() === 'listening'
@@ -43,33 +44,39 @@ const SectionPreviewPage = observer(() => {
     try {
       setLoading(true)
       let contentFound = false
-      
+
       // Fetch sections for the test
       const sectionsResponse = await testManagementApi.getAllSections(testId)
       const sections = sectionsResponse?.data || sectionsResponse || []
-      
+
       console.log('Sections response:', sections)
-      
+
       // Find the specific section by type
       const section = sections.find((s: any) => s.sectionType.toLowerCase() === sectionType.toLowerCase())
-      
+
       if (!section) {
         message.warning(`No ${sectionType} section found for this test`)
         setLoading(false)
         return
       }
+      console.log('mockId', mockId)
 
-      // Fetch user answers if resultId is provided
-      if (resultId) {
+      // Fetch user answers if mockId is provided
+      // Use a local variable instead of state to avoid async state update issues
+      let submittedAnswers: any[] = []
+      if (mockId) {
         try {
-          const answersResponse = await mockSubmissionApi.getSubmittedAnswers(resultId, section.id)
-          const answers = answersResponse?.data || []
-          console.log('User submitted answers:', answers)
-          setUserAnswers(answers)
+          console.log('🔍 DEBUG: Fetching answers with mockId:', mockId, 'sectionId:', section.id)
+          const answersResponse = await mockSubmissionApi.getSubmittedAnswers(mockId, section.id)
+          console.log('🔍 DEBUG: API Response:', answersResponse)
+          submittedAnswers = answersResponse?.data || []
+          console.log('🔍 DEBUG: Extracted answers:', submittedAnswers)
         } catch (error) {
-          console.error('Error fetching user answers:', error)
+          console.error('🔍 DEBUG: Error fetching user answers:', error)
           message.warning('Could not load user answers')
         }
+      } else {
+        console.log('🔍 DEBUG: No mockId provided, skipping answer fetch')
       }
 
       // Fetch parts for this section
@@ -206,11 +213,11 @@ const SectionPreviewPage = observer(() => {
 
           console.log('🔍 DEBUG: All listening parts loaded:', listeningParts.length)
           console.log('🔍 DEBUG: All listening questions:', listeningStore.allQuestions.map(q => ({ id: q.id, type: q.type, correctAnswer: q.correctAnswer })))
-          console.log('🔍 DEBUG: Listening user answers from API:', userAnswers)
+          console.log('🔍 DEBUG: Listening user answers from API:', submittedAnswers)
 
           // Load submitted answers if available
-          if (userAnswers && userAnswers.length > 0) {
-            listeningStore.loadSubmittedAnswers(userAnswers)
+          if (submittedAnswers && submittedAnswers.length > 0) {
+            listeningStore.loadSubmittedAnswers(submittedAnswers)
             console.log('🔍 DEBUG: Loaded submitted answers into listening store')
             console.log('🔍 DEBUG: Listening submitted answers map:', Array.from(listeningStore.submittedAnswers.entries()))
             console.log('🔍 DEBUG: Listening answer correctness map:', Array.from(listeningStore.answerCorrectness.entries()))
@@ -322,12 +329,12 @@ const SectionPreviewPage = observer(() => {
 
           console.log('🔍 DEBUG: All parts loaded:', allParts.length)
           console.log('🔍 DEBUG: All questions:', readingStore.allQuestions.map(q => ({ id: q.id, type: q.type, correctAnswer: q.correctAnswer })))
-          console.log('🔍 DEBUG: User answers from API:', userAnswers)
+          console.log('🔍 DEBUG: User answers from API:', submittedAnswers)
           console.log('🔍 DEBUG: Preview mode:', readingStore.isPreviewMode)
 
           // Load submitted answers if available
-          if (userAnswers && userAnswers.length > 0) {
-            readingStore.loadSubmittedAnswers(userAnswers)
+          if (submittedAnswers && submittedAnswers.length > 0) {
+            readingStore.loadSubmittedAnswers(submittedAnswers)
             console.log('🔍 DEBUG: Loaded submitted answers into store')
             console.log('🔍 DEBUG: Submitted answers map:', Array.from(readingStore.submittedAnswers.entries()))
             console.log('🔍 DEBUG: Answer correctness map:', Array.from(readingStore.answerCorrectness.entries()))
