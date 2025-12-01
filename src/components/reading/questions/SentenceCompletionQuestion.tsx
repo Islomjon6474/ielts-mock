@@ -108,7 +108,7 @@ const SentenceCompletionQuestion = observer(({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Display image if available */}
       {imageUrl && (
         <div className="mb-4">
@@ -120,10 +120,12 @@ const SentenceCompletionQuestion = observer(({
           />
         </div>
       )}
-      
-      {/* Questions Section */}
-      <div>
-        <div className="space-y-2">
+
+      {/* Questions and Options - Horizontal Layout */}
+      <div className="grid grid-cols-2 gap-6">
+        {/* Left Side - Questions Section */}
+        <div>
+        <div className="space-y-1">
           {questions.map((question, index) => {
             const questionNumber = questionNumbers[index]
             const answer = readingStore.getAnswer(question.id) as string || ''
@@ -141,8 +143,11 @@ const SentenceCompletionQuestion = observer(({
             const placeholderMatch = textContent.match(/\[(\d+)\]/)
             const placeholderNum = placeholderMatch ? placeholderMatch[1] : questionNumber.toString()
 
-            // Split HTML by placeholder to show it inline
-            const parts = textContent.split(`[${placeholderNum}]`)
+            // Split the text into parts before and after placeholder, REMOVING the placeholder
+            const placeholderPattern = /\[(\d+)\]/
+            const match = textContent.match(placeholderPattern)
+            const beforeText = match ? textContent.substring(0, match.index) : ''
+            const afterText = match ? textContent.substring(match.index! + match[0].length) : textContent
 
             // Get clean answer text for display
             const cleanAnswer = displayAnswer ? (() => {
@@ -165,15 +170,23 @@ const SentenceCompletionQuestion = observer(({
               }
             }
 
+            // Process arrows in text
+            const processArrows = (html: string) => {
+              return html
+                .replace(/↓/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↓</span>')
+                .replace(/↑/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↑</span>')
+                .replace(/←/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">←</span>')
+                .replace(/→/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">→</span>')
+            }
+
             return (
               <div
                 key={question.id}
-                className="flex items-center flex-wrap gap-2 text-sm mb-4"
+                className="flex items-center flex-wrap gap-2 text-sm mb-2"
                 ref={(el) => { if (el) questionRefs.current[questionNumber] = el }}
               >
                 <strong className="text-base" style={{ color: 'var(--text-primary)' }}>{questionNumber}</strong>
-                {parts[0] && <span dangerouslySetInnerHTML={{ __html: parts[0].replace(/↓/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↓</span>').replace(/↑/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↑</span>').replace(/←/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">←</span>').replace(/→/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">→</span>') }} style={{ display: 'inline' }} />}
-                {/* Drop zone for answer */}
+                {beforeText && <span dangerouslySetInnerHTML={{ __html: processArrows(beforeText) }} style={{ display: 'inline' }} />}
                 <div
                   onDragOver={!readingStore.isPreviewMode ? handleDragOver : undefined}
                   onDrop={!readingStore.isPreviewMode ? (e) => handleDrop(e, question.id) : undefined}
@@ -202,40 +215,41 @@ const SentenceCompletionQuestion = observer(({
                     <span className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>{placeholderNum}</span>
                   )}
                 </div>
-                {parts[1] && <span dangerouslySetInnerHTML={{ __html: parts[1].replace(/↓/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↓</span>').replace(/↑/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↑</span>').replace(/←/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">←</span>').replace(/→/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">→</span>') }} style={{ display: 'inline' }} />}
+                {afterText && <span dangerouslySetInnerHTML={{ __html: processArrows(afterText) }} style={{ display: 'inline' }} />}
               </div>
             )
           })}
         </div>
-      </div>
+        </div>
 
-      {/* Options Section */}
-      <div>
-        <h4 className="font-semibold text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Features</h4>
-        <div className="grid grid-cols-2 gap-3">
-          {options.map((option, index) => {
-            const isUsed = usedOptions.includes(option)
-            const cleanOption = stripHtml(option)
+        {/* Right Side - Options Section */}
+        <div>
+          <h4 className="font-semibold text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Features</h4>
+          <div className="space-y-2">
+            {options.map((option, index) => {
+              const isUsed = usedOptions.includes(option)
+              const cleanOption = stripHtml(option)
 
-            return (
-              <div
-                key={index}
-                draggable={!isUsed && !readingStore.isPreviewMode}
-                onDragStart={!readingStore.isPreviewMode ? (e) => handleDragStart(e, option) : undefined}
-                className="px-4 py-3 border-2 rounded-md text-sm transition-all shadow-sm"
-                style={{
-                  backgroundColor: isUsed ? 'var(--secondary)' : 'var(--card-background)',
-                  color: isUsed ? 'var(--text-secondary)' : 'var(--text-primary)',
-                  borderColor: isUsed ? 'var(--text-secondary)' : 'var(--border-color)',
-                  cursor: isUsed ? 'not-allowed' : readingStore.isPreviewMode ? 'default' : 'move',
-                  textDecoration: isUsed ? 'line-through' : 'none',
-                  opacity: isUsed ? 0.5 : 1
-                }}
-              >
-                {cleanOption}
-              </div>
-            )
-          })}
+              return (
+                <div
+                  key={index}
+                  draggable={!isUsed && !readingStore.isPreviewMode}
+                  onDragStart={!readingStore.isPreviewMode ? (e) => handleDragStart(e, option) : undefined}
+                  className="px-2 py-1 border-2 rounded text-sm transition-all"
+                  style={{
+                    backgroundColor: isUsed ? 'var(--secondary)' : 'var(--card-background)',
+                    color: isUsed ? 'var(--text-secondary)' : 'var(--text-primary)',
+                    borderColor: isUsed ? 'var(--text-secondary)' : 'var(--border-color)',
+                    cursor: isUsed ? 'not-allowed' : readingStore.isPreviewMode ? 'default' : 'move',
+                    textDecoration: isUsed ? 'line-through' : 'none',
+                    opacity: isUsed ? 0.5 : 1
+                  }}
+                >
+                  {cleanOption}
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
     </div>

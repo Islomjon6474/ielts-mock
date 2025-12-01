@@ -125,11 +125,12 @@ const SentenceCompletionQuestion = observer(({
           />
         </div>
       )}
-      
-      <div className="space-y-6">
-        {/* Questions Section */}
+
+      {/* Questions and Options - Horizontal Layout */}
+      <div className="grid grid-cols-2 gap-6">
+        {/* Left Side - Questions Section */}
         <div>
-          <div className="space-y-2">
+          <div className="space-y-1">
             {questions.map((question, index) => {
               const questionNumber = questionNumbers[index]
 
@@ -139,8 +140,20 @@ const SentenceCompletionQuestion = observer(({
               const placeholderMatch = textContent.match(/\[(\d+)\]/)
               const placeholderNum = placeholderMatch ? placeholderMatch[1] : questionNumber.toString()
 
-              // Split HTML by placeholder to show it inline
-              const parts = textContent.split(`[${placeholderNum}]`)
+              // Split the text into parts before and after placeholder, REMOVING the placeholder
+              const placeholderPattern = /\[(\d+)\]/
+              const match = textContent.match(placeholderPattern)
+              const beforeText = match ? textContent.substring(0, match.index) : ''
+              const afterText = match ? textContent.substring(match.index! + match[0].length) : textContent
+
+              // Process arrows in text
+              const processArrows = (html: string) => {
+                return html
+                  .replace(/↓/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↓</span>')
+                  .replace(/↑/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↑</span>')
+                  .replace(/←/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">←</span>')
+                  .replace(/→/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">→</span>')
+              }
 
               // In preview mode with submitted answers, show submitted answer with correctness styling
               if (isPreviewMode) {
@@ -171,20 +184,19 @@ const SentenceCompletionQuestion = observer(({
                 return (
                   <div
                     key={question.id}
-                    className="flex items-center flex-wrap gap-2 text-sm mb-4"
+                    className="flex items-center flex-wrap gap-2 text-sm mb-2"
                     data-question-id={questionNumber}
                     ref={(el) => { if (el) questionRefs.current[questionNumber] = el }}
                   >
                     <strong className="text-base">{questionNumber}</strong>
-                    {parts[0] && <span dangerouslySetInnerHTML={{ __html: parts[0].replace(/↓/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↓</span>').replace(/↑/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↑</span>').replace(/←/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">←</span>').replace(/→/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">→</span>') }} style={{ display: 'inline' }} />}
-                    {/* Drop zone for answer - disabled in preview */}
+                    {beforeText && <span dangerouslySetInnerHTML={{ __html: processArrows(beforeText) }} style={{ display: 'inline' }} />}
                     <div
+                      className="inline-flex items-center border-2 border-dashed rounded px-3 py-1 min-w-[120px]"
                       style={{
                         borderColor,
                         backgroundColor,
                         borderWidth: '2px'
                       }}
-                      className="inline-flex items-center border-2 border-dashed rounded px-3 py-1 min-w-[120px]"
                     >
                       {submittedAnswer ? (
                         <span style={{ color: 'var(--text-primary)' }} className="text-sm font-medium">{cleanAnswer}</span>
@@ -192,7 +204,7 @@ const SentenceCompletionQuestion = observer(({
                         <span style={{ color: 'var(--text-secondary)' }} className="text-xs font-bold">{placeholderNum}</span>
                       )}
                     </div>
-                    {parts[1] && <span dangerouslySetInnerHTML={{ __html: parts[1].replace(/↓/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↓</span>').replace(/↑/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↑</span>').replace(/←/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">←</span>').replace(/→/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">→</span>') }} style={{ display: 'inline' }} />}
+                    {afterText && <span dangerouslySetInnerHTML={{ __html: processArrows(afterText) }} style={{ display: 'inline' }} />}
                   </div>
                 )
               }
@@ -210,13 +222,12 @@ const SentenceCompletionQuestion = observer(({
               return (
                 <div
                   key={question.id}
-                  className="flex items-center flex-wrap gap-2 text-sm mb-4"
+                  className="flex items-center flex-wrap gap-2 text-sm mb-2"
                   data-question-id={questionNumber}
                   ref={(el) => { if (el) questionRefs.current[questionNumber] = el }}
                 >
                   <strong className="text-base">{questionNumber}</strong>
-                  {parts[0] && <span dangerouslySetInnerHTML={{ __html: parts[0].replace(/↓/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↓</span>').replace(/↑/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↑</span>').replace(/←/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">←</span>').replace(/→/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">→</span>') }} style={{ display: 'inline' }} />}
-                  {/* Drop zone for answer */}
+                  {beforeText && <span dangerouslySetInnerHTML={{ __html: processArrows(beforeText) }} style={{ display: 'inline' }} />}
                   <div
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, question.id)}
@@ -242,17 +253,17 @@ const SentenceCompletionQuestion = observer(({
                       <span style={{ color: 'var(--text-secondary)' }} className="text-xs font-bold">{placeholderNum}</span>
                     )}
                   </div>
-                  {parts[1] && <span dangerouslySetInnerHTML={{ __html: parts[1].replace(/↓/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↓</span>').replace(/↑/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↑</span>').replace(/←/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">←</span>').replace(/→/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">→</span>') }} style={{ display: 'inline' }} />}
+                  {afterText && <span dangerouslySetInnerHTML={{ __html: processArrows(afterText) }} style={{ display: 'inline' }} />}
                 </div>
               )
             })}
           </div>
         </div>
 
-        {/* Options Section */}
+        {/* Right Side - Options Section */}
         <div>
           <h4 style={{ color: 'var(--text-primary)' }} className="font-semibold text-sm mb-3">Features</h4>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
             {options.map((option, index) => {
               const isUsed = usedOptions.includes(option)
               const cleanOption = stripHtml(option)
@@ -269,7 +280,7 @@ const SentenceCompletionQuestion = observer(({
                     textDecoration: isUsed ? 'line-through' : 'none',
                     opacity: isUsed ? 0.5 : 1
                   }}
-                  className={`px-4 py-3 border-2 rounded-md text-sm transition-all shadow-sm ${
+                  className={`px-2 py-1 border-2 rounded text-sm transition-all ${
                     isUsed
                       ? 'cursor-not-allowed'
                       : isPreviewMode
