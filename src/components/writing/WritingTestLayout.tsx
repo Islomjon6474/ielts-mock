@@ -216,9 +216,9 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
 
       {/* Bottom Navigation */}
       <Footer className="border-t p-0" style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }}>
-        <div className="flex items-center px-6 gap-4">
-          {/* Part Buttons - Full Width */}
-          <div className="flex items-center gap-3 flex-1">
+        <div className="flex items-center justify-between px-4 py-2 gap-3">
+          {/* Part Buttons - Compact */}
+          <div className="flex items-center gap-2">
             {writingStore.tasks.map((task) => {
               const isCurrentTask = writingStore.currentTask === task.id
               const taskWordCount = writingStore.getWordCount(task.id)
@@ -227,70 +227,67 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
               return (
                 <div
                   key={task.id}
-                  className="flex-1 flex items-center justify-between cursor-pointer px-4 py-2 rounded-lg border"
+                  className="flex items-center gap-1.5 cursor-pointer px-2 py-1 rounded border transition-all"
                   style={{
                     backgroundColor: isCurrentTask ? 'var(--background)' : 'var(--card-background)',
                     borderColor: isCurrentTask ? 'var(--border-color)' : 'var(--border-color)',
-                    opacity: isCurrentTask ? 1 : 0.8
+                    opacity: isCurrentTask ? 1 : 0.8,
+                    minWidth: 'fit-content'
                   }}
                   onClick={() => handleTaskChange(task.id)}
                 >
                   <span
-                    className="font-semibold"
+                    className="font-medium text-xs whitespace-nowrap"
                     style={{ color: isCurrentTask ? 'var(--text-primary)' : 'var(--text-secondary)' }}
                   >
                     {task.title}
                   </span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      {taskWordCount} of {task.minWords}
-                    </span>
-                    {isComplete && <CheckOutlined className="text-green-500" />}
-                  </div>
+                  <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    {taskWordCount}/{task.minWords}
+                  </span>
+                  {isComplete && <CheckOutlined className="text-green-500" style={{ fontSize: '10px' }} />}
                 </div>
               )
             })}
           </div>
 
           {/* Navigation Arrows and Submit */}
-          <div className="flex flex-col gap-2">
-            {/* Previous and Next Buttons Row */}
-            <div className="flex items-center gap-3">
-              {/* Previous Button */}
-              <Button
-                icon={<LeftOutlined />}
-                onClick={() => handleTaskChange(writingStore.currentTask - 1)}
-                disabled={writingStore.currentTask === 1}
-                className="w-12 h-12 flex items-center justify-center"
-                style={{
-                  backgroundColor: writingStore.currentTask !== 1 ? 'var(--card-background)' : 'var(--background)',
-                  borderColor: 'var(--border-color)',
-                  color: writingStore.currentTask !== 1 ? 'var(--text-primary)' : 'var(--text-secondary)',
-                  opacity: writingStore.currentTask !== 1 ? 1 : 0.5
-                }}
-              />
+          <div className="flex items-center gap-2">
+            {/* Previous Button */}
+            <Button
+              icon={<LeftOutlined />}
+              onClick={() => handleTaskChange(writingStore.currentTask - 1)}
+              disabled={writingStore.currentTask === 1}
+              size="small"
+              style={{
+                backgroundColor: writingStore.currentTask !== 1 ? 'var(--card-background)' : 'var(--background)',
+                borderColor: 'var(--border-color)',
+                color: writingStore.currentTask !== 1 ? 'var(--text-primary)' : 'var(--text-secondary)',
+                opacity: writingStore.currentTask !== 1 ? 1 : 0.5
+              }}
+            />
 
-              {/* Next Button */}
-              <Button
-                icon={<RightOutlined />}
-                onClick={() => handleTaskChange(writingStore.currentTask + 1)}
-                disabled={writingStore.currentTask === writingStore.tasks.length}
-                className="w-12 h-12 flex items-center justify-center"
-                style={{
-                  backgroundColor: writingStore.currentTask !== writingStore.tasks.length ? 'var(--text-primary)' : 'var(--background)',
-                  borderColor: writingStore.currentTask !== writingStore.tasks.length ? 'var(--text-primary)' : 'var(--border-color)',
-                  color: writingStore.currentTask !== writingStore.tasks.length ? 'var(--card-background)' : 'var(--text-secondary)'
-                }}
-              />
-            </div>
+            {/* Next Button */}
+            <Button
+              icon={<RightOutlined />}
+              onClick={() => handleTaskChange(writingStore.currentTask + 1)}
+              disabled={writingStore.currentTask === writingStore.tasks.length}
+              size="small"
+              style={{
+                backgroundColor: writingStore.currentTask !== writingStore.tasks.length ? 'var(--text-primary)' : 'var(--background)',
+                borderColor: writingStore.currentTask !== writingStore.tasks.length ? 'var(--text-primary)' : 'var(--border-color)',
+                color: writingStore.currentTask !== writingStore.tasks.length ? 'var(--card-background)' : 'var(--text-secondary)'
+              }}
+            />
 
-            {/* Submit Button Row */}
+            {/* Submit Button */}
             <Button
               type="primary"
               icon={<CheckOutlined />}
               onClick={handleSubmit}
               disabled={isPreviewMode}
-              className="bg-green-600 hover:bg-green-700 w-full"
+              size="small"
+              className="bg-green-600 hover:bg-green-700"
             >
               Submit
             </Button>

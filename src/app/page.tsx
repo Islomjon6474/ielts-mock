@@ -186,29 +186,39 @@ const HomePage = observer(() => {
       const mockId = response.data // Get the mockId from response
       console.log('✅ Mock test started:', mockId)
 
-      // Get sections to find listening section
-      const sectionsResp = await mockSubmissionApi.getAllSections(id, mockId)
-      const sections = sectionsResp.data
+      // Check user role - only auto-start for USER role (students)
+      const isStudent = authStore.user?.role === 'USER'
+      const isAdmin = authStore.user?.role === 'ADMIN'
 
-      // Find listening section
-      const listeningSection = sections.find((s: any) =>
-        String(s.sectionType).toLowerCase() === 'listening'
-      )
+      if (isStudent) {
+        // STUDENT: Auto-start listening section and go directly to test
+        const sectionsResp = await mockSubmissionApi.getAllSections(id, mockId)
+        const sections = sectionsResp.data
 
-      if (!listeningSection) {
-        Modal.error({
-          title: 'Section Not Found',
-          content: 'Listening section not found for this test.',
-        })
-        return
+        // Find listening section
+        const listeningSection = sections.find((s: any) =>
+          String(s.sectionType).toLowerCase() === 'listening'
+        )
+
+        if (!listeningSection) {
+          Modal.error({
+            title: 'Section Not Found',
+            content: 'Listening section not found for this test.',
+          })
+          return
+        }
+
+        // Start listening section
+        await mockSubmissionApi.startSection(mockId, listeningSection.id)
+        console.log('✅ Started listening section:', listeningSection.id)
+
+        // Navigate directly to listening page
+        router.push(`/listening?testId=${id}&mockId=${mockId}`)
+      } else {
+        // ADMIN or other roles: Show section selection page
+        console.log('✅ Navigating to section selection page for admin')
+        router.push(`/test/${id}?mockId=${mockId}`)
       }
-
-      // Start listening section
-      await mockSubmissionApi.startSection(mockId, listeningSection.id)
-      console.log('✅ Started listening section:', listeningSection.id)
-
-      // Navigate directly to listening page
-      router.push(`/listening?testId=${id}&mockId=${mockId}`)
     } catch (error) {
       console.error('Error starting test:', error)
       Modal.error({
@@ -235,24 +245,39 @@ const HomePage = observer(() => {
       const sectionsResp = await mockSubmissionApi.getAllSections(testId, mockId)
       const sections = sectionsResp.data
 
+      // Check user role
+      const isStudent = authStore.user?.role === 'USER'
+      const isAdmin = authStore.user?.role === 'ADMIN'
+
       // Find first unfinished section (isFinished !== 1)
       const unfinishedSection = sections.find((s: any) => s.isFinished !== 1)
 
       if (!unfinishedSection) {
-        // All sections finished, go to first section in preview mode
-        const firstSection = sections[0]
-        if (firstSection) {
-          const sectionType = String(firstSection.sectionType).toLowerCase()
-          router.push(`/${sectionType}?testId=${testId}&mockId=${mockId}&preview=true`)
+        // All sections finished
+        if (isStudent) {
+          // STUDENT: Go to first section in preview mode
+          const firstSection = sections[0]
+          if (firstSection) {
+            const sectionType = String(firstSection.sectionType).toLowerCase()
+            router.push(`/${sectionType}?testId=${testId}&mockId=${mockId}&preview=true`)
+          } else {
+            router.push('/')
+          }
         } else {
-          router.push('/')
+          // ADMIN: Show section selection page in preview mode
+          router.push(`/test/${testId}?mockId=${mockId}`)
         }
         return
       }
 
-      // Navigate to the unfinished section
-      const sectionType = String(unfinishedSection.sectionType).toLowerCase()
-      router.push(`/${sectionType}?testId=${testId}&mockId=${mockId}`)
+      if (isStudent) {
+        // STUDENT: Navigate directly to the unfinished section
+        const sectionType = String(unfinishedSection.sectionType).toLowerCase()
+        router.push(`/${sectionType}?testId=${testId}&mockId=${mockId}`)
+      } else {
+        // ADMIN: Show section selection page
+        router.push(`/test/${testId}?mockId=${mockId}`)
+      }
     } catch (error) {
       console.error('Error continuing test:', error)
       // Fallback to test page
