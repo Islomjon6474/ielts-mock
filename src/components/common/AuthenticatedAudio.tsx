@@ -18,6 +18,7 @@ const AuthenticatedAudio = forwardRef<HTMLAudioElement, AuthenticatedAudioProps>
 
     useEffect(() => {
       if (!src) {
+        setBlobUrl(null)
         setLoading(false)
         return
       }
@@ -25,16 +26,18 @@ const AuthenticatedAudio = forwardRef<HTMLAudioElement, AuthenticatedAudioProps>
       const fetchAudio = async () => {
         try {
           setLoading(true)
+          // Clear old blob URL
+          setBlobUrl(null)
 
           const token = localStorage.getItem('authToken')
           const headers: HeadersInit = {}
-          
+
           if (token) {
             headers['Authorization'] = `Bearer ${token}`
           }
 
           const response = await fetch(src, { headers })
-          
+
           if (!response.ok) {
             throw new Error('Failed to load audio')
           }
@@ -44,6 +47,10 @@ const AuthenticatedAudio = forwardRef<HTMLAudioElement, AuthenticatedAudioProps>
           setBlobUrl(url)
         } catch (err) {
           console.error('Error loading audio:', err)
+          if (onError) {
+            // Create a synthetic event for error callback
+            onError(err as any)
+          }
         } finally {
           setLoading(false)
         }
@@ -51,7 +58,7 @@ const AuthenticatedAudio = forwardRef<HTMLAudioElement, AuthenticatedAudioProps>
 
       fetchAudio()
 
-      // Cleanup blob URL on unmount
+      // Cleanup blob URL when src changes or component unmounts
       return () => {
         if (blobUrl) {
           URL.revokeObjectURL(blobUrl)
@@ -59,12 +66,12 @@ const AuthenticatedAudio = forwardRef<HTMLAudioElement, AuthenticatedAudioProps>
       }
     }, [src])
 
-    if (!src || !blobUrl) return null
-
+    // Always render the audio element (even if blobUrl is not ready yet)
+    // This ensures the ref is always valid
     return (
       <audio
         ref={ref}
-        src={blobUrl}
+        src={blobUrl || undefined}
         style={style}
         onLoadedMetadata={onLoadedMetadata}
         onEnded={onEnded}

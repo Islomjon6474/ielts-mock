@@ -156,25 +156,51 @@ const SectionPreviewPage = observer(() => {
             console.log(`🎵 Preview: Audio ${index + 1} (ord: ${audio.ord || 'N/A'}): ${audio.name || 'unnamed'}`, fileUrl)
             audioUrls.push(fileUrl)
 
-            // Preload via Audio object and canplaythrough
-            const p = new Promise<void>((resolve) => {
-              const a = new Audio()
-              a.preload = 'auto'
-              a.src = fileUrl
-              const done = () => {
-                a.removeEventListener('canplaythrough', done)
-                a.removeEventListener('error', onErr)
-                console.log(`✅ Preview: Audio ${index + 1} preloaded successfully`)
+            // Preload via authenticated fetch and Audio object
+            const p = new Promise<void>(async (resolve) => {
+              try {
+                // Fetch audio with authentication
+                const token = localStorage.getItem('authToken')
+                const headers: HeadersInit = {}
+
+                if (token) {
+                  headers['Authorization'] = `Bearer ${token}`
+                }
+
+                const response = await fetch(fileUrl, { headers })
+
+                if (!response.ok) {
+                  console.error(`❌ Preview: Failed to fetch audio ${index + 1}: ${response.status} ${response.statusText}`)
+                  resolve()
+                  return
+                }
+
+                const blob = await response.blob()
+                const blobUrl = URL.createObjectURL(blob)
+
+                const a = new Audio()
+                a.preload = 'auto'
+                a.src = blobUrl
+                const done = () => {
+                  a.removeEventListener('canplaythrough', done)
+                  a.removeEventListener('error', onErr)
+                  console.log(`✅ Preview: Audio ${index + 1} preloaded successfully`)
+                  URL.revokeObjectURL(blobUrl)
+                  resolve()
+                }
+                const onErr = () => {
+                  a.removeEventListener('canplaythrough', done)
+                  a.removeEventListener('error', onErr)
+                  console.error(`❌ Preview: Failed to preload audio ${index + 1}`)
+                  URL.revokeObjectURL(blobUrl)
+                  resolve()
+                }
+                a.addEventListener('canplaythrough', done, { once: true })
+                a.addEventListener('error', onErr, { once: true })
+              } catch (error) {
+                console.error(`❌ Preview: Error preloading audio ${index + 1}:`, error)
                 resolve()
               }
-              const onErr = () => {
-                a.removeEventListener('canplaythrough', done)
-                a.removeEventListener('error', onErr)
-                console.error(`❌ Preview: Failed to preload audio ${index + 1}:`, fileUrl)
-                resolve()
-              }
-              a.addEventListener('canplaythrough', done, { once: true })
-              a.addEventListener('error', onErr, { once: true })
             })
             preloadPromises.push(p)
           })

@@ -48,6 +48,7 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
   const audioRef = useRef<HTMLAudioElement>(null)
   const [currentAudioIndex, setCurrentAudioIndex] = useState(0)
   const [allAudioUrls, setAllAudioUrls] = useState<string[]>([])
+  const [currentAudioSrc, setCurrentAudioSrc] = useState<string | undefined>(undefined)
 
   const currentPart = listeningStore.currentPartData
 
@@ -66,18 +67,23 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
     }
   }, [listeningStore.audioUrls, listeningStore.parts])
 
-  // Set initial audio source and auto-play when index changes
+  // Update current audio source when index changes
   useEffect(() => {
-    if (audioRef.current && allAudioUrls.length > 0 && currentAudioIndex < allAudioUrls.length) {
-      audioRef.current.src = allAudioUrls[currentAudioIndex]
-      // Auto-play next audio if already playing
-      if (listeningStore.isPlaying && listeningStore.hasStarted) {
-        audioRef.current.play().catch(err => {
-          console.error('Failed to play next audio:', err)
-        })
-      }
+    if (allAudioUrls.length > 0 && currentAudioIndex < allAudioUrls.length) {
+      setCurrentAudioSrc(allAudioUrls[currentAudioIndex])
     }
-  }, [allAudioUrls, currentAudioIndex, listeningStore.isPlaying, listeningStore.hasStarted])
+  }, [allAudioUrls, currentAudioIndex])
+
+  // Handle when audio is loaded and ready to play
+  const handleAudioLoadedMetadata = () => {
+    console.log('🎵 Audio loaded and ready to play')
+    // Auto-play if we should be playing
+    if (audioRef.current && listeningStore.isPlaying && listeningStore.hasStarted) {
+      audioRef.current.play().catch(err => {
+        console.error('Failed to play audio:', err)
+      })
+    }
+  }
 
   // Handle audio ended - play next audio automatically
   useEffect(() => {
@@ -319,7 +325,12 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
   return (
     <Layout className="h-screen flex flex-col">
       {/* Hidden Audio Player */}
-      <AuthenticatedAudio ref={audioRef} style={{ display: 'none' }} />
+      <AuthenticatedAudio
+        ref={audioRef}
+        src={currentAudioSrc}
+        onLoadedMetadata={handleAudioLoadedMetadata}
+        style={{ display: 'none' }}
+      />
       
       <Header 
         isPreviewMode={isPreviewMode}

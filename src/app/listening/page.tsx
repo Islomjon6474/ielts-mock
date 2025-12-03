@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { observer } from 'mobx-react-lite'
+import { Spin } from 'antd'
 import { useStore } from '@/stores/StoreContext'
 import ListeningTestLayout from '@/components/listening/ListeningTestLayout'
 import { mockSubmissionApi, fileApi } from '@/services/testManagementApi'
@@ -14,6 +15,7 @@ import { playWarningSound } from '@/utils/audioAlert'
 const ListeningPageContent = observer(() => {
   const { listeningStore } = useStore()
   const [loading, setLoading] = useState(true)
+  const [loadingMessage, setLoadingMessage] = useState('Loading test...')
   const searchParams = useSearchParams()
   const urlTestId = searchParams.get('testId')
   const urlMockId = searchParams.get('mockId')
@@ -151,70 +153,117 @@ const ListeningPageContent = observer(() => {
           listeningStore.setAudioLoading(true)
           listeningStore.setAllAudioReady(false)
           listeningStore.setAudioError(null)
+          setLoadingMessage('Fetching audio files...')
 
           console.log('🎵 Fetching audio for test ID:', testIdToUse)
           const audioResponse = await mockSubmissionApi.getAllListeningAudio(testIdToUse)
           const audioFiles = audioResponse.data || []
-          
+
           // Sort audio files by ord field to ensure correct order
           const sortedAudioFiles = [...audioFiles].sort((a, b) => (a.ord || 0) - (b.ord || 0))
           console.log(`🎵 Found ${sortedAudioFiles.length} audio files for listening test`)
+
+          if (sortedAudioFiles.length > 0) {
+            setLoadingMessage(`Downloading ${sortedAudioFiles.length} audio file${sortedAudioFiles.length > 1 ? 's' : ''}...`)
+          }
           
-          const preloadPromises: Promise<void>[] = []
+          const preloadPromises: Promise<number>[] = []
           const audioUrls: string[] = []
-          
+
           sortedAudioFiles.forEach((audio: any, index: number) => {
             const fileId = audio.fileId
             if (!fileId) {
               console.warn(`Audio at index ${index} has no fileId`)
               return
             }
-            
+
             const fileUrl = fileApi.getFileUrl(fileId)
             if (!fileUrl) {
               console.warn(`Could not generate URL for fileId: ${fileId}`)
               return
             }
-            
+
             console.log(`🎵 Audio ${index + 1} (ord: ${audio.ord || 'N/A'}): ${audio.name || 'unnamed'}`, fileUrl)
             audioUrls.push(fileUrl)
 
-            // Preload audio file
-            const preloadPromise = new Promise<void>((resolve) => {
-              const audioElement = new Audio()
-              audioElement.preload = 'auto'
-              audioElement.src = fileUrl
-              
-              const onReady = () => {
-                audioElement.removeEventListener('canplaythrough', onReady)
-                audioElement.removeEventListener('error', onError)
-                console.log(`✅ Audio ${index + 1} preloaded successfully`)
-                resolve()
+            // Preload audio file with authentication and get its duration
+            const preloadPromise = new Promise<number>(async (resolve) => {
+              try {
+                setLoadingMessage(`Downloading audio ${index + 1} of ${sortedAudioFiles.length}...`)
+
+                // Fetch audio with authentication
+                const token = localStorage.getItem('authToken')
+                const headers: HeadersInit = {}
+
+                if (token) {
+                  headers['Authorization'] = `Bearer ${token}`
+                }
+
+                const response = await fetch(fileUrl, { headers })
+
+                if (!response.ok) {
+                  console.error(`❌ Failed to fetch audio ${index + 1}: ${response.status} ${response.statusText}`)
+                  resolve(0)
+                  return
+                }
+
+                const blob = await response.blob()
+                const blobUrl = URL.createObjectURL(blob)
+
+                // Create audio element to get duration
+                const audioElement = new Audio()
+                audioElement.preload = 'metadata'
+                audioElement.src = blobUrl
+
+                const onLoadedMetadata = () => {
+                  audioElement.removeEventListener('loadedmetadata', onLoadedMetadata)
+                  audioElement.removeEventListener('error', onError)
+                  const duration = audioElement.duration || 0
+                  console.log(`✅ Audio ${index + 1} preloaded successfully - Duration: ${Math.round(duration)}s`)
+                  URL.revokeObjectURL(blobUrl) // Clean up blob URL
+                  resolve(duration)
+                }
+
+                const onError = () => {
+                  audioElement.removeEventListener('loadedmetadata', onLoadedMetadata)
+                  audioElement.removeEventListener('error', onError)
+                  console.error(`❌ Failed to load audio metadata ${index + 1}`)
+                  URL.revokeObjectURL(blobUrl) // Clean up blob URL
+                  resolve(0)
+                }
+
+                audioElement.addEventListener('loadedmetadata', onLoadedMetadata, { once: true })
+                audioElement.addEventListener('error', onError, { once: true })
+              } catch (error) {
+                console.error(`❌ Error preloading audio ${index + 1}:`, error)
+                resolve(0)
               }
-              
-              const onError = () => {
-                audioElement.removeEventListener('canplaythrough', onReady)
-                audioElement.removeEventListener('error', onError)
-                console.error(`❌ Failed to preload audio ${index + 1}:`, fileUrl)
-                resolve() // Resolve anyway to not block other files
-              }
-              
-              audioElement.addEventListener('canplaythrough', onReady, { once: true })
-              audioElement.addEventListener('error', onError, { once: true })
             })
-            
+
             preloadPromises.push(preloadPromise)
           })
 
-          // Wait for all audio to preload
-          await Promise.all(preloadPromises)
-          console.log(`✅ All ${audioUrls.length} audio files preloaded`)
+          // Wait for all audio to preload and get their durations
+          setLoadingMessage('Processing audio files...')
+          const audioDurations = await Promise.all(preloadPromises)
+          let totalAudioDuration = audioDurations.reduce((sum, duration) => sum + duration, 0)
+
+          // Fallback: if no audio files or total duration is 0, estimate based on number of parts/questions
+          if (totalAudioDuration === 0 || audioUrls.length === 0) {
+            const estimatedDurationPerPart = 600 // 10 minutes per part
+            const numberOfParts = Math.max(partsWithContent.length, 4) // Assume at least 4 parts for standard IELTS
+            totalAudioDuration = numberOfParts * estimatedDurationPerPart
+            console.log(`⚠️ No audio files or duration found. Using estimated duration: ${Math.round(totalAudioDuration / 60)} minutes`)
+          } else {
+            console.log(`✅ All ${audioUrls.length} audio files preloaded`)
+            console.log(`⏱️ Total audio duration: ${Math.round(totalAudioDuration)}s (${Math.round(totalAudioDuration / 60)} minutes)`)
+          }
           listeningStore.setAllAudioReady(true)
-          
+
           // Store ALL audio URLs in the listening store for sequential playback
           listeningStore.setAudioUrls(audioUrls)
           console.log(`📦 Stored ${audioUrls.length} audio URLs in listening store`)
-          
+
           // Also map to parts for compatibility with existing code
           const audioUrlsMap: { [partId: string]: string } = {}
           partsWithContent.forEach((part, index) => {
@@ -222,7 +271,7 @@ const ListeningPageContent = observer(() => {
               audioUrlsMap[part.id] = audioUrls[index]
             }
           })
-          
+
           // 5) Transform and set to store
           const listeningParts = transformAdminPartsToListening(partsWithContent, audioUrlsMap)
           listeningStore.setParts(listeningParts)
@@ -237,10 +286,11 @@ const ListeningPageContent = observer(() => {
             }
           }
 
-          // 6) Calculate total audio duration and start timer
-          // Estimate: assume each audio is ~10 minutes (600 seconds)
-          const estimatedAudioDuration = audioUrls.length * 600 // 10 min per audio
-          listeningStore.startTimerAfterAudio(estimatedAudioDuration, async () => {
+          // 6) Start timer with audio duration (the store will add 10 minutes)
+          const audioDurationInSeconds = Math.round(totalAudioDuration)
+          console.log(`⏱️ Audio duration: ${Math.round(audioDurationInSeconds / 60)} minutes`)
+          console.log(`⏱️ Total test time will be: ${Math.round(audioDurationInSeconds / 60) + 10} minutes (audio + 10 min)`)
+          listeningStore.startTimerAfterAudio(audioDurationInSeconds, async () => {
             console.log('⏰ Time is up! Auto-submitting...')
             try {
               await listeningStore.finishSection()
@@ -328,7 +378,19 @@ const ListeningPageContent = observer(() => {
     }
   }, [])
 
-  if (loading) return null
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen" style={{ backgroundColor: 'var(--background)' }}>
+        <Spin size="large" />
+        <p style={{ color: 'var(--text-primary)' }} className="mt-4 text-lg">{loadingMessage}</p>
+        {loadingMessage.includes('Downloading') && (
+          <p style={{ color: 'var(--text-secondary)' }} className="mt-2 text-sm">
+            Please wait while we prepare your test...
+          </p>
+        )}
+      </div>
+    )
+  }
   // Use the store's preview mode which gets automatically set when viewing finished mocks
   return <ListeningTestLayout isPreviewMode={listeningStore.isPreviewMode} />
 })
