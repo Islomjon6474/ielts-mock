@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { Layout, Button } from 'antd'
-import { LeftOutlined, RightOutlined, CheckOutlined } from '@ant-design/icons'
+import {LeftOutlined, RightOutlined, CheckOutlined, ReloadOutlined} from '@ant-design/icons'
 import { observer } from 'mobx-react-lite'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useStore } from '@/stores/StoreContext'
@@ -210,34 +210,42 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
         )}
       </Header>
 
-      {/* Admin Grading Panel */}
-      {showAdminPanel && (
-        <div className="px-4 pt-4">
-          <AdminGradingPanel
-            mockId={readingStore.mockId!}
-            sectionId={readingStore.sectionId!}
-            totalQuestions={gradingStats.total}
-            correctAnswers={gradingStats.correct}
-            incorrectAnswers={gradingStats.incorrect}
-            notAnswered={gradingStats.notAnswered}
-            studentName={studentName}
-            testName={testName}
-            onRecalculate={() => {
-              // Optionally reload the page or refresh data
-              window.location.reload()
-            }}
-          />
-        </div>
-      )}
-
-      {/* Part Title - Compact */}
+      {/* Part Title with Admin Grading Panel - Compact */}
       <div className="px-4 py-1.5 border-b" style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }}>
-        <h2 className="font-semibold text-sm inline-block mr-4" style={{ color: 'var(--text-primary)' }}>{currentPart.title}</h2>
-        <span
-          className="text-xs prose prose-xs max-w-none inline"
-          style={{ color: 'var(--text-secondary)' }}
-          dangerouslySetInnerHTML={{ __html: currentPart.instruction }}
-        />
+        <div className="flex items-center justify-between gap-4">
+          {/* Part Title and Instruction */}
+          <div className="flex-1">
+            <h2 className="font-semibold text-sm inline-block mr-4" style={{ color: 'var(--text-primary)' }}>{currentPart.title}</h2>
+            <span
+              className="text-xs prose prose-xs max-w-none inline"
+              style={{ color: 'var(--text-secondary)' }}
+              dangerouslySetInnerHTML={{ __html: currentPart.instruction }}
+            />
+          </div>
+
+          {/* Admin Grading Panel - Inline Compact */}
+          {showAdminPanel && (
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-xs">
+                <span style={{ color: 'var(--text-secondary)' }}>Total: <strong style={{ color: 'var(--text-primary)' }}>{gradingStats.total}</strong></span>
+                <span className="text-green-600">✓ {gradingStats.correct}</span>
+                <span className="text-red-500">✗ {gradingStats.incorrect}</span>
+                {gradingStats.notAnswered > 0 && (
+                  <span style={{ color: '#8c8c8c' }}>− {gradingStats.notAnswered}</span>
+                )}
+              </div>
+              <Button
+                type="primary"
+                size="small"
+                icon={<ReloadOutlined />}
+                onClick={() => window.location.reload()}
+                style={{ fontSize: '12px', padding: '0 8px', height: '24px' }}
+              >
+                Recalc
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Main Content Area with Resizable Panes */}

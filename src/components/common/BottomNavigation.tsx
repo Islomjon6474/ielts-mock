@@ -140,16 +140,19 @@ const BottomNavigation = observer(({
         </div>
 
         {/* Navigation Arrows and Submit Button */}
-        <div className="flex flex-col gap-2 flex-shrink-0">
+        <div className="flex flex-col gap-1 flex-shrink-0" style={{ width: '90px' }}>
           {/* Previous and Next Buttons Row */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1" style={{ width: '100%' }}>
             {/* Previous Button */}
             <Button
-              icon={<LeftOutlined />}
+              icon={<LeftOutlined style={{ fontSize: '12px' }} />}
               onClick={onPrevious}
               disabled={!hasPrevious}
-              className="w-12 h-12 flex items-center justify-center"
+              size="small"
+              className="flex-1 flex items-center justify-center"
               style={{
+                height: '32px',
+                padding: '4px 8px',
                 backgroundColor: hasPrevious ? 'var(--primary)' : 'var(--background)',
                 borderColor: hasPrevious ? 'var(--primary)' : 'var(--border-color)',
                 color: hasPrevious ? (getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() === '#ffff00' ? '#000000' : '#ffffff') : 'var(--text-secondary)'
@@ -158,25 +161,30 @@ const BottomNavigation = observer(({
 
             {/* Next Button */}
             <Button
-              icon={<RightOutlined />}
+              icon={<RightOutlined style={{ fontSize: '12px' }} />}
               onClick={onNext}
               disabled={!hasNext}
-              className="w-12 h-12 flex items-center justify-center"
+              size="small"
+              className="flex-1 flex items-center justify-center"
               style={{
+                height: '32px',
+                padding: '4px 8px',
                 backgroundColor: hasNext ? 'var(--primary)' : 'var(--background)',
                 borderColor: hasNext ? 'var(--primary)' : 'var(--border-color)',
                 color: hasNext ? (getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() === '#ffff00' ? '#000000' : '#ffffff') : 'var(--text-secondary)'
               }}
             />
           </div>
-          
+
           {/* Submit Button Row */}
           <Button
             type="primary"
-            icon={<CheckOutlined />}
-            className="bg-green-600 hover:bg-green-700 w-full"
+            icon={<CheckOutlined style={{ fontSize: '12px' }} />}
+            size="small"
+            className="bg-green-600 hover:bg-green-700"
             onClick={onSubmit}
             disabled={isPreviewMode}
+            style={{ width: '100%', height: '32px', padding: '4px 8px', fontSize: '13px' }}
           >
             Submit
           </Button>
