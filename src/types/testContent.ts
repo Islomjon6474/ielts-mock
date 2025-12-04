@@ -10,6 +10,7 @@ export type QuestionType =
   | 'MATCH_HEADING'
   | 'SHORT_ANSWER'
   | 'MULTIPLE_CORRECT_ANSWERS'
+  | 'MATRIX_TABLE'
 
 export interface AdminQuestion {
   questionNumber?: number
@@ -26,6 +27,7 @@ export interface AdminQuestionGroup {
   headingOptions?: string
   imageId?: string
   questions?: AdminQuestion[] | string | Record<string, AdminQuestion>
+  matrixOptions?: string[] // For MATRIX_TABLE type - column headers
 }
 
 export interface AdminPartContent {

@@ -273,6 +273,9 @@ const SectionPreviewPage = observer(() => {
               questionGroups = dataToUse.questionGroups.map((group: any, groupIndex: number) => ({
                 instruction: group.instruction,
                 imageUrl: fileApi.getImageUrl(group.imageId),
+                headingOptions: group.headingOptions, // For MATCH_HEADING
+                matrixOptions: group.matrixOptions,   // For MATRIX_TABLE
+                options: group.options,               // For SENTENCE_COMPLETION
                 questions: (group.questions || []).map((q: any) => ({
                   ...q,
                   options: q.options || [],

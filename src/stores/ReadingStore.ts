@@ -2,7 +2,7 @@ import { makeAutoObservable } from 'mobx'
 import * as R from 'ramda'
 import { mockSubmissionApi } from '@/services/testManagementApi'
 
-export type QuestionType = 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN' | 'FILL_IN_BLANK' | 'MATCH_HEADING' | 'MULTIPLE_CHOICE' | 'MULTIPLE_CHOICE_SINGLE' | 'IMAGE_INPUTS' | 'SENTENCE_COMPLETION' | 'MULTIPLE_CORRECT_ANSWERS'
+export type QuestionType = 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN' | 'FILL_IN_BLANK' | 'MATCH_HEADING' | 'MULTIPLE_CHOICE' | 'MULTIPLE_CHOICE_SINGLE' | 'IMAGE_INPUTS' | 'SENTENCE_COMPLETION' | 'MULTIPLE_CORRECT_ANSWERS' | 'MATRIX_TABLE'
 
 export interface Answer {
   questionId: number
@@ -25,6 +25,7 @@ export interface QuestionGroup {
   questions: Question[]
   headingOptions?: string[]  // For MATCH_HEADING questions
   options?: string[]          // For SENTENCE_COMPLETION questions
+  matrixOptions?: string[]    // For MATRIX_TABLE questions (column headers)
 }
 
 export interface Section {

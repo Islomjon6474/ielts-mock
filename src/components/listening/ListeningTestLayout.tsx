@@ -22,6 +22,7 @@ import MultipleChoiceSingleQuestion from './MultipleChoiceSingleQuestion'
 import MultipleCorrectAnswersQuestion from './MultipleCorrectAnswersQuestion'
 import TrueFalseQuestion from './TrueFalseQuestion'
 import SentenceCompletionQuestion from './SentenceCompletionQuestion'
+import MatrixTableQuestion from './MatrixTableQuestion'
 import SubmitModal from '@/components/common/SubmitModal'
 import { exitFullscreen } from '@/utils/fullscreen'
 
@@ -38,6 +39,7 @@ interface QuestionGroup {
   instruction?: string
   questions: ListeningQuestion[]
   options?: string[]
+  matrixOptions?: string[]
 }
 
 const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: ListeningTestLayoutProps) => {
@@ -405,7 +407,7 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                   if (group.type === 'SENTENCE_COMPLETION') {
                     const questionNumbers = group.questions.map(q => q.id)
                     const options = group.options || []
-                    
+
                     return (
                       <div key={`group-${groupIdx}`} className="mb-8">
                         <div style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }} className="rounded-lg border-l-4 border-blue-500 px-4 py-2 mb-4">
@@ -416,12 +418,36 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                             <div style={{ color: 'var(--text-secondary)' }} className="text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: group.instruction }} />
                           )}
                         </div>
-                        
+
                         <SentenceCompletionQuestion
                           questions={group.questions}
                           questionNumbers={questionNumbers}
                           options={options}
                           imageUrl={group.imageUrl}
+                          isPreviewMode={isPreviewMode}
+                        />
+                      </div>
+                    )
+                  }
+
+                  // Handle MATRIX_TABLE separately
+                  if (group.type === 'MATRIX_TABLE') {
+                    const matrixOptions = group.matrixOptions || []
+
+                    return (
+                      <div key={`group-${groupIdx}`} className="mb-8">
+                        <div style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }} className="rounded-lg border-l-4 border-purple-500 px-4 py-2 mb-4">
+                          <h3 style={{ color: 'var(--text-primary)' }} className="font-bold text-base mb-1">
+                            Questions {startNum}{endNum !== startNum && `–${endNum}`}
+                          </h3>
+                          {group.instruction && (
+                            <div style={{ color: 'var(--text-secondary)' }} className="text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: group.instruction }} />
+                          )}
+                        </div>
+
+                        <MatrixTableQuestion
+                          questions={group.questions}
+                          options={matrixOptions}
                           isPreviewMode={isPreviewMode}
                         />
                       </div>

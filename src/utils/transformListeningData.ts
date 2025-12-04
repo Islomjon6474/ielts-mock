@@ -8,12 +8,29 @@ export function transformAdminToListeningPart(
   adminData: any,
   partNumber: number,
   audioUrl?: string
-): ListeningPart {
+): ListeningPart & { questionGroups?: any[] } {
   // Use the flat questions array if available (new format)
   // Otherwise fall back to flattening questionGroups (old format)
   let questions: any[]
   let questionRange: [number, number]
-  
+  let questionGroups: any[] | undefined = undefined
+
+  // Preserve questionGroups with their options for grouped rendering (MATRIX_TABLE, SENTENCE_COMPLETION, etc.)
+  if (adminData.questionGroups && Array.isArray(adminData.questionGroups) && adminData.questionGroups.length > 0) {
+    questionGroups = adminData.questionGroups.map((group: any, groupIndex: number) => ({
+      type: group.type,
+      instruction: group.instruction,
+      imageUrl: group.imageId ? fileApi.getImageUrl(group.imageId) : undefined,
+      headingOptions: group.headingOptions,
+      matrixOptions: group.matrixOptions,
+      options: group.options,
+      questions: (group.questions || []).map((q: any) => ({
+        ...q,
+        groupIndex: groupIndex
+      }))
+    }))
+  }
+
   if (adminData.questions && Array.isArray(adminData.questions) && adminData.questions.length > 0) {
     // New format: use pre-flattened questions array
     // Calculate question range from actual questions in this part
@@ -102,8 +119,9 @@ export function transformAdminToListeningPart(
     instruction: adminData.instruction || '',
     questionRange,
     audioUrl: audioUrl || '',
-    questions
-  }
+    questions,
+    questionGroups // Add questionGroups to the result
+  } as any
 }
 
 /**

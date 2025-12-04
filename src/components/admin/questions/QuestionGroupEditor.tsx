@@ -8,6 +8,7 @@ import { SentenceCompletionQuestion } from './SentenceCompletionQuestion'
 import { MatchHeadingQuestion } from './MatchHeadingQuestion'
 import { ShortAnswerQuestion } from './ShortAnswerQuestion'
 import { MultipleCorrectAnswersQuestion } from './MultipleCorrectAnswersQuestion'
+import { MatrixTableQuestion } from './MatrixTableQuestion'
 import { questionTypes } from './index'
 import { ImageInputsQuestion } from './ImageInputsQuestion'
 import { ImageUpload } from '../ImageUpload'
@@ -120,6 +121,9 @@ export const QuestionGroupEditor = ({
       case 'MULTIPLE_CORRECT_ANSWERS':
         newQuestion = { text: '', correctAnswers: [] }
         break
+      case 'MATRIX_TABLE':
+        newQuestion = { text: '', correctAnswers: [] }
+        break
       default:
         newQuestion = { text: '', answer: '' }
     }
@@ -209,6 +213,8 @@ export const QuestionGroupEditor = ({
         return <SentenceCompletionQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
       case 'MULTIPLE_CORRECT_ANSWERS':
         return <MultipleCorrectAnswersQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
+      case 'MATRIX_TABLE':
+        return <MatrixTableQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
       default:
         return null
     }
@@ -351,6 +357,52 @@ export const QuestionGroupEditor = ({
                   icon={<PlusOutlined />}
                 >
                   Add Option
+                </Button>
+              </>
+            )}
+          </Form.List>
+        </div>
+      )}
+
+      {/* Matrix Options for Matrix Table question type */}
+      {selectedType === 'MATRIX_TABLE' && (
+        <div>
+          <Form.List name={[...groupPath, 'matrixOptions']}>
+            {(fields, { add, remove }) => (
+              <>
+                <div className="mb-2 font-medium">Matrix Column Options *</div>
+                <div className="text-xs text-gray-500 mb-3">
+                  Add options that will appear as column headers in the table
+                </div>
+                {fields.map((field, index) => (
+                  <div key={field.key} className="mb-3 flex gap-2 items-start">
+                    <div className="flex-1">
+                      <Form.Item
+                        {...field}
+                        rules={[{ required: true, message: 'Please enter option text' }]}
+                        className="mb-0"
+                      >
+                        <PassageRichTextEditor
+                          placeholder={`Column Option ${index + 1}: e.g., Category A`}
+                          minHeight="80px"
+                        />
+                      </Form.Item>
+                    </div>
+                    <Button
+                      type="text"
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={() => remove(field.name)}
+                    />
+                  </div>
+                ))}
+                <Button
+                  type="dashed"
+                  onClick={() => add()}
+                  block
+                  icon={<PlusOutlined />}
+                >
+                  Add Column Option
                 </Button>
               </>
             )}

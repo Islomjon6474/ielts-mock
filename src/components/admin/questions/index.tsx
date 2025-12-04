@@ -5,6 +5,7 @@ export { SentenceCompletionQuestion } from './SentenceCompletionQuestion'
 export { MatchHeadingQuestion } from './MatchHeadingQuestion'
 export { ShortAnswerQuestion } from './ShortAnswerQuestion'
 export { MultipleCorrectAnswersQuestion } from './MultipleCorrectAnswersQuestion'
+export { MatrixTableQuestion } from './MatrixTableQuestion'
 export { QuestionGroupEditor } from './QuestionGroupEditor'
 
 export const questionTypes = [
@@ -17,4 +18,5 @@ export const questionTypes = [
   { value: 'MULTIPLE_CORRECT_ANSWERS', label: 'Multiple Correct Answers' },
   { value: 'IMAGE_INPUTS', label: 'Image with Inputs (Listening)' },
   { value: 'SENTENCE_COMPLETION', label: 'Sentence Completion (Drag & Drop)' },
+  { value: 'MATRIX_TABLE', label: 'Matrix/Table (Multi-select Grid)' },
 ]

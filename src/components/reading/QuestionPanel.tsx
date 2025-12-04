@@ -11,6 +11,7 @@ import MultipleChoiceSingleQuestion from './questions/MultipleChoiceSingleQuesti
 import MultipleCorrectAnswersQuestion from './questions/MultipleCorrectAnswersQuestion'
 import ImageInputsQuestion from './questions/ImageInputsQuestion'
 import SentenceCompletionQuestion from './questions/SentenceCompletionQuestion'
+import MatrixTableQuestion from './questions/MatrixTableQuestion'
 import { Question } from '@/stores/ReadingStore'
 import AuthenticatedImage from '@/components/common/AuthenticatedImage'
 
@@ -80,6 +81,9 @@ const QuestionPanel = observer(() => {
         return null
       case 'SENTENCE_COMPLETION':
         // Don't render individual sentence completion questions - they're handled by drag and drop
+        return null
+      case 'MATRIX_TABLE':
+        // Don't render individual matrix table questions - they're handled as a group
         return null
       case 'MULTIPLE_CHOICE':
         return (
@@ -271,6 +275,44 @@ const QuestionPanel = observer(() => {
                     })}
                   </div>
                 </div>
+              </div>
+            </div>
+          )
+        }
+
+        // Render MATRIX_TABLE as a special group with table
+        if (group.type === 'MATRIX_TABLE') {
+          const questionGroupData = currentPart.questionGroups?.[groupIndex]
+          // Get matrix options from questionGroups
+          let options = questionGroupData?.matrixOptions || []
+          const parsedOptions = Array.isArray(options) ? options : []
+
+          return (
+            <div key={groupIndex} className="mb-8">
+              {groupIndex > 0 && (
+                <div className="border-t-2 my-6" style={{ borderColor: 'var(--border-color)' }}></div>
+              )}
+
+              <div className="space-y-4">
+                <div className="rounded-lg border-l-4 p-4 mb-4" style={{ backgroundColor: 'var(--card-background)', borderLeftColor: '#8b5cf6' }}>
+                  <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
+                    Questions {group.startNumber}–{group.endNumber}
+                  </h3>
+                  {questionGroupData?.instruction && (
+                    <div
+                      className="text-sm prose prose-sm max-w-none"
+                      style={{ color: 'var(--text-secondary)' }}
+                      dangerouslySetInnerHTML={{ __html: questionGroupData.instruction }}
+                    />
+                  )}
+                </div>
+
+                <MatrixTableQuestion
+                  questions={group.questions.map(q => q.question)}
+                  questionNumbers={group.questions.map(q => q.questionNumber)}
+                  options={parsedOptions}
+                  isPreviewMode={readingStore.isPreviewMode}
+                />
               </div>
             </div>
           )
