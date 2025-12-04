@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import { Question } from '@/stores/ReadingStore'
+import QuestionMarkingButtons from '@/components/admin/QuestionMarkingButtons'
 
 interface MatchHeadingQuestionProps {
   questions: Question[]
@@ -144,6 +145,14 @@ const MatchHeadingQuestion = observer(({
                       <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Drag heading here</span>
                     )}
                   </div>
+                  {readingStore.isPreviewMode && readingStore.mockId && readingStore.sectionId && (
+                    <QuestionMarkingButtons
+                      mockId={readingStore.mockId}
+                      sectionId={readingStore.sectionId}
+                      questionOrd={questionNumber}
+                      isCorrect={isCorrect}
+                    />
+                  )}
                 </div>
               </div>
             )

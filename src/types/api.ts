@@ -81,6 +81,13 @@ export interface MockQuestionAnswerDto {
   answer: string
 }
 
+export interface MockQuestionSubmittedAndCorrectAnswerDto {
+  questionOrd: number
+  answer: string // Student's submitted answer
+  isCorrect: number // 0 = incorrect, 1 = correct, null = not graded
+  correctAnswers: string[] // Array of correct answers
+}
+
 // ============================================================================
 // User Types
 // ============================================================================
@@ -250,6 +257,7 @@ export type ResponseDtoListMockDto = ResponseDto<MockDto[]>
 
 export type ResponseDtoMockQuestionAnswerDto = ResponseDto<MockQuestionAnswerDto>
 export type ResponseDtoListMockQuestionAnswerDto = ResponseDto<MockQuestionAnswerDto[]>
+export type ResponseDtoListMockQuestionSubmittedAndCorrectAnswerDto = ResponseDto<MockQuestionSubmittedAndCorrectAnswerDto[]>
 
 export type ResponseDtoUserDto = ResponseDto<UserDto>
 export type ResponseDtoListUserDto = ResponseDto<UserDto[]>

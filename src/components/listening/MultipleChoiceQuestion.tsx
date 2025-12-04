@@ -5,6 +5,7 @@ import { Checkbox, Card } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import AuthenticatedImage from '@/components/common/AuthenticatedImage'
+import QuestionMarkingButtons from '@/components/admin/QuestionMarkingButtons'
 
 interface MultipleChoiceQuestionProps {
   question: any
@@ -99,6 +100,14 @@ const MultipleChoiceQuestion = observer(({ question, questionNumber, isPreviewMo
             Selected: {displayAnswer.length} / {maxAnswers}
           </div>
         </div>
+        {isPreviewMode && listeningStore.mockId && listeningStore.sectionId && (
+          <QuestionMarkingButtons
+            mockId={listeningStore.mockId}
+            sectionId={listeningStore.sectionId}
+            questionOrd={questionNumber}
+            isCorrect={isCorrect}
+          />
+        )}
       </div>
     </Card>
   )

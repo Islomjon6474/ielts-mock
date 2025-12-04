@@ -4,6 +4,7 @@ import { Input, Card } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import { Question } from '@/stores/ReadingStore'
+import QuestionMarkingButtons from '@/components/admin/QuestionMarkingButtons'
 
 interface ImageInputsQuestionProps {
   question: Question
@@ -42,19 +43,29 @@ const ImageInputsQuestion = observer(({ question, questionNumber }: ImageInputsQ
         <div className="flex-1">
           <p className="mb-3 text-sm font-medium" style={{ color: 'var(--text-primary)' }}><strong>{questionNumber}</strong> {question.text}</p>
 
-          <Input
-            value={readingStore.isPreviewMode ? (submittedAnswer as string || '') : (answer || '')}
-            onChange={(e) => handleChange(e.target.value)}
-            placeholder="Answer"
-            className="max-w-md"
-            disabled={readingStore.isPreviewMode}
-            style={{
-              backgroundColor,
-              borderColor,
-              borderWidth: readingStore.isPreviewMode && submittedAnswer ? '2px' : '1px',
-              color: 'var(--text-primary)'
-            }}
-          />
+          <div className="flex items-center gap-2">
+            <Input
+              value={readingStore.isPreviewMode ? (submittedAnswer as string || '') : (answer || '')}
+              onChange={(e) => handleChange(e.target.value)}
+              placeholder="Answer"
+              className="max-w-md"
+              disabled={readingStore.isPreviewMode}
+              style={{
+                backgroundColor,
+                borderColor,
+                borderWidth: readingStore.isPreviewMode && submittedAnswer ? '2px' : '1px',
+                color: 'var(--text-primary)'
+              }}
+            />
+            {readingStore.isPreviewMode && readingStore.mockId && readingStore.sectionId && (
+              <QuestionMarkingButtons
+                mockId={readingStore.mockId}
+                sectionId={readingStore.sectionId}
+                questionOrd={questionNumber}
+                isCorrect={isCorrect}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>

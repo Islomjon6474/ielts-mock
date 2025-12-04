@@ -5,6 +5,7 @@ import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import { Question } from '@/stores/ReadingStore'
 import AuthenticatedImage from '@/components/common/AuthenticatedImage'
+import QuestionMarkingButtons from '@/components/admin/QuestionMarkingButtons'
 
 interface SentenceCompletionQuestionProps {
   questions: Question[]
@@ -216,6 +217,14 @@ const SentenceCompletionQuestion = observer(({
                   )}
                 </div>
                 {afterText && <span dangerouslySetInnerHTML={{ __html: processArrows(afterText) }} style={{ display: 'inline' }} />}
+                {readingStore.isPreviewMode && readingStore.mockId && readingStore.sectionId && (
+                  <QuestionMarkingButtons
+                    mockId={readingStore.mockId}
+                    sectionId={readingStore.sectionId}
+                    questionOrd={questionNumber}
+                    isCorrect={isCorrect}
+                  />
+                )}
               </div>
             )
           })}

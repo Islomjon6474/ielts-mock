@@ -61,16 +61,17 @@ const SectionPreviewPage = observer(() => {
       }
       console.log('mockId', mockId)
 
-      // Fetch user answers if mockId is provided
+      // Fetch user answers with correctness info if mockId is provided (for admin view)
       // Use a local variable instead of state to avoid async state update issues
       let submittedAnswers: any[] = []
       if (mockId) {
         try {
-          console.log('🔍 DEBUG: Fetching answers with mockId:', mockId, 'sectionId:', section.id)
-          const answersResponse = await mockSubmissionApi.getSubmittedAnswers(mockId, section.id)
-          console.log('🔍 DEBUG: API Response:', answersResponse)
+          console.log('🔍 DEBUG: Fetching answers with correctness for mockId:', mockId, 'sectionId:', section.id)
+          // Use the new API that includes correctness information
+          const answersResponse = await mockSubmissionApi.getSubmittedAndCorrectAnswers(mockId, section.id)
+          console.log('🔍 DEBUG: API Response with correctness:', answersResponse)
           submittedAnswers = answersResponse?.data || []
-          console.log('🔍 DEBUG: Extracted answers:', submittedAnswers)
+          console.log('🔍 DEBUG: Extracted answers with correctness:', submittedAnswers)
         } catch (error) {
           console.error('🔍 DEBUG: Error fetching user answers:', error)
           message.warning('Could not load user answers')
@@ -236,15 +237,21 @@ const SectionPreviewPage = observer(() => {
         if (listeningParts.length > 0) {
           listeningStore.setParts(listeningParts)
           listeningStore.setPreviewMode(true) // Enable preview mode
+          // Set mockId and sectionId for admin marking functionality
+          if (mockId) {
+            listeningStore.setMockId(mockId)
+            listeningStore.setSectionId(section.id)
+          }
 
           console.log('🔍 DEBUG: All listening parts loaded:', listeningParts.length)
           console.log('🔍 DEBUG: All listening questions:', listeningStore.allQuestions.map(q => ({ id: q.id, type: q.type, correctAnswer: q.correctAnswer })))
           console.log('🔍 DEBUG: Listening user answers from API:', submittedAnswers)
 
-          // Load submitted answers if available
+          // Load submitted answers with correctness if available
           if (submittedAnswers && submittedAnswers.length > 0) {
-            listeningStore.loadSubmittedAnswers(submittedAnswers)
-            console.log('🔍 DEBUG: Loaded submitted answers into listening store')
+            // Use new method that loads pre-calculated correctness from API
+            listeningStore.loadSubmittedAnswersWithCorrectness(submittedAnswers)
+            console.log('🔍 DEBUG: Loaded submitted answers with correctness into listening store')
             console.log('🔍 DEBUG: Listening submitted answers map:', Array.from(listeningStore.submittedAnswers.entries()))
             console.log('🔍 DEBUG: Listening answer correctness map:', Array.from(listeningStore.answerCorrectness.entries()))
           } else {
@@ -355,16 +362,22 @@ const SectionPreviewPage = observer(() => {
         if (allParts.length > 0) {
           readingStore.setParts(allParts)
           readingStore.setPreviewMode(true) // Enable preview mode to disable inputs
+          // Set mockId and sectionId for admin marking functionality
+          if (mockId) {
+            readingStore.setMockId(mockId)
+            readingStore.setSectionId(section.id)
+          }
 
           console.log('🔍 DEBUG: All parts loaded:', allParts.length)
           console.log('🔍 DEBUG: All questions:', readingStore.allQuestions.map(q => ({ id: q.id, type: q.type, correctAnswer: q.correctAnswer })))
           console.log('🔍 DEBUG: User answers from API:', submittedAnswers)
           console.log('🔍 DEBUG: Preview mode:', readingStore.isPreviewMode)
 
-          // Load submitted answers if available
+          // Load submitted answers with correctness if available
           if (submittedAnswers && submittedAnswers.length > 0) {
-            readingStore.loadSubmittedAnswers(submittedAnswers)
-            console.log('🔍 DEBUG: Loaded submitted answers into store')
+            // Use new method that loads pre-calculated correctness from API
+            readingStore.loadSubmittedAnswersWithCorrectness(submittedAnswers)
+            console.log('🔍 DEBUG: Loaded submitted answers with correctness into store')
             console.log('🔍 DEBUG: Submitted answers map:', Array.from(readingStore.submittedAnswers.entries()))
             console.log('🔍 DEBUG: Answer correctness map:', Array.from(readingStore.answerCorrectness.entries()))
           } else {

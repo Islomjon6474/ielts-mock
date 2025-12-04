@@ -4,6 +4,7 @@ import { Input } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import AuthenticatedImage from '@/components/common/AuthenticatedImage'
+import QuestionMarkingButtons from '@/components/admin/QuestionMarkingButtons'
 
 interface MultipleCorrectAnswersQuestionProps {
   question: any
@@ -85,6 +86,14 @@ const MultipleCorrectAnswersQuestion = observer(({
               }}
               disabled={true}
             />
+            {listeningStore.mockId && listeningStore.sectionId && (
+              <QuestionMarkingButtons
+                mockId={listeningStore.mockId}
+                sectionId={listeningStore.sectionId}
+                questionOrd={questionNumber}
+                isCorrect={isCorrect}
+              />
+            )}
           </div>
         </div>
       </div>

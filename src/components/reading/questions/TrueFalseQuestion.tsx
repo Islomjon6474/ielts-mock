@@ -6,6 +6,7 @@ import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import { Question } from '@/stores/ReadingStore'
 import AuthenticatedImage from '@/components/common/AuthenticatedImage'
+import QuestionMarkingButtons from '@/components/admin/QuestionMarkingButtons'
 
 interface TrueFalseQuestionProps {
   question: Question
@@ -96,6 +97,14 @@ const TrueFalseQuestion = observer(({ question, questionNumber, type = 'TRUE_FAL
             </Space>
           </Radio.Group>
         </div>
+        {readingStore.isPreviewMode && readingStore.mockId && readingStore.sectionId && (
+          <QuestionMarkingButtons
+            mockId={readingStore.mockId}
+            sectionId={readingStore.sectionId}
+            questionOrd={questionNumber}
+            isCorrect={isCorrect}
+          />
+        )}
       </div>
     </Card>
   )

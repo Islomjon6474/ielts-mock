@@ -6,6 +6,7 @@ import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import { Question } from '@/stores/ReadingStore'
 import AuthenticatedImage from '@/components/common/AuthenticatedImage'
+import QuestionMarkingButtons from '@/components/admin/QuestionMarkingButtons'
 
 interface FillInBlankQuestionProps {
   question: Question
@@ -108,20 +109,29 @@ const FillInBlankQuestion = observer(({ question, questionNumber }: FillInBlankQ
           }
 
           return (
-            <Input
-              key={index}
-              className="inline-block mx-2 text-center font-bold"
-              style={{
-                width: '120px',
-                backgroundColor,
-                borderColor,
-                borderWidth: '2px',
-                color: 'var(--text-primary)'
-              }}
-              value={submittedAnswer as string || ''}
-              placeholder={blankNumber.toString()}
-              disabled={true}
-            />
+            <span key={index} className="inline-flex items-center">
+              <Input
+                className="inline-block mx-2 text-center font-bold"
+                style={{
+                  width: '120px',
+                  backgroundColor,
+                  borderColor,
+                  borderWidth: '2px',
+                  color: 'var(--text-primary)'
+                }}
+                value={submittedAnswer as string || ''}
+                placeholder={blankNumber.toString()}
+                disabled={true}
+              />
+              {readingStore.mockId && readingStore.sectionId && (
+                <QuestionMarkingButtons
+                  mockId={readingStore.mockId}
+                  sectionId={readingStore.sectionId}
+                  questionOrd={blankNumber}
+                  isCorrect={isCorrect}
+                />
+              )}
+            </span>
           )
         }
 
@@ -164,6 +174,10 @@ const FillInBlankQuestion = observer(({ question, questionNumber }: FillInBlankQ
               inputPlaceholders.forEach((placeholder) => {
                 const number = parseInt(placeholder.getAttribute('data-input-placeholder') || '0')
                 if (number > 0) {
+                  // Create wrapper span for input and buttons
+                  const wrapper = document.createElement('span')
+                  wrapper.className = 'inline-flex items-center'
+
                   const input = document.createElement('input')
                   input.type = 'text'
                   input.className = 'ant-input inline-block mx-2 text-center font-bold'
@@ -193,6 +207,15 @@ const FillInBlankQuestion = observer(({ question, questionNumber }: FillInBlankQ
                       input.style.backgroundColor = 'var(--input-background)'
                       input.style.borderColor = 'var(--input-border)'
                     }
+
+                    // Add marking buttons if mockId and sectionId available
+                    wrapper.appendChild(input)
+                    if (readingStore.mockId && readingStore.sectionId) {
+                      const buttonContainer = document.createElement('span')
+                      buttonContainer.className = 'inline-flex ml-2'
+                      buttonContainer.setAttribute('data-question-buttons', number.toString())
+                      wrapper.appendChild(buttonContainer)
+                    }
                   } else {
                     // Normal mode - editable
                     const blankAnswer = readingStore.getAnswer(number) as string | undefined
@@ -203,10 +226,11 @@ const FillInBlankQuestion = observer(({ question, questionNumber }: FillInBlankQ
                     input.addEventListener('change', (e) => {
                       readingStore.setAnswer(number, (e.target as HTMLInputElement).value)
                     })
+                    wrapper.appendChild(input)
                   }
 
                   input.style.color = 'var(--text-primary)'
-                  placeholder.replaceWith(input)
+                  placeholder.replaceWith(wrapper)
                 }
               })
             }

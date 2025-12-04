@@ -3,6 +3,7 @@
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import { ListeningQuestion } from '@/stores/ListeningStore'
+import QuestionMarkingButtons from '@/components/admin/QuestionMarkingButtons'
 
 interface MatrixTableQuestionProps {
   questions: ListeningQuestion[]
@@ -116,6 +117,19 @@ const MatrixTableQuestion = observer(({
                 />
               </th>
             ))}
+            {listeningStore.isPreviewMode && listeningStore.mockId && listeningStore.sectionId && (
+              <th
+                className="py-2 px-3 text-center font-bold text-sm"
+                style={{
+                  border: '2px solid #d1d5db',
+                  backgroundColor: '#a78bfa',
+                  color: '#ffffff',
+                  minWidth: '120px'
+                }}
+              >
+                Admin
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -242,6 +256,23 @@ const MatrixTableQuestion = observer(({
                     </td>
                   )
                 })}
+                {listeningStore.isPreviewMode && listeningStore.mockId && listeningStore.sectionId && (
+                  <td
+                    style={{
+                      border: '2px solid #d1d5db',
+                      backgroundColor: 'var(--card-background)',
+                      padding: '8px',
+                      textAlign: 'center'
+                    }}
+                  >
+                    <QuestionMarkingButtons
+                      mockId={listeningStore.mockId}
+                      sectionId={listeningStore.sectionId}
+                      questionOrd={questionNumber}
+                      isCorrect={isCorrect}
+                    />
+                  </td>
+                )}
               </tr>
             )
           })}

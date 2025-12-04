@@ -236,6 +236,35 @@ export class ListeningStore {
     })
   }
 
+  // Load submitted answers with pre-calculated correctness from API (for admin view)
+  loadSubmittedAnswersWithCorrectness(submittedAnswers: Array<{
+    questionOrd: number
+    answer: string
+    isCorrect: number | null
+    correctAnswers: string[]
+  }>) {
+    this.submittedAnswers.clear()
+    this.answerCorrectness.clear()
+
+    submittedAnswers.forEach((submitted) => {
+      const questionId = submitted.questionOrd
+      const userAnswer = submitted.answer
+
+      // Store the submitted answer
+      this.submittedAnswers.set(questionId, userAnswer)
+
+      // Store correctness from API (isCorrect: 1 = correct, 0 = incorrect, null = not graded)
+      if (submitted.isCorrect !== null && submitted.isCorrect !== undefined) {
+        this.answerCorrectness.set(questionId, submitted.isCorrect === 1)
+      }
+    })
+  }
+
+  // Manually mark an answer as correct or incorrect (for admin)
+  setAnswerCorrectness(questionId: number, isCorrect: boolean) {
+    this.answerCorrectness.set(questionId, isCorrect)
+  }
+
   // Check if a user answer matches the correct answer
   private checkAnswerCorrectness(
     userAnswer: string | string[],

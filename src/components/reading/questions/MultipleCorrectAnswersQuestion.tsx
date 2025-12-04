@@ -5,6 +5,7 @@ import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import { Question } from '@/stores/ReadingStore'
 import AuthenticatedImage from '@/components/common/AuthenticatedImage'
+import QuestionMarkingButtons from '@/components/admin/QuestionMarkingButtons'
 
 interface MultipleCorrectAnswersQuestionProps {
   question: Question
@@ -88,6 +89,14 @@ const MultipleCorrectAnswersQuestion = observer(({
               color: 'var(--text-primary)'
             }}
           />
+          {readingStore.isPreviewMode && readingStore.mockId && readingStore.sectionId && (
+            <QuestionMarkingButtons
+              mockId={readingStore.mockId}
+              sectionId={readingStore.sectionId}
+              questionOrd={questionNumber}
+              isCorrect={isCorrect}
+            />
+          )}
         </div>
       </div>
     </Card>

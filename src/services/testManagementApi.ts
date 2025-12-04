@@ -13,6 +13,7 @@ import type {
   ResponseDtoListListeningAudioDto,
   ResponseDtoListMockDto,
   ResponseDtoListMockQuestionAnswerDto,
+  ResponseDtoListMockQuestionSubmittedAndCorrectAnswerDto,
   PaginationParams,
   GetSubmittedAnswersParams,
   GetAllSectionsParams,
@@ -336,6 +337,24 @@ export const mockSubmissionApi = {
   ): Promise<ResponseDtoListMockQuestionAnswerDto> => {
     const response = await api.get<ResponseDtoListMockQuestionAnswerDto>(
       '/mock-submission/get-all-question-submitted-answers',
+      {
+        params: { mockId, sectionId } as GetSubmittedAnswersParams,
+      }
+    )
+    return response.data
+  },
+
+  /**
+   * Get submitted answers with correctness information and correct answers (for admin preview)
+   * @param mockId - ID of the mock test
+   * @param sectionId - ID of the section
+   */
+  getSubmittedAndCorrectAnswers: async (
+    mockId: string,
+    sectionId: string
+  ): Promise<ResponseDtoListMockQuestionSubmittedAndCorrectAnswerDto> => {
+    const response = await api.get<ResponseDtoListMockQuestionSubmittedAndCorrectAnswerDto>(
+      '/mock-submission/get-all-question-submitted-and-correct-answers',
       {
         params: { mockId, sectionId } as GetSubmittedAnswersParams,
       }

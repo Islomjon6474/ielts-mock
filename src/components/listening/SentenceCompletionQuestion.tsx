@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import AuthenticatedImage from '@/components/common/AuthenticatedImage'
+import QuestionMarkingButtons from '@/components/admin/QuestionMarkingButtons'
 
 interface SentenceCompletionQuestionProps {
   questions: any[]
@@ -205,6 +206,14 @@ const SentenceCompletionQuestion = observer(({
                       )}
                     </div>
                     {afterText && <span dangerouslySetInnerHTML={{ __html: processArrows(afterText) }} style={{ display: 'inline' }} />}
+                    {listeningStore.mockId && listeningStore.sectionId && (
+                      <QuestionMarkingButtons
+                        mockId={listeningStore.mockId}
+                        sectionId={listeningStore.sectionId}
+                        questionOrd={questionNumber}
+                        isCorrect={isCorrect}
+                      />
+                    )}
                   </div>
                 )
               }

@@ -51,6 +51,18 @@ export interface MockResultDto {
   totalScore?: number
 }
 
+export interface SetAnswerAsCorrectDto {
+  mockId: string
+  sectionId: string
+  questionOrd: number
+  isCorrect: number // 1 for correct, 0 for incorrect
+}
+
+export interface CalcScoreDto {
+  mockId: string
+  sectionId: string
+}
+
 export interface ApiResponse<T> {
   success: boolean
   data?: T
@@ -148,6 +160,48 @@ export const mockResultApi = {
       return response.data
     } catch (error: any) {
       console.error('❌ Error saving writing grade:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Mark an answer as correct or incorrect manually
+   * POST /mock-result/set-answer-as-correct
+   * Body: { mockId, sectionId, questionOrd, isCorrect }
+   */
+  setAnswerAsCorrect: async (data: SetAnswerAsCorrectDto): Promise<ApiResponse<any>> => {
+    try {
+      console.log('✏️ Marking answer as correct:', data)
+      const response = await authApi.post('/mock-result/set-answer-as-correct', data)
+      console.log('✅ Set answer as correct response:', response.data)
+
+      return {
+        success: true,
+        data: response.data
+      }
+    } catch (error: any) {
+      console.error('❌ Error marking answer as correct:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Recalculate scores for a section
+   * POST /mock-result/calc-score
+   * Body: { mockId, sectionId }
+   */
+  calcScore: async (data: CalcScoreDto): Promise<ApiResponse<any>> => {
+    try {
+      console.log('🔢 Recalculating score:', data)
+      const response = await authApi.post('/mock-result/calc-score', data)
+      console.log('✅ Recalculate score response:', response.data)
+
+      return {
+        success: true,
+        data: response.data
+      }
+    } catch (error: any) {
+      console.error('❌ Error recalculating score:', error)
       throw error
     }
   },

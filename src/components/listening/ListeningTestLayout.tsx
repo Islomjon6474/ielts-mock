@@ -1,11 +1,12 @@
 'use client'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { Layout, Input } from 'antd'
 import { observer } from 'mobx-react-lite'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useStore } from '@/stores/StoreContext'
 import Header from '@/components/common/Header'
 import Timer from '@/components/common/Timer'
+import AdminGradingPanel from '@/components/admin/AdminGradingPanel'
 import AuthenticatedImage from '@/components/common/AuthenticatedImage'
 import AuthenticatedAudio from '@/components/common/AuthenticatedAudio'
 import { ListeningQuestion } from '@/stores/ListeningStore'
@@ -45,6 +46,7 @@ interface QuestionGroup {
 const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: ListeningTestLayoutProps) => {
   const { listeningStore } = useStore()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [showModal, setShowModal] = useState(true)
   const [showSubmitModal, setShowSubmitModal] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -53,6 +55,38 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
   const [currentAudioSrc, setCurrentAudioSrc] = useState<string | undefined>(undefined)
 
   const currentPart = listeningStore.currentPartData
+
+  // Get admin grading info from URL params
+  const studentName = searchParams?.get('studentName') || undefined
+  const testName = searchParams?.get('testName') || undefined
+  const showAdminPanel = isPreviewMode && listeningStore.mockId && listeningStore.sectionId
+
+  // Calculate statistics for admin panel
+  const gradingStats = useMemo(() => {
+    let correct = 0
+    let incorrect = 0
+    let notAnswered = 0
+
+    listeningStore.allQuestions.forEach(q => {
+      const submitted = listeningStore.getSubmittedAnswer(q.id)
+      const isCorrect = listeningStore.isAnswerCorrect(q.id)
+
+      if (!submitted) {
+        notAnswered++
+      } else if (isCorrect === true) {
+        correct++
+      } else if (isCorrect === false) {
+        incorrect++
+      }
+    })
+
+    return {
+      total: listeningStore.allQuestions.length,
+      correct,
+      incorrect,
+      notAnswered
+    }
+  }, [listeningStore.submittedAnswers, listeningStore.answerCorrectness, listeningStore.allQuestions])
 
   // Use audio URLs from store (independent from parts)
   useEffect(() => {
@@ -343,7 +377,27 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
           <Timer timeRemaining={listeningStore.timeRemaining} isTimeUp={listeningStore.isTimeUp} />
         )}
       </Header>
-      
+
+      {/* Admin Grading Panel */}
+      {showAdminPanel && (
+        <div className="px-4 pt-4">
+          <AdminGradingPanel
+            mockId={listeningStore.mockId!}
+            sectionId={listeningStore.sectionId!}
+            totalQuestions={gradingStats.total}
+            correctAnswers={gradingStats.correct}
+            incorrectAnswers={gradingStats.incorrect}
+            notAnswered={gradingStats.notAnswered}
+            studentName={studentName}
+            testName={testName}
+            onRecalculate={() => {
+              // Optionally reload the page or refresh data
+              window.location.reload()
+            }}
+          />
+        </div>
+      )}
+
       {/* Part Title and Status */}
       <div style={{ backgroundColor: 'var(--card-background)', borderBottomColor: 'var(--border-color)' }} className="px-4 py-1.5 border-b">
         <h2 style={{ color: 'var(--text-primary)' }} className="font-semibold text-sm inline-block mr-4">{currentPart.title}</h2>

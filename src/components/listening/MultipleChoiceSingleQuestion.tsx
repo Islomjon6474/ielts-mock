@@ -5,6 +5,7 @@ import { Radio, Card } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import AuthenticatedImage from '@/components/common/AuthenticatedImage'
+import QuestionMarkingButtons from '@/components/admin/QuestionMarkingButtons'
 
 interface MultipleChoiceSingleQuestionProps {
   question: any
@@ -89,6 +90,14 @@ const MultipleChoiceSingleQuestion = observer(({ question, questionNumber, isPre
             </div>
           </Radio.Group>
         </div>
+        {isPreviewMode && listeningStore.mockId && listeningStore.sectionId && (
+          <QuestionMarkingButtons
+            mockId={listeningStore.mockId}
+            sectionId={listeningStore.sectionId}
+            questionOrd={questionNumber}
+            isCorrect={isCorrect}
+          />
+        )}
       </div>
     </Card>
   )

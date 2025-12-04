@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Layout, Button } from 'antd'
 import { LeftOutlined, RightOutlined, CheckOutlined } from '@ant-design/icons'
 import { observer } from 'mobx-react-lite'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useStore } from '@/stores/StoreContext'
 import Header from '@/components/common/Header'
 import Timer from '@/components/common/Timer'
@@ -12,6 +12,7 @@ import ReadingPassage from './ReadingPassage'
 import QuestionPanel from './QuestionPanel'
 import BottomNavigation from './BottomNavigation'
 import SubmitModal from '@/components/common/SubmitModal'
+import AdminGradingPanel from '@/components/admin/AdminGradingPanel'
 import { exitFullscreen } from '@/utils/fullscreen'
 
 const { Content } = Layout
@@ -24,10 +25,43 @@ interface ReadingTestLayoutProps {
 const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: ReadingTestLayoutProps) => {
   const { readingStore } = useStore()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [leftWidth, setLeftWidth] = useState(50)
   const [isDragging, setIsDragging] = useState(false)
   const [showSubmitModal, setShowSubmitModal] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Get admin grading info from URL params
+  const studentName = searchParams?.get('studentName') || undefined
+  const testName = searchParams?.get('testName') || undefined
+  const showAdminPanel = isPreviewMode && readingStore.mockId && readingStore.sectionId
+
+  // Calculate statistics for admin panel
+  const gradingStats = useMemo(() => {
+    let correct = 0
+    let incorrect = 0
+    let notAnswered = 0
+
+    readingStore.allQuestions.forEach(q => {
+      const submitted = readingStore.getSubmittedAnswer(q.id)
+      const isCorrect = readingStore.isAnswerCorrect(q.id)
+
+      if (!submitted) {
+        notAnswered++
+      } else if (isCorrect === true) {
+        correct++
+      } else if (isCorrect === false) {
+        incorrect++
+      }
+    })
+
+    return {
+      total: readingStore.allQuestions.length,
+      correct,
+      incorrect,
+      notAnswered
+    }
+  }, [readingStore.submittedAnswers, readingStore.answerCorrectness, readingStore.allQuestions])
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -175,6 +209,26 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
           <Timer timeRemaining={readingStore.timeRemaining} isTimeUp={readingStore.isTimeUp} />
         )}
       </Header>
+
+      {/* Admin Grading Panel */}
+      {showAdminPanel && (
+        <div className="px-4 pt-4">
+          <AdminGradingPanel
+            mockId={readingStore.mockId!}
+            sectionId={readingStore.sectionId!}
+            totalQuestions={gradingStats.total}
+            correctAnswers={gradingStats.correct}
+            incorrectAnswers={gradingStats.incorrect}
+            notAnswered={gradingStats.notAnswered}
+            studentName={studentName}
+            testName={testName}
+            onRecalculate={() => {
+              // Optionally reload the page or refresh data
+              window.location.reload()
+            }}
+          />
+        </div>
+      )}
 
       {/* Part Title - Compact */}
       <div className="px-4 py-1.5 border-b" style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }}>
