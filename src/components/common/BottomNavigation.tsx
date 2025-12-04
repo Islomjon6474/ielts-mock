@@ -51,7 +51,44 @@ const BottomNavigation = observer(({
   }
 
   return (
-    <footer className="border-t" style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }}>
+    <footer className="relative border-t" style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }}>
+      {/* Navigation Arrows - Positioned Above */}
+      <div className="absolute right-6 flex items-center gap-1" style={{ bottom: '100%', marginBottom: '4px' }}>
+        {/* Previous Button */}
+        <Button
+          icon={<LeftOutlined style={{ fontSize: '12px' }} />}
+          onClick={onPrevious}
+          disabled={!hasPrevious}
+          size="small"
+          className="flex items-center justify-center"
+          style={{
+            width: '32px',
+            height: '32px',
+            padding: '4px',
+            backgroundColor: hasPrevious ? 'var(--primary)' : 'var(--background)',
+            borderColor: hasPrevious ? 'var(--primary)' : 'var(--border-color)',
+            color: hasPrevious ? (getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() === '#ffff00' ? '#000000' : '#ffffff') : 'var(--text-secondary)'
+          }}
+        />
+
+        {/* Next Button */}
+        <Button
+          icon={<RightOutlined style={{ fontSize: '12px' }} />}
+          onClick={onNext}
+          disabled={!hasNext}
+          size="small"
+          className="flex items-center justify-center"
+          style={{
+            width: '32px',
+            height: '32px',
+            padding: '4px',
+            backgroundColor: hasNext ? 'var(--primary)' : 'var(--background)',
+            borderColor: hasNext ? 'var(--primary)' : 'var(--border-color)',
+            color: hasNext ? (getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() === '#ffff00' ? '#000000' : '#ffffff') : 'var(--text-secondary)'
+          }}
+        />
+      </div>
+
       <div className="flex items-center justify-between px-6 py-3">
         {/* Part Navigation with Question Numbers */}
         <div className="flex items-center gap-3 flex-1">
@@ -80,7 +117,7 @@ const BottomNavigation = observer(({
                 >
                   {part.title}
                 </span>
-                
+
                 {/* Show question numbers only for current part */}
                 {isCurrentPart && (
                   <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
@@ -101,7 +138,7 @@ const BottomNavigation = observer(({
                           <div className={`absolute top-0 left-0 right-0 h-1 ${
                             isAnswered ? 'bg-green-500' : 'bg-gray-300'
                           }`} />
-                          
+
                           {/* Question number */}
                           <div
                             className="min-w-[32px] w-[32px] h-[32px] flex items-center justify-center text-sm border transition-colors"
@@ -120,7 +157,7 @@ const BottomNavigation = observer(({
                     })}
                   </div>
                 )}
-                
+
                 {/* Show count and range for non-current parts */}
                 {!isCurrentPart && (
                   <div className="flex flex-col items-center">
@@ -139,55 +176,17 @@ const BottomNavigation = observer(({
           )}
         </div>
 
-        {/* Navigation Arrows and Submit Button */}
-        <div className="flex flex-col gap-1 flex-shrink-0" style={{ width: '90px' }}>
-          {/* Previous and Next Buttons Row */}
-          <div className="flex items-center gap-1" style={{ width: '100%' }}>
-            {/* Previous Button */}
-            <Button
-              icon={<LeftOutlined style={{ fontSize: '12px' }} />}
-              onClick={onPrevious}
-              disabled={!hasPrevious}
-              size="small"
-              className="flex-1 flex items-center justify-center"
-              style={{
-                height: '32px',
-                padding: '4px 8px',
-                backgroundColor: hasPrevious ? 'var(--primary)' : 'var(--background)',
-                borderColor: hasPrevious ? 'var(--primary)' : 'var(--border-color)',
-                color: hasPrevious ? (getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() === '#ffff00' ? '#000000' : '#ffffff') : 'var(--text-secondary)'
-              }}
-            />
-
-            {/* Next Button */}
-            <Button
-              icon={<RightOutlined style={{ fontSize: '12px' }} />}
-              onClick={onNext}
-              disabled={!hasNext}
-              size="small"
-              className="flex-1 flex items-center justify-center"
-              style={{
-                height: '32px',
-                padding: '4px 8px',
-                backgroundColor: hasNext ? 'var(--primary)' : 'var(--background)',
-                borderColor: hasNext ? 'var(--primary)' : 'var(--border-color)',
-                color: hasNext ? (getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() === '#ffff00' ? '#000000' : '#ffffff') : 'var(--text-secondary)'
-              }}
-            />
-          </div>
-
-          {/* Submit Button Row */}
+        {/* Submit Button Only */}
+        <div className="flex-shrink-0">
           <Button
             type="primary"
-            icon={<CheckOutlined style={{ fontSize: '12px' }} />}
+            icon={<CheckOutlined style={{ fontSize: '14px' }} />}
             size="small"
             className="bg-green-600 hover:bg-green-700"
             onClick={onSubmit}
             disabled={isPreviewMode}
-            style={{ width: '100%', height: '32px', padding: '4px 8px', fontSize: '13px' }}
-          >
-            Submit
-          </Button>
+            style={{ width: '36px', height: '36px', padding: '8px' }}
+          />
         </div>
       </div>
     </footer>

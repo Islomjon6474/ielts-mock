@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { Layout, Input } from 'antd'
+import { Layout, Input, Button } from 'antd'
+import { ReloadOutlined } from '@ant-design/icons'
 import { observer } from 'mobx-react-lite'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useStore } from '@/stores/StoreContext'
@@ -378,36 +379,44 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
         )}
       </Header>
 
-      {/* Admin Grading Panel */}
-      {showAdminPanel && (
-        <div className="px-4 pt-4">
-          <AdminGradingPanel
-            mockId={listeningStore.mockId!}
-            sectionId={listeningStore.sectionId!}
-            totalQuestions={gradingStats.total}
-            correctAnswers={gradingStats.correct}
-            incorrectAnswers={gradingStats.incorrect}
-            notAnswered={gradingStats.notAnswered}
-            studentName={studentName}
-            testName={testName}
-            onRecalculate={() => {
-              // Optionally reload the page or refresh data
-              window.location.reload()
-            }}
-          />
-        </div>
-      )}
-
-      {/* Part Title and Status */}
+      {/* Part Title and Status with Admin Grading Panel - Compact */}
       <div style={{ backgroundColor: 'var(--card-background)', borderBottomColor: 'var(--border-color)' }} className="px-4 py-1.5 border-b">
-        <h2 style={{ color: 'var(--text-primary)' }} className="font-semibold text-sm inline-block mr-4">{currentPart.title}</h2>
-        <span style={{ color: 'var(--text-secondary)' }} className="text-xs" dangerouslySetInnerHTML={{ __html: currentPart.instruction || '' }} />
-        {listeningStore.isPlaying && (
-          <div className="flex items-center gap-1.5 inline-flex ml-4">
-            <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
-            <span style={{ color: 'var(--text-primary)' }} className="text-xs">Audio is playing</span>
+        <div className="flex items-center justify-between gap-4">
+          {/* Part Title and Status */}
+          <div className="flex-1 flex items-center gap-4">
+            <h2 style={{ color: 'var(--text-primary)' }} className="font-semibold text-sm inline-block mr-4">{currentPart.title}</h2>
+            <span style={{ color: 'var(--text-secondary)' }} className="text-xs" dangerouslySetInnerHTML={{ __html: currentPart.instruction || '' }} />
+            {listeningStore.isPlaying && (
+              <div className="flex items-center gap-1.5 inline-flex">
+                <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
+                <span style={{ color: 'var(--text-primary)' }} className="text-xs">Audio is playing</span>
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Admin Grading Panel - Inline Compact */}
+          {showAdminPanel && (
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-xs">
+                <span style={{ color: 'var(--text-secondary)' }}>Total: <strong style={{ color: 'var(--text-primary)' }}>{gradingStats.total}</strong></span>
+                <span className="text-green-600">✓ {gradingStats.correct}</span>
+                <span className="text-red-500">✗ {gradingStats.incorrect}</span>
+                {gradingStats.notAnswered > 0 && (
+                  <span style={{ color: '#8c8c8c' }}>− {gradingStats.notAnswered}</span>
+                )}
+              </div>
+              <Button
+                type="primary"
+                size="small"
+                icon={<ReloadOutlined />}
+                onClick={() => window.location.reload()}
+                style={{ fontSize: '12px', padding: '0 8px', height: '24px' }}
+              >
+                Recalc
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Main Content */}

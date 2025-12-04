@@ -236,6 +236,7 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
               </div>
               <Button
                 type="primary"
+
                 size="small"
                 icon={<ReloadOutlined />}
                 onClick={() => window.location.reload()}
