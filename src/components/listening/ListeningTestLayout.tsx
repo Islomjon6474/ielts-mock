@@ -45,7 +45,7 @@ interface QuestionGroup {
 }
 
 const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: ListeningTestLayoutProps) => {
-  const { listeningStore } = useStore()
+  const { listeningStore, adminStore } = useStore()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [showModal, setShowModal] = useState(true)
@@ -57,9 +57,10 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
 
   const currentPart = listeningStore.currentPartData
 
-  // Get admin grading info from URL params
-  const studentName = searchParams?.get('studentName') || undefined
-  const testName = searchParams?.get('testName') || undefined
+  // Get admin grading info from adminStore (optimized - no need to fetch all tests)
+  const studentNameData = listeningStore.mockId ? adminStore.getStudentName(listeningStore.mockId) : null
+  const studentName = studentNameData ? `${studentNameData.firstName} ${studentNameData.lastName}`.trim() : undefined
+  const testName = listeningStore.mockId ? adminStore.getTestName(listeningStore.mockId) : undefined
   const showAdminPanel = isPreviewMode && listeningStore.mockId && listeningStore.sectionId
 
   // Calculate statistics for admin panel

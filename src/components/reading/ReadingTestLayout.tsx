@@ -23,7 +23,7 @@ interface ReadingTestLayoutProps {
 }
 
 const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: ReadingTestLayoutProps) => {
-  const { readingStore } = useStore()
+  const { readingStore, adminStore } = useStore()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [leftWidth, setLeftWidth] = useState(50)
@@ -31,9 +31,10 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
   const [showSubmitModal, setShowSubmitModal] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Get admin grading info from URL params
-  const studentName = searchParams?.get('studentName') || undefined
-  const testName = searchParams?.get('testName') || undefined
+  // Get admin grading info from adminStore (optimized - no need to fetch all tests)
+  const studentNameData = readingStore.mockId ? adminStore.getStudentName(readingStore.mockId) : null
+  const studentName = studentNameData ? `${studentNameData.firstName} ${studentNameData.lastName}`.trim() : undefined
+  const testName = readingStore.mockId ? adminStore.getTestName(readingStore.mockId) : undefined
   const showAdminPanel = isPreviewMode && readingStore.mockId && readingStore.sectionId
 
   // Calculate statistics for admin panel

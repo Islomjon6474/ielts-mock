@@ -96,15 +96,15 @@ const SentenceCompletionQuestion = observer(({
   // Helper to render HTML content with styled arrows while preserving structure
   const renderHtmlWithStyledArrows = (html: string) => {
     if (!html) return null
-    
+
     // Keep HTML structure intact, just style the arrows
     let processedHtml = html
       // Style arrows to be larger and bold
-      .replace(/↓/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↓</span>')
-      .replace(/↑/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↑</span>')
-      .replace(/←/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">←</span>')
-      .replace(/→/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">→</span>')
-    
+      .replace(/↓/g, '<span style="font-size: 2rem; font-weight: bold; color: var(--text-primary); display: inline-block; margin: 0 4px;">↓</span>')
+      .replace(/↑/g, '<span style="font-size: 2rem; font-weight: bold; color: var(--text-primary); display: inline-block; margin: 0 4px;">↑</span>')
+      .replace(/←/g, '<span style="font-size: 2rem; font-weight: bold; color: var(--text-primary); display: inline-block; margin: 0 4px;">←</span>')
+      .replace(/→/g, '<span style="font-size: 2rem; font-weight: bold; color: var(--text-primary); display: inline-block; margin: 0 4px;">→</span>')
+
     return <div dangerouslySetInnerHTML={{ __html: processedHtml }} className="prose prose-sm max-w-none" />
   }
 
@@ -144,11 +144,29 @@ const SentenceCompletionQuestion = observer(({
             const placeholderMatch = textContent.match(/\[(\d+)\]/)
             const placeholderNum = placeholderMatch ? placeholderMatch[1] : questionNumber.toString()
 
-            // Split the text into parts before and after placeholder, REMOVING the placeholder
-            const placeholderPattern = /\[(\d+)\]/
-            const match = textContent.match(placeholderPattern)
-            const beforeText = match ? textContent.substring(0, match.index) : ''
-            const afterText = match ? textContent.substring(match.index! + match[0].length) : textContent
+            // Process arrows in text
+            const processArrows = (html: string) => {
+              return html
+                .replace(/↓/g, '<span style="font-size: 2rem; font-weight: bold; color: var(--text-primary); display: inline-block; margin: 0 4px;">↓</span>')
+                .replace(/↑/g, '<span style="font-size: 2rem; font-weight: bold; color: var(--text-primary); display: inline-block; margin: 0 4px;">↑</span>')
+                .replace(/←/g, '<span style="font-size: 2rem; font-weight: bold; color: var(--text-primary); display: inline-block; margin: 0 4px;">←</span>')
+                .replace(/→/g, '<span style="font-size: 2rem; font-weight: bold; color: var(--text-primary); display: inline-block; margin: 0 4px;">→</span>')
+            }
+
+            // Convert block elements to inline to preserve flow
+            const convertBlockToInline = (html: string) => {
+              return html
+                .replace(/<p>/gi, '<span>')
+                .replace(/<\/p>/gi, '</span>')
+                .replace(/<div>/gi, '<span>')
+                .replace(/<\/div>/gi, '</span>')
+                .replace(/<br\s*\/?>/gi, ' ')
+            }
+
+            // Split text by placeholder and inject drop zone
+            const DROPZONE_MARKER = '__DROPZONE__'
+            const processedText = processArrows(convertBlockToInline(textContent)).replace(/\[(\d+)\]/, DROPZONE_MARKER)
+            const textParts = processedText.split(DROPZONE_MARKER)
 
             // Get clean answer text for display
             const cleanAnswer = displayAnswer ? (() => {
@@ -171,28 +189,19 @@ const SentenceCompletionQuestion = observer(({
               }
             }
 
-            // Process arrows in text
-            const processArrows = (html: string) => {
-              return html
-                .replace(/↓/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↓</span>')
-                .replace(/↑/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">↑</span>')
-                .replace(/←/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">←</span>')
-                .replace(/→/g, '<span style="font-size: 2rem; font-weight: bold; color: #374151; display: inline-block; margin: 0 4px;">→</span>')
-            }
-
             return (
               <div
                 key={question.id}
-                className="flex items-center flex-wrap gap-2 text-sm mb-2"
+                className="text-sm mb-2"
                 ref={(el) => { if (el) questionRefs.current[questionNumber] = el }}
+                style={{ color: 'var(--text-primary)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.25rem' }}
               >
-                <strong className="text-base" style={{ color: 'var(--text-primary)' }}>{questionNumber}</strong>
-                {beforeText && <span dangerouslySetInnerHTML={{ __html: processArrows(beforeText) }} style={{ display: 'inline' }} />}
-                <div
+                <span dangerouslySetInnerHTML={{ __html: textParts[0] }} style={{ display: 'inline' }} />
+                <span
                   onDragOver={!readingStore.isPreviewMode ? handleDragOver : undefined}
                   onDrop={!readingStore.isPreviewMode ? (e) => handleDrop(e, question.id) : undefined}
                   tabIndex={0}
-                  className="inline-flex items-center border-2 border-dashed rounded px-3 py-1 min-w-[120px]"
+                  className="inline-flex items-center justify-center border-2 border-dashed rounded px-2 min-w-[60px] leading-none"
                   style={{
                     borderColor,
                     backgroundColor,
@@ -200,23 +209,23 @@ const SentenceCompletionQuestion = observer(({
                   }}
                 >
                   {displayAnswer ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{cleanAnswer}</span>
+                    <span className="text-sm font-medium leading-none" style={{ color: 'var(--text-primary)' }}>
+                      {cleanAnswer}
                       {!readingStore.isPreviewMode && (
                         <button
                           onClick={() => handleRemove(question.id)}
-                          className="text-xs font-bold"
-                          style={{ color: 'var(--text-secondary)' }}
+                          className="text-xs font-bold hover:opacity-70 transition-opacity ml-2"
+                          style={{ color: 'var(--text-primary)' }}
                         >
                           ✕
                         </button>
                       )}
-                    </div>
+                    </span>
                   ) : (
-                    <span className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>{placeholderNum}</span>
+                    <span className="text-xs font-bold leading-none" style={{ color: 'var(--text-secondary)' }}>{placeholderNum}</span>
                   )}
-                </div>
-                {afterText && <span dangerouslySetInnerHTML={{ __html: processArrows(afterText) }} style={{ display: 'inline' }} />}
+                </span>
+                {textParts[1] && <span dangerouslySetInnerHTML={{ __html: textParts[1] }} style={{ display: 'inline' }} />}
                 {readingStore.isPreviewMode && readingStore.mockId && readingStore.sectionId && (
                   <QuestionMarkingButtons
                     mockId={readingStore.mockId}
@@ -240,22 +249,46 @@ const SentenceCompletionQuestion = observer(({
               const cleanOption = stripHtml(option)
 
               return (
-                <div
+                <button
                   key={index}
                   draggable={!isUsed && !readingStore.isPreviewMode}
                   onDragStart={!readingStore.isPreviewMode ? (e) => handleDragStart(e, option) : undefined}
-                  className="px-2 py-1 border-2 rounded text-sm transition-all"
+                  disabled={isUsed || readingStore.isPreviewMode}
+                  className={`w-full px-3 py-1.5 border rounded-md text-xs font-medium transition-all ${
+                    isUsed
+                      ? 'cursor-not-allowed'
+                      : readingStore.isPreviewMode
+                      ? 'cursor-default'
+                      : 'cursor-move hover:shadow-md hover:scale-[1.01] active:scale-[0.99]'
+                  }`}
                   style={{
                     backgroundColor: isUsed ? 'var(--secondary)' : 'var(--card-background)',
                     color: isUsed ? 'var(--text-secondary)' : 'var(--text-primary)',
                     borderColor: isUsed ? 'var(--text-secondary)' : 'var(--border-color)',
-                    cursor: isUsed ? 'not-allowed' : readingStore.isPreviewMode ? 'default' : 'move',
                     textDecoration: isUsed ? 'line-through' : 'none',
-                    opacity: isUsed ? 0.5 : 1
+                    opacity: isUsed ? 0.5 : 1,
+                    boxShadow: !isUsed ? '0 1px 2px rgba(0,0,0,0.1)' : 'none'
                   }}
                 >
-                  {cleanOption}
-                </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex-1 text-left">{cleanOption}</span>
+                    {!isUsed && !readingStore.isPreviewMode && (
+                      <svg
+                        className="w-3 h-3 opacity-50"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                        />
+                      </svg>
+                    )}
+                  </div>
+                </button>
               )
             })}
           </div>

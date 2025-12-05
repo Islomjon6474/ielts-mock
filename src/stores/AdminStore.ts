@@ -1,27 +1,31 @@
 import { makeAutoObservable, runInAction } from 'mobx'
 import { testManagementApi } from '@/services/testManagementApi'
 import type { TestDto, SectionDto, PartDto } from '@/types/api'
+import type { MockResultDto } from '@/services/mockResultApi'
 
 export class AdminStore {
   // Current test being edited
   currentTest: TestDto | null = null
   currentTestId: string | null = null
-  
+
   // Sections for current test
   sections: SectionDto[] = []
   currentSectionId: string | null = null
-  
+
   // Parts for current section (cached by sectionId)
   partsCache: Map<string, PartDto[]> = new Map()
-  
+
   // Part content cache (to avoid refetching)
   partContentCache: Map<string, any> = new Map()
-  
+
+  // Mock results cache (keyed by mock result id)
+  mockResultsCache: Map<string, MockResultDto> = new Map()
+
   // Loading states
   isLoadingTest: boolean = false
   isLoadingSections: boolean = false
   isLoadingParts: boolean = false
-  
+
   // Error states
   error: string | null = null
 
@@ -329,6 +333,77 @@ export class AdminStore {
     return this.partsCache.has(sectionId)
   }
 
+  // ============================================================================
+  // Mock Results Management
+  // ============================================================================
+
+  /**
+   * Store multiple mock results in cache
+   */
+  storeMockResults(results: MockResultDto[]) {
+    runInAction(() => {
+      results.forEach(result => {
+        this.mockResultsCache.set(result.id, result)
+      })
+    })
+    console.log(`📦 Stored ${results.length} mock results in cache`)
+  }
+
+  /**
+   * Store a single mock result in cache
+   */
+  storeMockResult(result: MockResultDto) {
+    runInAction(() => {
+      this.mockResultsCache.set(result.id, result)
+    })
+    console.log(`📦 Stored mock result ${result.id} in cache`)
+  }
+
+  /**
+   * Get a mock result from cache by ID
+   */
+  getMockResult(mockId: string): MockResultDto | null {
+    return this.mockResultsCache.get(mockId) || null
+  }
+
+  /**
+   * Get student name from cached mock result
+   */
+  getStudentName(mockId: string): { firstName: string; lastName: string } | null {
+    const result = this.mockResultsCache.get(mockId)
+    if (!result) {
+      console.warn(`⚠️ Mock result ${mockId} not found in cache`)
+      return null
+    }
+
+    const firstName = result.firstName || result.userFirstName || result.userName?.split(' ')[0] || 'Unknown'
+    const lastName = result.lastName || result.userLastName || result.userName?.split(' ')[1] || ''
+
+    return { firstName, lastName }
+  }
+
+  /**
+   * Get test name from cached mock result
+   */
+  getTestName(mockId: string): string | null {
+    const result = this.mockResultsCache.get(mockId)
+    return result?.testName || null
+  }
+
+  /**
+   * Clear mock results cache
+   */
+  clearMockResultsCache() {
+    runInAction(() => {
+      this.mockResultsCache.clear()
+    })
+    console.log('🗑️ Cleared mock results cache')
+  }
+
+  // ============================================================================
+  // Utility Methods
+  // ============================================================================
+
   /**
    * Clear all error states
    */
@@ -349,6 +424,7 @@ export class AdminStore {
       this.currentSectionId = null
       this.partsCache.clear()
       this.partContentCache.clear()
+      this.mockResultsCache.clear()
       this.isLoadingTest = false
       this.isLoadingSections = false
       this.isLoadingParts = false

@@ -7,17 +7,20 @@ import { HomeOutlined, ArrowLeftOutlined, SoundOutlined, BookOutlined, EditOutli
 import { mockResultApi } from '@/services/mockResultApi'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { withAuth } from '@/components/auth/withAuth'
+import { useStore } from '@/stores/StoreContext'
+import { observer } from 'mobx-react-lite'
 
 const { Header, Content } = Layout
 const { Title, Text } = Typography
 
-const ResultPreviewPage = () => {
+const ResultPreviewPage = observer(() => {
   const router = useRouter()
   const params = useParams()
   const searchParams = useSearchParams()
+  const { adminStore } = useStore()
   const resultId = params.resultId as string
   const testId = searchParams.get('testId')
-  
+
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
 
@@ -30,41 +33,35 @@ const ResultPreviewPage = () => {
   const fetchResultDetails = async () => {
     try {
       setLoading(true)
-      // Fetch all results and find the one we need
-      const response = await mockResultApi.getAllMockResults(0, 1000)
-      const foundResult = response.data?.find(r => r.id === resultId)
-      
+
+      // Get result from adminStore cache (optimized - no API call)
+      const foundResult = adminStore.getMockResult(resultId)
+
       if (foundResult) {
-        console.log('Result data:', foundResult)
+        console.log('📦 Using cached result from adminStore:', foundResult)
         setResult(foundResult)
       } else {
-        message.error('Result not found')
+        console.error('⚠️ Result not found in cache. Please navigate from the results page.')
+        message.error('Result data not found. Please return to the results page and try again.')
       }
     } catch (error: any) {
-      console.error('Error fetching result:', error)
-      message.error(error.response?.data?.reason || 'Failed to load result details')
+      console.error('Error loading result:', error)
+      message.error(error.message || 'Failed to load result details')
     } finally {
       setLoading(false)
     }
   }
 
   const handleSectionClick = (sectionType: string) => {
-    // Get student name from result
-    const studentName = result?.userName ||
-      (result?.firstName && result?.lastName ? `${result.firstName} ${result.lastName}` : '') ||
-      (result?.userFirstName && result?.userLastName ? `${result.userFirstName} ${result.userLastName}` : '') ||
-      result?.userId || ''
-
-    const studentParam = studentName ? `&studentName=${encodeURIComponent(studentName)}` : ''
-    const testNameParam = result?.testName ? `&testName=${encodeURIComponent(result.testName)}` : ''
-    const mockIdParam = result?.mockId ? `&mockId=${result.mockId}` : ''
+    // mockId is the same as resultId - layouts will get student name and test name from adminStore
+    const mockIdParam = `&mockId=${resultId}`
 
     if (sectionType === 'LISTENING') {
-      router.push(`/admin/reading/preview/${testId}/LISTENING?resultId=${resultId}${mockIdParam}${studentParam}${testNameParam}`)
+      router.push(`/admin/reading/preview/${testId}/LISTENING?resultId=${resultId}${mockIdParam}`)
     } else if (sectionType === 'READING') {
-      router.push(`/admin/reading/preview/${testId}/READING?resultId=${resultId}${mockIdParam}${studentParam}${testNameParam}`)
+      router.push(`/admin/reading/preview/${testId}/READING?resultId=${resultId}${mockIdParam}`)
     } else if (sectionType === 'WRITING') {
-      router.push(`/admin/results/${resultId}/grade-writing?testId=${testId}${mockIdParam}${studentParam}${testNameParam}`)
+      router.push(`/admin/results/${resultId}/grade-writing?testId=${testId}${mockIdParam}`)
     }
   }
 
@@ -211,6 +208,6 @@ const ResultPreviewPage = () => {
       </Content>
     </Layout>
   )
-}
+})
 
 export default withAuth(ResultPreviewPage, { requireAdmin: true })

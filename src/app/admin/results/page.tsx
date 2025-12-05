@@ -1,18 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { 
-  Layout, 
-  Typography, 
-  Card, 
-  Button, 
-  Table, 
-  message, 
+import {
+  Layout,
+  Typography,
+  Card,
+  Button,
+  Table,
+  message,
   Space,
   Tag
 } from 'antd'
-import { 
-  HomeOutlined, 
+import {
+  HomeOutlined,
   ReloadOutlined,
   UserOutlined,
   CalendarOutlined,
@@ -24,12 +24,15 @@ import { mockResultApi, MockResultDto, SectionResult } from '@/services/mockResu
 import { UserMenu } from '@/components/auth/UserMenu'
 import { withAuth } from '@/components/auth/withAuth'
 import { parseCustomDate } from '@/utils/dateUtils'
+import { useStore } from '@/stores/StoreContext'
+import { observer } from 'mobx-react-lite'
 
 const { Header, Content } = Layout
 const { Title, Text } = Typography
 
-const ResultsManagementPage = () => {
+const ResultsManagementPage = observer(() => {
   const router = useRouter()
+  const { adminStore } = useStore()
   const [results, setResults] = useState<MockResultDto[]>([])
   const [loading, setLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
@@ -44,13 +47,12 @@ const ResultsManagementPage = () => {
     try {
       setLoading(true)
       const response = await mockResultApi.getAllMockResults(page, size)
-      console.log('Results response:', response)
-      console.log('First result object:', response.data?.[0])
-      console.log('First result startDate:', response.data?.[0]?.startDate)
-      
       const resultsList = response.data || []
       setResults(resultsList)
       setTotalResults(response.totalCount || 0)
+
+      // Store results in AdminStore for later use
+      adminStore.storeMockResults(resultsList)
     } catch (error: any) {
       console.error('Error fetching results:', error)
       message.error(error.response?.data?.reason || 'Failed to load results')
@@ -298,6 +300,7 @@ const ResultsManagementPage = () => {
               onRow={(record) => ({
                 onClick: () => {
                   // Navigate to preview page with testId and result info
+                  console.log("Test record", record)
                   router.push(`/admin/results/${record.id}/preview?testId=${record.testId}`)
                 },
                 style: { cursor: 'pointer' }
@@ -325,6 +328,6 @@ const ResultsManagementPage = () => {
       </Content>
     </Layout>
   )
-}
+})
 
 export default withAuth(ResultsManagementPage, { requireAdmin: true })
