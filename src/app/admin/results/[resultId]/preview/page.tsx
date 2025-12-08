@@ -5,10 +5,12 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { Layout, Typography, Card, Button, Space, message, Spin, Tag } from 'antd'
 import { HomeOutlined, ArrowLeftOutlined, SoundOutlined, BookOutlined, EditOutlined } from '@ant-design/icons'
 import { mockResultApi } from '@/services/mockResultApi'
+import { mockSubmissionApi } from '@/services/mockSubmissionApi'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { withAuth } from '@/components/auth/withAuth'
 import { useStore } from '@/stores/StoreContext'
 import { observer } from 'mobx-react-lite'
+import { SectionResultsTable } from '@/components/admin/SectionResultsTable'
 
 const { Header, Content } = Layout
 const { Title, Text } = Typography
@@ -23,12 +25,20 @@ const ResultPreviewPage = observer(() => {
 
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
+  const [expandedSection, setExpandedSection] = useState<string | null>(null)
+  const [sectionsData, setSectionsData] = useState<any[]>([])
 
   useEffect(() => {
     if (resultId) {
       fetchResultDetails()
     }
   }, [resultId])
+
+  useEffect(() => {
+    if (testId && resultId) {
+      fetchSectionsData()
+    }
+  }, [testId, resultId])
 
   const fetchResultDetails = async () => {
     try {
@@ -49,6 +59,24 @@ const ResultPreviewPage = observer(() => {
       message.error(error.message || 'Failed to load result details')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchSectionsData = async () => {
+    try {
+      console.log('🔍 Fetching sections for testId:', testId, 'mockId:', resultId)
+
+      // Fetch all sections for this test to get proper section IDs
+      const response = await mockSubmissionApi.getAllSections(testId!, resultId)
+
+      if (response.success && response.data) {
+        console.log('✅ Fetched sections:', response.data)
+        setSectionsData(response.data)
+      } else {
+        console.error('❌ Failed to fetch sections')
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching sections:', error)
     }
   }
 
@@ -89,6 +117,41 @@ const ResultPreviewPage = observer(() => {
       default:
         return sectionType
     }
+  }
+
+  const handleToggleResults = (sectionType: string) => {
+    if (expandedSection === sectionType) {
+      setExpandedSection(null)
+    } else {
+      setExpandedSection(sectionType)
+    }
+  }
+
+  const handleScoreUpdate = async () => {
+    // Refresh the result data to show updated scores by fetching from API
+    try {
+      console.log('🔄 Refreshing scores after recalculation...')
+
+      // Fetch fresh data from API
+      const response = await mockResultApi.getAllMockResults(0, 100)
+
+      if (response.success && response.data) {
+        // Update adminStore cache with fresh data
+        adminStore.storeMockResults(response.data)
+
+        // Then update local state with fresh data from cache
+        fetchResultDetails()
+
+        console.log('✅ Scores refreshed successfully')
+      }
+    } catch (error) {
+      console.error('❌ Error refreshing scores:', error)
+    }
+  }
+
+  const getSectionId = (sectionType: string): string | null => {
+    const section = sectionsData.find(s => s.sectionType === sectionType)
+    return section?.id || null
   }
 
   if (loading) {
@@ -199,9 +262,37 @@ const ResultPreviewPage = observer(() => {
                         <Text type="warning">Not graded yet</Text>
                       )}
                     </Space>
+
+                    {/* Results Button */}
+                    {section.sectionType !== 'WRITING' && (
+                      <div style={{ marginTop: 16 }}>
+                        <Button
+                          type={expandedSection === section.sectionType ? 'primary' : 'default'}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleToggleResults(section.sectionType)
+                          }}
+                          block
+                        >
+                          {expandedSection === section.sectionType ? 'Hide Results' : 'View Results'}
+                        </Button>
+                      </div>
+                    )}
                   </Card>
                 ))}
               </div>
+
+              {/* Expandable Results Table - spans full width below all cards */}
+              {expandedSection && expandedSection !== 'WRITING' && getSectionId(expandedSection) && (
+                <div style={{ marginTop: 24, width: '100%' }}>
+                  <SectionResultsTable
+                    mockId={resultId}
+                    sectionId={getSectionId(expandedSection)!}
+                    sectionType={expandedSection}
+                    onScoreUpdate={handleScoreUpdate}
+                  />
+                </div>
+              )}
             </>
           )}
         </div>
