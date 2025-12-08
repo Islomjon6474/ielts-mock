@@ -1,5 +1,6 @@
 export { MultipleChoiceQuestion } from './MultipleChoiceQuestion'
 export { MultipleChoiceSingleQuestion } from './MultipleChoiceSingleQuestion'
+export { MultipleQuestionsMultipleChoiceQuestion } from './MultipleQuestionsMultipleChoiceQuestion'
 export { TrueFalseQuestion } from './TrueFalseQuestion'
 export { SentenceCompletionQuestion } from './SentenceCompletionQuestion'
 export { MatchHeadingQuestion } from './MatchHeadingQuestion'
@@ -11,6 +12,7 @@ export { QuestionGroupEditor } from './QuestionGroupEditor'
 export const questionTypes = [
   { value: 'MULTIPLE_CHOICE', label: 'Multiple Choice (Multiple Answers)' },
   { value: 'MULTIPLE_CHOICE_SINGLE', label: 'Multiple Choice (Single Answer)' },
+  { value: 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE', label: 'Multiple Questions Multiple Choice' },
   { value: 'TRUE_FALSE_NOT_GIVEN', label: 'True/False/Not Given' },
   { value: 'YES_NO_NOT_GIVEN', label: 'Yes/No/Not Given' },
   { value: 'MATCH_HEADING', label: 'Match Headings' },

@@ -712,7 +712,7 @@ const PartEditorPage = observer(() => {
                 const num = m.match(/\[(\d+)\]/)
                 return num ? parseInt(num[1]) : 0
               }).filter((n: number) => n > 0)
-              
+
               // Create separate flat question objects for user-side (1 per placeholder)
               placeholderNumbers.forEach((placeholderNum: number) => {
                 flatQuestions.push({
@@ -721,6 +721,33 @@ const PartEditorPage = observer(() => {
                   text: questionWithoutAnswer.text || '',
                 })
               })
+            } else if (group.type === 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE') {
+              // For MULTIPLE_QUESTIONS_MULTIPLE_CHOICE, create multiple flat questions
+              // One for each question number in the range, all with the same options and groupId
+              if (group.range) {
+                const rangeMatch = group.range.match(/^(\d+)-(\d+)$/)
+                if (rangeMatch) {
+                  const rangeStart = parseInt(rangeMatch[1])
+                  const rangeEnd = parseInt(rangeMatch[2])
+
+                  // Generate a unique groupId for this question group
+                  const groupId = `mqmc_${groupIndex}_${rangeStart}_${rangeEnd}`
+
+                  // Create one flat question for each number in the range
+                  for (let qNum = rangeStart; qNum <= rangeEnd; qNum++) {
+                    flatQuestions.push({
+                      id: qNum,
+                      type: 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE',
+                      text: questionWithoutAnswer.text || '',
+                      options: questionWithoutAnswer.options || [],
+                      maxAnswers: questionWithoutAnswer.maxAnswers || 2,
+                      groupId: groupId, // Mark them as belonging to the same group
+                      rangeStart: rangeStart, // Store the full range info
+                      rangeEnd: rangeEnd
+                    })
+                  }
+                }
+              }
             } else {
               // For other types, one question object = one flat question
               const questionType = group.type

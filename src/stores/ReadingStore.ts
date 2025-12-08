@@ -2,7 +2,7 @@ import { makeAutoObservable } from 'mobx'
 import * as R from 'ramda'
 import { mockSubmissionApi } from '@/services/testManagementApi'
 
-export type QuestionType = 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN' | 'FILL_IN_BLANK' | 'MATCH_HEADING' | 'MULTIPLE_CHOICE' | 'MULTIPLE_CHOICE_SINGLE' | 'IMAGE_INPUTS' | 'SENTENCE_COMPLETION' | 'MULTIPLE_CORRECT_ANSWERS' | 'MATRIX_TABLE'
+export type QuestionType = 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN' | 'FILL_IN_BLANK' | 'MATCH_HEADING' | 'MULTIPLE_CHOICE' | 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE' | 'IMAGE_INPUTS' | 'SENTENCE_COMPLETION' | 'MULTIPLE_CORRECT_ANSWERS' | 'MATRIX_TABLE'
 
 export interface Answer {
   questionId: number
@@ -17,12 +17,16 @@ export interface Question {
   maxAnswers?: number
   imageUrl?: string
   correctAnswer?: string | string[] // Correct answer(s) for the question
+  groupId?: string // For grouping multiple questions together (e.g., MULTIPLE_QUESTIONS_MULTIPLE_CHOICE)
+  rangeStart?: number // Start of question range
+  rangeEnd?: number // End of question range
 }
 
 export interface QuestionGroup {
   instruction?: string
   imageUrl?: string
   questions: Question[]
+  range?: string              // Question range (e.g., "10-14")
   headingOptions?: string[]  // For MATCH_HEADING questions
   options?: string[]          // For SENTENCE_COMPLETION questions
   matrixOptions?: string[]    // For MATRIX_TABLE questions (column headers)
@@ -299,7 +303,7 @@ export class ReadingStore {
     // Normalize answers for comparison (trim, lowercase)
     const normalize = (str: string) => str.trim().toLowerCase()
 
-    if (questionType === 'MULTIPLE_CHOICE' || questionType === 'MULTIPLE_CORRECT_ANSWERS') {
+    if (questionType === 'MULTIPLE_CHOICE' || questionType === 'MULTIPLE_CORRECT_ANSWERS' || questionType === 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE') {
       // For multiple choice with multiple answers
       const userAnswers = Array.isArray(userAnswer) ? userAnswer : [userAnswer]
       const correctAnswers = Array.isArray(correctAnswer) ? correctAnswer : [correctAnswer]

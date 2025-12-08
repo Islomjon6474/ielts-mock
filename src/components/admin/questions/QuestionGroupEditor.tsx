@@ -3,6 +3,7 @@ import { Card, Button, Select, Form, Input, Divider } from 'antd'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
 import { MultipleChoiceQuestion } from './MultipleChoiceQuestion'
 import { MultipleChoiceSingleQuestion } from './MultipleChoiceSingleQuestion'
+import { MultipleQuestionsMultipleChoiceQuestion } from './MultipleQuestionsMultipleChoiceQuestion'
 import { TrueFalseQuestion } from './TrueFalseQuestion'
 import { SentenceCompletionQuestion } from './SentenceCompletionQuestion'
 import { MatchHeadingQuestion } from './MatchHeadingQuestion'
@@ -51,9 +52,12 @@ export const QuestionGroupEditor = ({
       setSelectedType(type)
     }
     
-    // For SHORT_ANSWER, always ensure there's 1 question
+    // For SHORT_ANSWER and MULTIPLE_QUESTIONS_MULTIPLE_CHOICE, always ensure there's 1 question
     if (type === 'SHORT_ANSWER' && questions.length === 0) {
       form.setFieldValue([...groupPath, 'questions'], [{ text: '' }])
+      setQuestionCount(1)
+    } else if (type === 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE' && questions.length === 0) {
+      form.setFieldValue([...groupPath, 'questions'], [{ options: ['', '', ''], correctAnswers: {} }])
       setQuestionCount(1)
     } else if (range && range !== questionRange) {
       setQuestionRange(range)
@@ -96,6 +100,9 @@ export const QuestionGroupEditor = ({
       case 'MULTIPLE_CHOICE_SINGLE':
         newQuestion = { text: '', options: ['', '', ''], answer: '' }
         break
+      case 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE':
+        newQuestion = { text: '', options: ['', '', ''], answer: [] }
+        break
       case 'TRUE_FALSE_NOT_GIVEN':
       case 'YES_NO_NOT_GIVEN':
         newQuestion = { text: '', answer: '' }
@@ -108,9 +115,9 @@ export const QuestionGroupEditor = ({
         break
       case 'IMAGE_INPUTS':
         const imageId = form.getFieldValue([...groupPath, 'imageId'])
-        newQuestion = { 
-          x: 50, 
-          y: 50, 
+        newQuestion = {
+          x: 50,
+          y: 50,
           answer: '',
           imageUrl: imageId ? `/api/file/download/${imageId}` : undefined
         }
@@ -168,10 +175,13 @@ export const QuestionGroupEditor = ({
 
   const handleQuestionTypeChange = (value: string) => {
     setSelectedType(value)
-    
-    // For SHORT_ANSWER, immediately create 1 question with empty text
+
+    // For SHORT_ANSWER and MULTIPLE_QUESTIONS_MULTIPLE_CHOICE, immediately create 1 question
     if (value === 'SHORT_ANSWER') {
       form.setFieldValue([...groupPath, 'questions'], [{ text: '' }])
+      setQuestionCount(1)
+    } else if (value === 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE') {
+      form.setFieldValue([...groupPath, 'questions'], [{ options: ['', '', ''], correctAnswers: {} }])
       setQuestionCount(1)
     } else {
       // Reset questions when type changes for other types
@@ -194,12 +204,14 @@ export const QuestionGroupEditor = ({
 
   const renderQuestion = (index: number) => {
     const qNum = getQuestionNumber(index)
-    
+
     switch (selectedType) {
       case 'MULTIPLE_CHOICE':
         return <MultipleChoiceQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
       case 'MULTIPLE_CHOICE_SINGLE':
         return <MultipleChoiceSingleQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
+      case 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE':
+        return <MultipleQuestionsMultipleChoiceQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} questionRange={questionRange} />
       case 'TRUE_FALSE_NOT_GIVEN':
       case 'YES_NO_NOT_GIVEN':
         return <TrueFalseQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} type={selectedType} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} />
@@ -429,7 +441,7 @@ export const QuestionGroupEditor = ({
         </>
       )}
       
-      {selectedType && selectedType !== 'SHORT_ANSWER' && (
+      {selectedType && selectedType !== 'SHORT_ANSWER' && selectedType !== 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE' && (
         <Button 
           type="dashed" 
           block 

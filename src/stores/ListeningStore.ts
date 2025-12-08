@@ -3,9 +3,10 @@ import { mockSubmissionApi } from '@/services/testManagementApi'
 
 export interface ListeningQuestion {
   id: number
-  type: 'FILL_IN_BLANK' | 'MULTIPLE_CHOICE' | 'MULTIPLE_CHOICE_SINGLE' | 'MATCHING' | 'TABLE' | 'IMAGE_INPUTS' | 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN' | 'SENTENCE_COMPLETION' | 'SHORT_ANSWER' | 'MULTIPLE_CORRECT_ANSWERS' | 'MATRIX_TABLE'
+  type: 'FILL_IN_BLANK' | 'MULTIPLE_CHOICE' | 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE' | 'MATCHING' | 'TABLE' | 'IMAGE_INPUTS' | 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN' | 'SENTENCE_COMPLETION' | 'SHORT_ANSWER' | 'MULTIPLE_CORRECT_ANSWERS' | 'MATRIX_TABLE'
   text: string
   options?: string[]
+  maxAnswers?: number
   // For IMAGE_INPUTS questions, we repeat imageUrl per question id; UI will render image once per imageUrl group
   imageUrl?: string
   correctAnswer?: string | string[] // Correct answer(s) for the question
@@ -274,7 +275,7 @@ export class ListeningStore {
     // Normalize answers for comparison (trim, lowercase)
     const normalize = (str: string) => str.trim().toLowerCase()
 
-    if (questionType === 'MULTIPLE_CHOICE' || questionType === 'MULTIPLE_CORRECT_ANSWERS') {
+    if (questionType === 'MULTIPLE_CHOICE' || questionType === 'MULTIPLE_CORRECT_ANSWERS' || questionType === 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE') {
       // For multiple choice with multiple answers
       const userAnswers = Array.isArray(userAnswer) ? userAnswer : [userAnswer]
       const correctAnswers = Array.isArray(correctAnswer) ? correctAnswer : [correctAnswer]

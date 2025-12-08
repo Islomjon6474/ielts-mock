@@ -21,6 +21,7 @@ import FlowChartQuestion from './FlowChartQuestion'
 import FillInBlankQuestion from './FillInBlankQuestion'
 import MultipleChoiceQuestion from './MultipleChoiceQuestion'
 import MultipleChoiceSingleQuestion from './MultipleChoiceSingleQuestion'
+import MultipleQuestionsMultipleChoiceQuestion from './MultipleQuestionsMultipleChoiceQuestion'
 import MultipleCorrectAnswersQuestion from './MultipleCorrectAnswersQuestion'
 import TrueFalseQuestion from './TrueFalseQuestion'
 import SentenceCompletionQuestion from './SentenceCompletionQuestion'
@@ -433,13 +434,16 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                 let currentGroup: QuestionGroup | null = null
                 
                 currentPart.questions.forEach((q: ListeningQuestion) => {
-                  // Start a new group if imageUrl, type, groupInstruction, or groupIndex changes
+                  // Start a new group if imageUrl, type, groupInstruction, groupIndex, or groupId changes
                   const qGroupIndex = (q as any).groupIndex
-                  const shouldStartNewGroup = !currentGroup || 
-                    q.imageUrl !== currentGroup.imageUrl || 
+                  const qGroupId = (q as any).groupId
+                  const currentGroupId = currentGroup?.questions?.[0] ? (currentGroup.questions[0] as any).groupId : undefined
+                  const shouldStartNewGroup = !currentGroup ||
+                    q.imageUrl !== currentGroup.imageUrl ||
                     q.type !== currentGroup.type ||
                     (q as any).groupInstruction !== currentGroup.instruction ||
-                    (qGroupIndex !== undefined && qGroupIndex !== (currentGroup as any).groupIndex)
+                    (qGroupIndex !== undefined && qGroupIndex !== (currentGroup as any).groupIndex) ||
+                    (qGroupId && qGroupId !== currentGroupId)
                   
                   if (shouldStartNewGroup) {
                     // Use groupInstruction from question data
@@ -488,6 +492,34 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                           questionNumbers={questionNumbers}
                           options={options}
                           imageUrl={group.imageUrl}
+                          isPreviewMode={isPreviewMode}
+                        />
+                      </div>
+                    )
+                  }
+
+                  // Handle MULTIPLE_QUESTIONS_MULTIPLE_CHOICE separately
+                  if (group.type === 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE') {
+                    const firstQuestion = group.questions[0]
+
+                    // Get range from the question itself (stored during data processing)
+                    const startNum = (firstQuestion as any).rangeStart || firstQuestion.id
+                    const endNum = (firstQuestion as any).rangeEnd || group.questions[group.questions.length - 1].id
+
+                    console.log('✅ LISTENING - MULTIPLE_QUESTIONS_MULTIPLE_CHOICE:', {
+                      groupId: (firstQuestion as any).groupId,
+                      range: [startNum, endNum],
+                      questionCount: group.questions.length,
+                      options: firstQuestion?.options,
+                      hasOptions: !!firstQuestion?.options
+                    })
+
+                    return (
+                      <div key={`group-${groupIdx}`} className="mb-8">
+                        <MultipleQuestionsMultipleChoiceQuestion
+                          question={firstQuestion}
+                          questionNumber={startNum}
+                          questionRange={[startNum, endNum]}
                           isPreviewMode={isPreviewMode}
                         />
                       </div>
@@ -564,10 +596,14 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                               switch (q.type) {
                                 case 'MULTIPLE_CHOICE':
                                   return <MultipleChoiceQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
-                                
+
                                 case 'MULTIPLE_CHOICE_SINGLE':
                                   return <MultipleChoiceSingleQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
-                                
+
+                                case 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE':
+                                  // Don't render individual questions - they're handled as a group
+                                  return null
+
                                 case 'TRUE_FALSE_NOT_GIVEN':
                                 case 'YES_NO_NOT_GIVEN':
                                   return <TrueFalseQuestion key={q.id} question={q} questionNumber={q.id} type={q.type as 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN'} isPreviewMode={isPreviewMode} />
@@ -637,7 +673,10 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                                 return <MultipleChoiceQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
                               case 'MULTIPLE_CHOICE_SINGLE':
                                 return <MultipleChoiceSingleQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
-                              
+                              case 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE':
+                                // Don't render individual questions - they're handled as a group
+                                return null
+
                               case 'TRUE_FALSE_NOT_GIVEN':
                               case 'YES_NO_NOT_GIVEN':
                                 return <TrueFalseQuestion key={q.id} question={q} questionNumber={q.id} type={q.type as 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN'} isPreviewMode={isPreviewMode} />

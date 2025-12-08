@@ -8,6 +8,7 @@ import FillInBlankQuestion from './questions/FillInBlankQuestion'
 import MatchHeadingQuestion from './questions/MatchHeadingQuestion'
 import MultipleChoiceQuestion from './questions/MultipleChoiceQuestion'
 import MultipleChoiceSingleQuestion from './questions/MultipleChoiceSingleQuestion'
+import MultipleQuestionsMultipleChoiceQuestion from './questions/MultipleQuestionsMultipleChoiceQuestion'
 import MultipleCorrectAnswersQuestion from './questions/MultipleCorrectAnswersQuestion'
 import ImageInputsQuestion from './questions/ImageInputsQuestion'
 import SentenceCompletionQuestion from './questions/SentenceCompletionQuestion'
@@ -85,6 +86,9 @@ const QuestionPanel = observer(() => {
       case 'MATRIX_TABLE':
         // Don't render individual matrix table questions - they're handled as a group
         return null
+      case 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE':
+        // Don't render individual questions - they're handled as a group with shared options
+        return null
       case 'MULTIPLE_CHOICE':
         return (
           <MultipleChoiceQuestion
@@ -132,11 +136,13 @@ const QuestionPanel = observer(() => {
       const questionNumber = currentPart.questionRange[0] + index
       const lastGroup = groups[groups.length - 1]
       const qGroupIndex = (question as any).groupIndex
+      const qGroupId = question.groupId
 
-      // Start new group if type changes OR groupIndex changes
-      const shouldStartNewGroup = !lastGroup || 
+      // Start new group if type changes OR groupIndex changes OR groupId changes
+      const shouldStartNewGroup = !lastGroup ||
         lastGroup.type !== question.type ||
-        (qGroupIndex !== undefined && qGroupIndex !== lastGroup.groupIndex)
+        (qGroupIndex !== undefined && qGroupIndex !== lastGroup.groupIndex) ||
+        (qGroupId && qGroupId !== (lastGroup.questions[0]?.question as any).groupId)
 
       if (shouldStartNewGroup) {
         groups.push({
@@ -314,6 +320,37 @@ const QuestionPanel = observer(() => {
                   isPreviewMode={readingStore.isPreviewMode}
                 />
               </div>
+            </div>
+          )
+        }
+
+        // Render MULTIPLE_QUESTIONS_MULTIPLE_CHOICE as a special group
+        if (group.type === 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE') {
+          const firstQuestion = group.questions[0]?.question
+
+          // Get range from the question itself (stored during data processing)
+          const startNum = firstQuestion?.rangeStart || group.startNumber
+          const endNum = firstQuestion?.rangeEnd || group.endNumber
+
+          console.log('✅ READING - MULTIPLE_QUESTIONS_MULTIPLE_CHOICE:', {
+            groupId: firstQuestion?.groupId,
+            range: [startNum, endNum],
+            questionCount: group.questions.length,
+            options: firstQuestion?.options,
+            hasOptions: !!firstQuestion?.options
+          })
+
+          return (
+            <div key={groupIndex} className="mb-8">
+              {groupIndex > 0 && (
+                <div className="border-t-2 my-6" style={{ borderColor: 'var(--border-color)' }}></div>
+              )}
+
+              <MultipleQuestionsMultipleChoiceQuestion
+                question={firstQuestion}
+                questionNumber={startNum}
+                questionRange={[startNum, endNum]}
+              />
             </div>
           )
         }
