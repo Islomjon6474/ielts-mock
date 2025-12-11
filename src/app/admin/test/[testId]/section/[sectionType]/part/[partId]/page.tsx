@@ -250,14 +250,28 @@ const PartEditorPage = observer(() => {
         questionGroups.forEach((group: any, groupIndex: number) => {
           if (group.questions) {
             group.questions.forEach((question: any, questionIndex: number) => {
-              // For SHORT_ANSWER with placeholders
-              if (group.type === 'SHORT_ANSWER') {
-                const matches = (question.text || '').match(/\[(\d+)\]/g) || []
-                const placeholderNumbers = matches.map((m: string) => {
+              // Helper function to extract placeholder numbers from text
+              const extractPlaceholders = (text: string): number[] => {
+                const numbers: number[] = []
+                // Match [n] format
+                const plainMatches = (text || '').match(/\[(\d+)\]/g) || []
+                plainMatches.forEach((m: string) => {
                   const num = m.match(/\[(\d+)\]/)
-                  return num ? parseInt(num[1]) : 0
-                }).filter((n: number) => n > 0)
-                
+                  if (num) numbers.push(parseInt(num[1]))
+                })
+                // Match data-number="n" format (HTML from rich text editor)
+                const htmlMatches = (text || '').match(/data-number="(\d+)"/g) || []
+                htmlMatches.forEach((m: string) => {
+                  const num = m.match(/data-number="(\d+)"/)
+                  if (num) numbers.push(parseInt(num[1]))
+                })
+                return [...new Set(numbers)] // Remove duplicates
+              }
+
+              // For SHORT_ANSWER and TABLE_COMPLETION with placeholders
+              if (group.type === 'SHORT_ANSWER' || group.type === 'TABLE_COMPLETION') {
+                const placeholderNumbers = extractPlaceholders(question.text)
+
                 placeholderNumbers.forEach((placeholderNum: number) => {
                   const answers = answersMap.get(placeholderNum)
                   if (answers && answers.length > 0) {
@@ -265,6 +279,7 @@ const PartEditorPage = observer(() => {
                       ['questionGroups', groupIndex, 'questions', questionIndex, 'answers', placeholderNum],
                       answers[0] // First answer for this placeholder
                     )
+                    console.log(`✅ Set answer for placeholder ${placeholderNum}:`, answers[0])
                   }
                 })
               } else {
@@ -275,18 +290,20 @@ const PartEditorPage = observer(() => {
                   const questionNum = startNum + questionIndex
                   const answers = answersMap.get(questionNum)
                   if (answers) {
-                    // For MULTIPLE_CORRECT_ANSWERS, set the array directly
-                    if (group.type === 'MULTIPLE_CORRECT_ANSWERS') {
+                    // For MULTIPLE_CORRECT_ANSWERS and MATRIX_TABLE, set the array directly
+                    if (group.type === 'MULTIPLE_CORRECT_ANSWERS' || group.type === 'MATRIX_TABLE') {
                       form.setFieldValue(
                         ['questionGroups', groupIndex, 'questions', questionIndex, 'correctAnswers'],
                         answers
                       )
+                      console.log(`✅ Set correctAnswers array for Q${questionNum}:`, answers)
                     } else {
                       // For other types, join answers as a string
                       form.setFieldValue(
                         ['questionGroups', groupIndex, 'questions', questionIndex, 'correctAnswer'],
                         answers.join(', ')
                       )
+                      console.log(`✅ Set correctAnswer for Q${questionNum}:`, answers.join(', '))
                     }
                   }
                 }
