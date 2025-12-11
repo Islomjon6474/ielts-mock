@@ -12,6 +12,7 @@ export type QuestionType =
   | 'SHORT_ANSWER'
   | 'MULTIPLE_CORRECT_ANSWERS'
   | 'MATRIX_TABLE'
+  | 'TABLE_COMPLETION'
 
 export interface AdminQuestion {
   questionNumber?: number

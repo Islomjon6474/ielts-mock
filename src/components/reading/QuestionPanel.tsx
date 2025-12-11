@@ -13,6 +13,7 @@ import MultipleCorrectAnswersQuestion from './questions/MultipleCorrectAnswersQu
 import ImageInputsQuestion from './questions/ImageInputsQuestion'
 import SentenceCompletionQuestion from './questions/SentenceCompletionQuestion'
 import MatrixTableQuestion from './questions/MatrixTableQuestion'
+import TableCompletionQuestion from './questions/TableCompletionQuestion'
 import { Question } from '@/stores/ReadingStore'
 import AuthenticatedImage from '@/components/common/AuthenticatedImage'
 
@@ -113,6 +114,13 @@ const QuestionPanel = observer(() => {
       case 'MULTIPLE_CORRECT_ANSWERS':
         return (
           <MultipleCorrectAnswersQuestion
+            question={question}
+            questionNumber={questionNumber}
+          />
+        )
+      case 'TABLE_COMPLETION':
+        return (
+          <TableCompletionQuestion
             question={question}
             questionNumber={questionNumber}
           />
@@ -351,6 +359,43 @@ const QuestionPanel = observer(() => {
                 questionNumber={startNum}
                 questionRange={[startNum, endNum]}
               />
+            </div>
+          )
+        }
+
+        // Render TABLE_COMPLETION as a special group with table and inputs
+        if (group.type === 'TABLE_COMPLETION') {
+          const questionGroupData = currentPart.questionGroups?.[groupIndex]
+
+          return (
+            <div key={groupIndex} className="mb-8">
+              {groupIndex > 0 && (
+                <div className="border-t-2 my-6" style={{ borderColor: 'var(--border-color)' }}></div>
+              )}
+
+              <div className="space-y-4">
+                <div className="rounded-lg border-l-4 p-4 mb-4" style={{ backgroundColor: 'var(--card-background)', borderLeftColor: '#14b8a6' }}>
+                  <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
+                    Questions {group.startNumber}–{group.endNumber}
+                  </h3>
+                  {questionGroupData?.instruction && (
+                    <div
+                      className="text-sm prose prose-sm max-w-none"
+                      style={{ color: 'var(--text-secondary)' }}
+                      dangerouslySetInnerHTML={{ __html: questionGroupData.instruction }}
+                    />
+                  )}
+                </div>
+
+                {group.questions.map(({ question, questionNumber }) => (
+                  <TableCompletionQuestion
+                    key={question.id}
+                    question={question}
+                    questionNumber={questionNumber}
+                    isPreviewMode={readingStore.isPreviewMode}
+                  />
+                ))}
+              </div>
             </div>
           )
         }

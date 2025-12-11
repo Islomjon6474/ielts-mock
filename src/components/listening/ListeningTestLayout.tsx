@@ -26,6 +26,7 @@ import MultipleCorrectAnswersQuestion from './MultipleCorrectAnswersQuestion'
 import TrueFalseQuestion from './TrueFalseQuestion'
 import SentenceCompletionQuestion from './SentenceCompletionQuestion'
 import MatrixTableQuestion from './MatrixTableQuestion'
+import TableCompletionQuestion from './TableCompletionQuestion'
 import SubmitModal from '@/components/common/SubmitModal'
 import { exitFullscreen } from '@/utils/fullscreen'
 
@@ -549,6 +550,31 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                       </div>
                     )
                   }
+
+                  // Handle TABLE_COMPLETION separately
+                  if (group.type === 'TABLE_COMPLETION') {
+                    return (
+                      <div key={`group-${groupIdx}`} className="mb-8">
+                        <div style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }} className="rounded-lg border-l-4 border-teal-500 px-4 py-2 mb-4">
+                          <h3 style={{ color: 'var(--text-primary)' }} className="font-bold text-base mb-1">
+                            Questions {startNum}{endNum !== startNum && `–${endNum}`}
+                          </h3>
+                          {group.instruction && (
+                            <div style={{ color: 'var(--text-secondary)' }} className="text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: group.instruction }} />
+                          )}
+                        </div>
+
+                        {group.questions.map((q: ListeningQuestion) => (
+                          <TableCompletionQuestion
+                            key={q.id}
+                            question={q}
+                            questionNumber={q.id}
+                            isPreviewMode={isPreviewMode}
+                          />
+                        ))}
+                      </div>
+                    )
+                  }
                   
                   return (
                   <div key={`group-${groupIdx}`} className="mb-6">
@@ -611,6 +637,9 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                                 case 'FILL_IN_BLANK':
                                 case 'SHORT_ANSWER':
                                   return <FillInBlankQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
+
+                                case 'TABLE_COMPLETION':
+                                  return <TableCompletionQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
 
                                 case 'MULTIPLE_CORRECT_ANSWERS':
                                   return <MultipleCorrectAnswersQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
@@ -685,6 +714,9 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                               case 'SHORT_ANSWER':
                                 return <FillInBlankQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
 
+                              case 'TABLE_COMPLETION':
+                                return <TableCompletionQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
+
                               case 'MULTIPLE_CORRECT_ANSWERS':
                                 return <MultipleCorrectAnswersQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
 
@@ -702,7 +734,7 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                                     />
                                   </div>
                                 )
-                              
+
                               default:
                                 // Fallback: basic input with question number
                                 return (

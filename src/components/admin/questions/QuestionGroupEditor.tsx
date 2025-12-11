@@ -10,6 +10,7 @@ import { MatchHeadingQuestion } from './MatchHeadingQuestion'
 import { ShortAnswerQuestion } from './ShortAnswerQuestion'
 import { MultipleCorrectAnswersQuestion } from './MultipleCorrectAnswersQuestion'
 import { MatrixTableQuestion } from './MatrixTableQuestion'
+import { TableCompletionQuestion } from './TableCompletionQuestion'
 import { questionTypes } from './index'
 import { ImageInputsQuestion } from './ImageInputsQuestion'
 import { ImageUpload } from '../ImageUpload'
@@ -131,6 +132,9 @@ export const QuestionGroupEditor = ({
       case 'MATRIX_TABLE':
         newQuestion = { text: '', correctAnswers: [] }
         break
+      case 'TABLE_COMPLETION':
+        newQuestion = { text: '', answers: {} }
+        break
       default:
         newQuestion = { text: '', answer: '' }
     }
@@ -176,12 +180,15 @@ export const QuestionGroupEditor = ({
   const handleQuestionTypeChange = (value: string) => {
     setSelectedType(value)
 
-    // For SHORT_ANSWER and MULTIPLE_QUESTIONS_MULTIPLE_CHOICE, immediately create 1 question
+    // For SHORT_ANSWER, MULTIPLE_QUESTIONS_MULTIPLE_CHOICE, and TABLE_COMPLETION, immediately create 1 question
     if (value === 'SHORT_ANSWER') {
       form.setFieldValue([...groupPath, 'questions'], [{ text: '' }])
       setQuestionCount(1)
     } else if (value === 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE') {
       form.setFieldValue([...groupPath, 'questions'], [{ options: ['', '', ''], correctAnswers: {} }])
+      setQuestionCount(1)
+    } else if (value === 'TABLE_COMPLETION') {
+      form.setFieldValue([...groupPath, 'questions'], [{ text: '', answers: {} }])
       setQuestionCount(1)
     } else {
       // Reset questions when type changes for other types
@@ -227,6 +234,8 @@ export const QuestionGroupEditor = ({
         return <MultipleCorrectAnswersQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
       case 'MATRIX_TABLE':
         return <MatrixTableQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
+      case 'TABLE_COMPLETION':
+        return <TableCompletionQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
       default:
         return null
     }
@@ -441,10 +450,10 @@ export const QuestionGroupEditor = ({
         </>
       )}
       
-      {selectedType && selectedType !== 'SHORT_ANSWER' && selectedType !== 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE' && (
-        <Button 
-          type="dashed" 
-          block 
+      {selectedType && selectedType !== 'SHORT_ANSWER' && selectedType !== 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE' && selectedType !== 'TABLE_COMPLETION' && (
+        <Button
+          type="dashed"
+          block
           icon={<PlusOutlined />}
           onClick={addQuestion}
           className="mt-3"
