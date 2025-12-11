@@ -297,6 +297,13 @@ const PartEditorPage = observer(() => {
                         answers
                       )
                       console.log(`✅ Set correctAnswers array for Q${questionNum}:`, answers)
+                    } else if (group.type === 'IMAGE_INPUTS') {
+                      // IMAGE_INPUTS uses 'answer' field (singular, not correctAnswer)
+                      form.setFieldValue(
+                        ['questionGroups', groupIndex, 'questions', questionIndex, 'answer'],
+                        answers.join(', ')
+                      )
+                      console.log(`✅ Set answer for IMAGE_INPUTS Q${questionNum}:`, answers.join(', '))
                     } else {
                       // For other types, join answers as a string
                       form.setFieldValue(
