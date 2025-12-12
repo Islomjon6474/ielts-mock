@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { Input, Button } from 'antd'
+import { CloseOutlined } from '@ant-design/icons'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import AuthenticatedImage from '@/components/common/AuthenticatedImage'
@@ -161,74 +163,67 @@ const SentenceCompletionQuestion = observer(({
               }
 
               // Split text by placeholder and inject drop zone
+              // Use global regex to replace ALL occurrences of [number] placeholders
+              // Handle various encodings: [27], &#91;27&#93;, &lsqb;27&rsqb;, %5B27%5D
               const DROPZONE_MARKER = '__DROPZONE__'
-              const processedText = processArrows(convertBlockToInline(textContent)).replace(/\[(\d+)\]/, DROPZONE_MARKER)
-              const textParts = processedText.split(DROPZONE_MARKER)
+              let processedText = processArrows(convertBlockToInline(textContent))
 
-              // In preview mode with submitted answers, show submitted answer with correctness styling
-              if (isPreviewMode) {
-                const submittedAnswer = listeningStore.getSubmittedAnswer(question.id)
-                const isCorrect = listeningStore.isAnswerCorrect(question.id)
+              // Replace various encodings of [number] with DROPZONE_MARKER
+              // Order matters - more specific patterns first
+              processedText = processedText
+                // Pattern: entire placeholder wrapped in tags, e.g., <strong>[27]</strong> or <span>[27]</span>
+                .replace(/<[^>]*>\[(\d+)\]<\/[^>]*>/g, DROPZONE_MARKER)
+                // Pattern: brackets and number each in separate tags, e.g., <b>[</b><b>27</b><b>]</b>
+                .replace(/<[^>]*>\[<\/[^>]*>\s*<[^>]*>(\d+)<\/[^>]*>\s*<[^>]*>\]<\/[^>]*>/g, DROPZONE_MARKER)
+                // Pattern: opening bracket in tag, rest outside, e.g., <b>[</b>27]
+                .replace(/<[^>]*>\[<\/[^>]*>\s*(\d+)\s*\]/g, DROPZONE_MARKER)
+                // Pattern: closing bracket in tag, e.g., [27<b>]</b>
+                .replace(/\[\s*(\d+)\s*<[^>]*>\]<\/[^>]*>/g, DROPZONE_MARKER)
+                // Pattern: number in tag with brackets outside: [<strong>27</strong>]
+                .replace(/\[<[^>]*>(\d+)<\/[^>]*>\]/g, DROPZONE_MARKER)
+                // Standard format [27]
+                .replace(/\[(\d+)\]/g, DROPZONE_MARKER)
+                // HTML entity encoded &#91;27&#93;
+                .replace(/&#91;(\d+)&#93;/g, DROPZONE_MARKER)
+                // Named entity &lsqb;27&rsqb;
+                .replace(/&lsqb;(\d+)&rsqb;/g, DROPZONE_MARKER)
+                // URL encoded %5B27%5D
+                .replace(/%5B(\d+)%5D/gi, DROPZONE_MARKER)
 
-                // Determine border and background color based on correctness
-                let borderColor = 'var(--border-color)'
-                let backgroundColor = 'transparent'
-
-                if (submittedAnswer) {
-                  if (isCorrect === true) {
-                    borderColor = '#52c41a' // Green for correct
-                    backgroundColor = '#f6ffed' // Light green background
-                  } else if (isCorrect === false) {
-                    borderColor = '#ff4d4f' // Red for incorrect
-                    backgroundColor = '#fff2f0' // Light red background
-                  }
+              // Fallback: If no marker was inserted but we know there should be a placeholder,
+              // try stripping HTML tags and re-matching
+              if (!processedText.includes(DROPZONE_MARKER)) {
+                const strippedText = processedText.replace(/<[^>]*>/g, '')
+                if (strippedText.match(/\[(\d+)\]/)) {
+                  // The placeholder exists but is hidden by complex HTML - use stripped version
+                  processedText = strippedText.replace(/\[(\d+)\]/g, DROPZONE_MARKER)
                 }
-
-                // Get clean answer text for display
-                const cleanAnswer = submittedAnswer ? (() => {
-                  const tmp = document.createElement('DIV')
-                  tmp.innerHTML = submittedAnswer as string
-                  return tmp.textContent || tmp.innerText || ''
-                })() : ''
-
-                return (
-                  <div
-                    key={question.id}
-                    className="text-sm mb-2"
-                    data-question-id={questionNumber}
-                    ref={(el) => { if (el) questionRefs.current[questionNumber] = el }}
-                    style={{ color: 'var(--text-primary)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.25rem' }}
-                  >
-                    <span dangerouslySetInnerHTML={{ __html: textParts[0] }} style={{ display: 'inline' }} />
-                    <span
-                      className="inline-flex items-center justify-center border-2 border-dashed rounded px-2 min-w-[60px] leading-none"
-                      style={{
-                        borderColor,
-                        backgroundColor,
-                        borderWidth: '2px'
-                      }}
-                    >
-                      {submittedAnswer ? (
-                        <span style={{ color: 'var(--text-primary)' }} className="text-sm font-medium leading-none">{cleanAnswer}</span>
-                      ) : (
-                        <span style={{ color: 'var(--text-secondary)' }} className="text-xs font-bold leading-none">{placeholderNum}</span>
-                      )}
-                    </span>
-                    {textParts[1] && <span dangerouslySetInnerHTML={{ __html: textParts[1] }} style={{ display: 'inline' }} />}
-                    {listeningStore.mockId && listeningStore.sectionId && (
-                      <QuestionMarkingButtons
-                        mockId={listeningStore.mockId}
-                        sectionId={listeningStore.sectionId}
-                        questionOrd={questionNumber}
-                        isCorrect={isCorrect}
-                      />
-                    )}
-                  </div>
-                )
               }
 
-              // Normal mode - editable
-              const answer = listeningStore.getAnswer(question.id) as string || ''
+              const textParts = processedText.split(DROPZONE_MARKER)
+
+              // If still no split happened but there should be a placeholder, add marker at end
+              const shouldHaveDropzone = textContent.includes('[') && textContent.includes(']')
+              const hasDropzone = textParts.length > 1
+
+              // Get answer (preview mode uses submitted, normal mode uses current)
+              const submittedAnswer = isPreviewMode ? listeningStore.getSubmittedAnswer(question.id) : null
+              const isCorrect = isPreviewMode ? listeningStore.isAnswerCorrect(question.id) : null
+              const answer = isPreviewMode ? (submittedAnswer as string || '') : (listeningStore.getAnswer(question.id) as string || '')
+
+              // Determine border and background color
+              let borderColor = answer ? 'var(--primary)' : 'var(--border-color)'
+              let backgroundColor = answer ? 'var(--secondary)' : 'transparent'
+
+              if (isPreviewMode && submittedAnswer) {
+                if (isCorrect === true) {
+                  borderColor = '#52c41a' // Green for correct
+                  backgroundColor = '#f6ffed' // Light green background
+                } else if (isCorrect === false) {
+                  borderColor = '#ff4d4f' // Red for incorrect
+                  backgroundColor = '#fff2f0' // Light red background
+                }
+              }
 
               // Get clean answer text for display
               const cleanAnswer = answer ? (() => {
@@ -236,6 +231,39 @@ const SentenceCompletionQuestion = observer(({
                 tmp.innerHTML = answer
                 return tmp.textContent || tmp.innerText || ''
               })() : ''
+
+              // Render drop zone component
+              const renderDropZone = () => (
+                <span
+                  onDragOver={!isPreviewMode ? handleDragOver : undefined}
+                  onDrop={!isPreviewMode ? (e) => handleDrop(e, question.id) : undefined}
+                  className="inline-flex items-center gap-1 mx-1"
+                >
+                  <Input
+                    value={cleanAnswer}
+                    onChange={(e) => listeningStore.setAnswer(question.id, e.target.value)}
+                    placeholder={placeholderNum}
+                    className="text-center"
+                    style={{
+                      width: '120px',
+                      backgroundColor,
+                      borderColor,
+                      borderWidth: '2px',
+                      color: 'var(--text-primary)'
+                    }}
+                    disabled={isPreviewMode}
+                  />
+                  {answer && !isPreviewMode && (
+                    <Button
+                      type="text"
+                      shape="circle"
+                      size="small"
+                      icon={<CloseOutlined />}
+                      onClick={() => handleRemove(question.id)}
+                    />
+                  )}
+                </span>
+              )
 
               return (
                 <div
@@ -245,33 +273,24 @@ const SentenceCompletionQuestion = observer(({
                   ref={(el) => { if (el) questionRefs.current[questionNumber] = el }}
                   style={{ color: 'var(--text-primary)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.25rem' }}
                 >
-                  <span dangerouslySetInnerHTML={{ __html: textParts[0] }} style={{ display: 'inline' }} />
-                  <span
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, question.id)}
-                    tabIndex={0}
-                    style={{
-                      borderColor: answer ? 'var(--primary)' : 'var(--border-color)',
-                      backgroundColor: answer ? 'var(--secondary)' : 'transparent'
-                    }}
-                    className="inline-flex items-center justify-center border-2 border-dashed rounded px-2 min-w-[60px] leading-none"
-                  >
-                    {answer ? (
-                      <span style={{ color: 'var(--text-primary)' }} className="text-sm font-medium leading-none">
-                        {cleanAnswer}
-                        <button
-                          onClick={() => handleRemove(question.id)}
-                          style={{ color: 'var(--text-primary)' }}
-                          className="hover:opacity-70 transition-opacity text-xs font-bold ml-2"
-                        >
-                          ✕
-                        </button>
-                      </span>
-                    ) : (
-                      <span style={{ color: 'var(--text-secondary)' }} className="text-xs font-bold leading-none">{placeholderNum}</span>
-                    )}
-                  </span>
-                  {textParts[1] && <span dangerouslySetInnerHTML={{ __html: textParts[1] }} style={{ display: 'inline' }} />}
+                  {/* Render all text parts with drop zones in between */}
+                  {textParts.map((part, partIndex) => (
+                    <span key={partIndex} style={{ display: 'contents' }}>
+                      <span dangerouslySetInnerHTML={{ __html: part }} style={{ display: 'inline' }} />
+                      {/* Add drop zone after each part except the last one */}
+                      {partIndex < textParts.length - 1 && renderDropZone()}
+                    </span>
+                  ))}
+                  {/* Fallback: if no dropzone was found but should have one, add at end */}
+                  {shouldHaveDropzone && !hasDropzone && renderDropZone()}
+                  {isPreviewMode && listeningStore.mockId && listeningStore.sectionId && (
+                    <QuestionMarkingButtons
+                      mockId={listeningStore.mockId}
+                      sectionId={listeningStore.sectionId}
+                      questionOrd={questionNumber}
+                      isCorrect={isCorrect}
+                    />
+                  )}
                 </div>
               )
             })}

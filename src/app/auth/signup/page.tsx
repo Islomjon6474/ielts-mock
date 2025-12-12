@@ -5,6 +5,7 @@ import { useStore } from '@/stores/StoreContext'
 import { useRouter } from 'next/navigation'
 import { Form, Input, Button, Card, message, Typography } from 'antd'
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons'
+import Logo from '@/components/common/Logo'
 import Link from 'next/link'
 
 const { Title, Text } = Typography
@@ -54,8 +55,11 @@ const SignUpPage = observer(() => {
         }}
       >
         <div className="text-center mb-6">
-          <Title level={2} className="!mb-2" style={{ color: 'var(--text-primary)' }}>Create Account</Title>
-          <Text type="secondary" style={{ color: 'var(--text-secondary)' }}>Join IELTS Mock Platform</Text>
+          <div className="flex justify-center mb-4">
+            <Logo size="large" />
+          </div>
+          <Title level={3} className="!mb-2" style={{ color: 'var(--text-primary)' }}>Create Account</Title>
+          <Text type="secondary" style={{ color: 'var(--text-secondary)' }}>Join Sirius Academy</Text>
         </div>
 
         <Form

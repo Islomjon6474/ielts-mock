@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { Layout, Typography, Card, Button, Space, message, Spin, Tag } from 'antd'
 import { HomeOutlined, ArrowLeftOutlined, SoundOutlined, BookOutlined, EditOutlined } from '@ant-design/icons'
+import Logo from '@/components/common/Logo'
 import { mockResultApi } from '@/services/mockResultApi'
 import { mockSubmissionApi } from '@/services/mockSubmissionApi'
 import { UserMenu } from '@/components/auth/UserMenu'
@@ -169,7 +170,7 @@ const ResultPreviewPage = observer(() => {
       {/* Header */}
       <Header style={{
         background: 'var(--header-background)',
-        borderBottom: '1px solid var(--border-color)', 
+        borderBottom: '1px solid var(--border-color)',
         padding: '20px 48px',
         display: 'flex',
         alignItems: 'center',
@@ -177,9 +178,12 @@ const ResultPreviewPage = observer(() => {
         height: 'auto',
         lineHeight: 'normal'
       }}>
-        <Title level={2} style={{ margin: 0, color: '#cf1322', lineHeight: '1.3' }}>
-          Test Result Preview
-        </Title>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <Logo size="medium" />
+          <Title level={4} style={{ margin: 0, color: 'var(--text-primary)', lineHeight: '1.3' }}>
+            Test Result Preview
+          </Title>
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <Button 
             icon={<ArrowLeftOutlined />}

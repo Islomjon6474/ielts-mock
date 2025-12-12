@@ -1,29 +1,30 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { 
-  Layout, 
-  Typography, 
-  Card, 
-  Button, 
-  Table, 
-  message, 
-  Modal, 
-  Form, 
-  Input, 
+import {
+  Layout,
+  Typography,
+  Card,
+  Button,
+  Table,
+  message,
+  Modal,
+  Form,
+  Input,
   Space,
   Tag,
   Tooltip
 } from 'antd'
-import { 
-  PlusOutlined, 
-  HomeOutlined, 
-  KeyOutlined, 
+import {
+  PlusOutlined,
+  HomeOutlined,
+  KeyOutlined,
   UserOutlined,
   ReloadOutlined,
   EditOutlined
 } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
+import Logo from '@/components/common/Logo'
 import { userManagementApi, StudentDto, ChangePasswordDto } from '@/services/userManagementApi'
 import { UserMenu } from '@/components/auth/UserMenu'
 import { withAuth } from '@/components/auth/withAuth'
@@ -235,9 +236,12 @@ const UserManagementPage = () => {
         height: 'auto',
         lineHeight: 'normal'
       }}>
-        <Title level={2} style={{ margin: 0, color: '#cf1322', lineHeight: '1.3' }}>
-          User Management
-        </Title>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <Logo size="medium" />
+          <Title level={4} style={{ margin: 0, color: 'var(--text-primary)', lineHeight: '1.3' }}>
+            User Management
+          </Title>
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <Button 
             icon={<HomeOutlined />}

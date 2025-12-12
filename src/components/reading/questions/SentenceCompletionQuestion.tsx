@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { Input, Button } from 'antd'
+import { CloseOutlined } from '@ant-design/icons'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import { Question } from '@/stores/ReadingStore'
@@ -164,9 +166,49 @@ const SentenceCompletionQuestion = observer(({
             }
 
             // Split text by placeholder and inject drop zone
+            // Use global regex to replace ALL occurrences of [number] placeholders
+            // Handle various encodings: [27], &#91;27&#93;, &lsqb;27&rsqb;, %5B27%5D
+            // Also handle when brackets are wrapped in HTML tags like <strong>[</strong>27<strong>]</strong>
             const DROPZONE_MARKER = '__DROPZONE__'
-            const processedText = processArrows(convertBlockToInline(textContent)).replace(/\[(\d+)\]/, DROPZONE_MARKER)
+            let processedText = processArrows(convertBlockToInline(textContent))
+
+            // Replace various encodings of [number] with DROPZONE_MARKER
+            // Order matters - more specific patterns first
+            processedText = processedText
+              // Pattern: entire placeholder wrapped in tags, e.g., <strong>[27]</strong> or <span>[27]</span>
+              .replace(/<[^>]*>\[(\d+)\]<\/[^>]*>/g, DROPZONE_MARKER)
+              // Pattern: brackets and number each in separate tags, e.g., <b>[</b><b>27</b><b>]</b>
+              .replace(/<[^>]*>\[<\/[^>]*>\s*<[^>]*>(\d+)<\/[^>]*>\s*<[^>]*>\]<\/[^>]*>/g, DROPZONE_MARKER)
+              // Pattern: opening bracket in tag, rest outside, e.g., <b>[</b>27]
+              .replace(/<[^>]*>\[<\/[^>]*>\s*(\d+)\s*\]/g, DROPZONE_MARKER)
+              // Pattern: closing bracket in tag, e.g., [27<b>]</b>
+              .replace(/\[\s*(\d+)\s*<[^>]*>\]<\/[^>]*>/g, DROPZONE_MARKER)
+              // Pattern: number in tag with brackets outside: [<strong>27</strong>]
+              .replace(/\[<[^>]*>(\d+)<\/[^>]*>\]/g, DROPZONE_MARKER)
+              // Standard format [27]
+              .replace(/\[(\d+)\]/g, DROPZONE_MARKER)
+              // HTML entity encoded &#91;27&#93;
+              .replace(/&#91;(\d+)&#93;/g, DROPZONE_MARKER)
+              // Named entity &lsqb;27&rsqb;
+              .replace(/&lsqb;(\d+)&rsqb;/g, DROPZONE_MARKER)
+              // URL encoded %5B27%5D
+              .replace(/%5B(\d+)%5D/gi, DROPZONE_MARKER)
+
+            // Fallback: If no marker was inserted but we know there should be a placeholder,
+            // try stripping HTML tags and re-matching
+            if (!processedText.includes(DROPZONE_MARKER)) {
+              const strippedText = processedText.replace(/<[^>]*>/g, '')
+              if (strippedText.match(/\[(\d+)\]/)) {
+                // The placeholder exists but is hidden by complex HTML - use stripped version
+                processedText = strippedText.replace(/\[(\d+)\]/g, DROPZONE_MARKER)
+              }
+            }
+
             const textParts = processedText.split(DROPZONE_MARKER)
+
+            // If still no split happened but there should be a placeholder, add marker at end
+            const shouldHaveDropzone = textContent.includes('[') && textContent.includes(']')
+            const hasDropzone = textParts.length > 1
 
             // Get clean answer text for display
             const cleanAnswer = displayAnswer ? (() => {
@@ -189,6 +231,39 @@ const SentenceCompletionQuestion = observer(({
               }
             }
 
+            // Render drop zone component
+            const renderDropZone = () => (
+              <span
+                onDragOver={!readingStore.isPreviewMode ? handleDragOver : undefined}
+                onDrop={!readingStore.isPreviewMode ? (e) => handleDrop(e, question.id) : undefined}
+                className="inline-flex items-center gap-1 mx-1"
+              >
+                <Input
+                  value={cleanAnswer}
+                  onChange={(e) => readingStore.setAnswer(question.id, e.target.value)}
+                  placeholder={placeholderNum}
+                  className="text-center"
+                  style={{
+                    width: '120px',
+                    backgroundColor,
+                    borderColor,
+                    borderWidth: '2px',
+                    color: 'var(--text-primary)'
+                  }}
+                  disabled={readingStore.isPreviewMode}
+                />
+                {displayAnswer && !readingStore.isPreviewMode && (
+                  <Button
+                    type="text"
+                    shape="circle"
+                    size="small"
+                    icon={<CloseOutlined />}
+                    onClick={() => handleRemove(question.id)}
+                  />
+                )}
+              </span>
+            )
+
             return (
               <div
                 key={question.id}
@@ -196,36 +271,16 @@ const SentenceCompletionQuestion = observer(({
                 ref={(el) => { if (el) questionRefs.current[questionNumber] = el }}
                 style={{ color: 'var(--text-primary)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.25rem' }}
               >
-                <span dangerouslySetInnerHTML={{ __html: textParts[0] }} style={{ display: 'inline' }} />
-                <span
-                  onDragOver={!readingStore.isPreviewMode ? handleDragOver : undefined}
-                  onDrop={!readingStore.isPreviewMode ? (e) => handleDrop(e, question.id) : undefined}
-                  tabIndex={0}
-                  className="inline-flex items-center justify-center border-2 border-dashed rounded px-2 min-w-[60px] leading-none"
-                  style={{
-                    borderColor,
-                    backgroundColor,
-                    borderWidth: '2px'
-                  }}
-                >
-                  {displayAnswer ? (
-                    <span className="text-sm font-medium leading-none" style={{ color: 'var(--text-primary)' }}>
-                      {cleanAnswer}
-                      {!readingStore.isPreviewMode && (
-                        <button
-                          onClick={() => handleRemove(question.id)}
-                          className="text-xs font-bold hover:opacity-70 transition-opacity ml-2"
-                          style={{ color: 'var(--text-primary)' }}
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </span>
-                  ) : (
-                    <span className="text-xs font-bold leading-none" style={{ color: 'var(--text-secondary)' }}>{placeholderNum}</span>
-                  )}
-                </span>
-                {textParts[1] && <span dangerouslySetInnerHTML={{ __html: textParts[1] }} style={{ display: 'inline' }} />}
+                {/* Render all text parts with drop zones in between */}
+                {textParts.map((part, partIndex) => (
+                  <span key={partIndex} style={{ display: 'contents' }}>
+                    <span dangerouslySetInnerHTML={{ __html: part }} style={{ display: 'inline' }} />
+                    {/* Add drop zone after each part except the last one */}
+                    {partIndex < textParts.length - 1 && renderDropZone()}
+                  </span>
+                ))}
+                {/* Fallback: if no dropzone was found but should have one, add at end */}
+                {shouldHaveDropzone && !hasDropzone && renderDropZone()}
                 {readingStore.isPreviewMode && readingStore.mockId && readingStore.sectionId && (
                   <QuestionMarkingButtons
                     mockId={readingStore.mockId}

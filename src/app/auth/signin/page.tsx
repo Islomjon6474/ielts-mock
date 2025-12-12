@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Form, Input, Button, Card, message, Typography } from 'antd'
 import { UserOutlined, LockOutlined } from '@ant-design/icons'
+import Logo from '@/components/common/Logo'
 
 const { Title, Text } = Typography
 
@@ -51,8 +52,11 @@ const SignInPage = observer(() => {
         }}
       >
         <div className="text-center mb-6">
-          <Title level={2} className="!mb-2" style={{ color: 'var(--text-primary)' }}>Welcome Back</Title>
-          <Text type="secondary" style={{ color: 'var(--text-secondary)' }}>Sign in to your IELTS Mock account</Text>
+          <div className="flex justify-center mb-4">
+            <Logo size="large" />
+          </div>
+          <Title level={3} className="!mb-2" style={{ color: 'var(--text-primary)' }}>Welcome Back</Title>
+          <Text type="secondary" style={{ color: 'var(--text-secondary)' }}>Sign in to your account</Text>
         </div>
 
         <Form

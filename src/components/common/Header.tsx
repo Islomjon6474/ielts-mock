@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from 'antd'
 import { WifiOutlined, BellOutlined, MenuOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
+import Logo from './Logo'
 import SettingsDrawer from './SettingsDrawer'
 
 interface HeaderProps {
@@ -56,12 +57,7 @@ const Header = ({
             Back to Sections
           </Button>
         )}
-        <h1
-          className="text-lg font-bold tracking-wide"
-          style={{ color: '#cf1322' }}
-        >
-          IELTS
-        </h1>
+        <Logo size="small" showText={true} />
         <span
           className="text-xs font-medium"
           style={{ color: 'var(--text-secondary)' }}

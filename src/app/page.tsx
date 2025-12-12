@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { Typography, Card, Row, Col, Button, Empty, Spin, Space, Tag, Pagination, Skeleton, Modal, Tabs } from 'antd'
 import { FileTextOutlined, SettingOutlined, CalendarOutlined, ArrowRightOutlined, ExclamationCircleOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons'
 import { observer } from 'mobx-react-lite'
+import Logo from '@/components/common/Logo'
 import { useStore } from '@/stores/StoreContext'
 import { mockSubmissionApi, testManagementApi } from '@/services/testManagementApi'
 import { UserMenu } from '@/components/auth/UserMenu'
@@ -379,8 +380,11 @@ const HomePage = observer(() => {
             
             {/* Title Section */}
             <div style={{ flex: 1, textAlign: 'center' }}>
-              <Title level={1} style={{ marginBottom: '12px', fontSize: '2.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                IELTS Mock Assessment Platform
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+                <Logo size="large" />
+              </div>
+              <Title level={2} style={{ marginBottom: '12px', fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                Mock Assessment Platform
               </Title>
               <Paragraph style={{ fontSize: '1.125rem', color: 'var(--text-secondary)', marginBottom: 0 }}>
                 Prepare for your IELTS exam with realistic practice tests
