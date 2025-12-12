@@ -297,8 +297,9 @@ const QuestionPanel = observer(() => {
         // Render MATRIX_TABLE as a special group with table
         if (group.type === 'MATRIX_TABLE') {
           const questionGroupData = currentPart.questionGroups?.[groupIndex]
-          // Get matrix options from questionGroups
-          let options = questionGroupData?.matrixOptions || []
+          // Get matrix options from questionGroups, fallback to first question's matrixOptions
+          const firstQuestion = group.questions[0]?.question
+          let options = questionGroupData?.matrixOptions || (firstQuestion as any)?.matrixOptions || []
           const parsedOptions = Array.isArray(options) ? options : []
 
           return (
@@ -335,6 +336,7 @@ const QuestionPanel = observer(() => {
         // Render MULTIPLE_QUESTIONS_MULTIPLE_CHOICE as a special group
         if (group.type === 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE') {
           const firstQuestion = group.questions[0]?.question
+          const questionGroupData = currentPart.questionGroups?.[groupIndex]
 
           // Get range from the question itself (stored during data processing)
           const startNum = firstQuestion?.rangeStart || group.startNumber
@@ -353,6 +355,20 @@ const QuestionPanel = observer(() => {
               {groupIndex > 0 && (
                 <div className="border-t-2 my-6" style={{ borderColor: 'var(--border-color)' }}></div>
               )}
+
+              {/* Question group header with instruction */}
+              <div className="rounded-lg border-l-4 p-4 mb-4" style={{ backgroundColor: 'var(--card-background)', borderLeftColor: '#f59e0b' }}>
+                <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
+                  Questions {startNum}–{endNum}
+                </h3>
+                {questionGroupData?.instruction && (
+                  <div
+                    className="text-sm prose prose-sm max-w-none"
+                    style={{ color: 'var(--text-secondary)' }}
+                    dangerouslySetInnerHTML={{ __html: questionGroupData.instruction }}
+                  />
+                )}
+              </div>
 
               <MultipleQuestionsMultipleChoiceQuestion
                 question={firstQuestion}

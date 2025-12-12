@@ -743,6 +743,9 @@ const PartEditorPage = observer(() => {
                   id: placeholderNum,
                   type: 'FILL_IN_BLANK',
                   text: questionWithoutAnswer.text || '',
+                  groupIndex: groupIndex,
+                  groupInstruction: group.instruction || '',
+                  ...(group.imageId && { imageUrl: `/api/file/download/${group.imageId}` }),
                 })
               })
             } else if (group.type === 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE') {
@@ -767,7 +770,10 @@ const PartEditorPage = observer(() => {
                       maxAnswers: questionWithoutAnswer.maxAnswers || 2,
                       groupId: groupId, // Mark them as belonging to the same group
                       rangeStart: rangeStart, // Store the full range info
-                      rangeEnd: rangeEnd
+                      rangeEnd: rangeEnd,
+                      groupIndex: groupIndex, // Add groupIndex to map back to questionGroups
+                      groupInstruction: group.instruction || '', // Add instruction directly
+                      ...(group.imageId && { imageUrl: `/api/file/download/${group.imageId}` }),
                     })
                   }
                 }
@@ -776,13 +782,19 @@ const PartEditorPage = observer(() => {
               // For other types, one question object = one flat question
               const questionType = group.type
               const questionId = startNumber + index
-              
+
               const flatQuestion: any = {
                 id: questionId,
                 type: questionType,
                 text: questionWithoutAnswer.text || '',
+                // ALWAYS add groupIndex and groupInstruction to ALL question types
+                // This is critical for proper grouping on student side
+                groupIndex: groupIndex,
+                groupInstruction: group.instruction || '',
+                // Add imageUrl from group's imageId if available (for all types)
+                ...(group.imageId && { imageUrl: `/api/file/download/${group.imageId}` }),
               }
-              
+
               // Add type-specific fields
               if (questionType === 'MULTIPLE_CHOICE' || questionType === 'MULTIPLE_CHOICE_SINGLE') {
                 flatQuestion.options = questionWithoutAnswer.options
@@ -797,13 +809,13 @@ const PartEditorPage = observer(() => {
                 // Options are already an array from Form.List
                 const groupOptions = group.options || []
                 flatQuestion.options = Array.isArray(groupOptions) ? groupOptions : []
-              } else if (questionType === 'IMAGE_INPUTS') {
-                // For IMAGE_INPUTS, add imageUrl from group's imageId
-                if (group.imageId) {
-                  flatQuestion.imageUrl = `/api/file/download/${group.imageId}`
-                }
+              } else if (questionType === 'MATRIX_TABLE') {
+                // matrixOptions are stored at group level
+                const groupMatrixOptions = group.matrixOptions || []
+                flatQuestion.matrixOptions = Array.isArray(groupMatrixOptions) ? groupMatrixOptions : []
               }
-              
+              // Note: imageUrl is already added for all types from group.imageId above
+
               flatQuestions.push(flatQuestion)
             }
             

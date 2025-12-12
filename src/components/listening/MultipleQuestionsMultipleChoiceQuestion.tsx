@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { Checkbox, Card, Divider } from 'antd'
+import { Checkbox } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/stores/StoreContext'
 import AuthenticatedImage from '@/components/common/AuthenticatedImage'
@@ -16,20 +16,12 @@ interface MultipleQuestionsMultipleChoiceQuestionProps {
 
 const MultipleQuestionsMultipleChoiceQuestion = observer(({ question, questionNumber, questionRange, isPreviewMode = false }: MultipleQuestionsMultipleChoiceQuestionProps) => {
   const { listeningStore } = useStore()
-  const maxAnswers = question.maxAnswers || 2
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Calculate all question numbers in the range
   const questionNumbers = questionRange
     ? Array.from({ length: questionRange[1] - questionRange[0] + 1 }, (_, i) => questionRange[0] + i)
     : [questionNumber]
-
-  console.log('✅ LISTENING - MULTIPLE_QUESTIONS_MULTIPLE_CHOICE Rendering:', {
-    questionRange,
-    questionNumbers,
-    hasOptions: !!question?.options,
-    options: question?.options
-  })
 
   // Get answer from the FIRST question (all questions share the same answer)
   const firstQuestionNum = questionNumbers[0]
@@ -47,11 +39,16 @@ const MultipleQuestionsMultipleChoiceQuestion = observer(({ question, questionNu
     }
   }, [listeningStore.currentQuestionNumber, questionNumbers])
 
-  const handleChange = (checkedValues: string[]) => {
-    // No limit - user can select as many options as they want
+  const handleChange = (option: string, checked: boolean) => {
+    let newAnswer: string[]
+    if (checked) {
+      newAnswer = [...answer, option]
+    } else {
+      newAnswer = answer.filter(a => a !== option)
+    }
     // Save the SAME answer for ALL questions in the range
     questionNumbers.forEach(qNum => {
-      listeningStore.setAnswer(qNum, checkedValues)
+      listeningStore.setAnswer(qNum, newAnswer)
     })
   }
 
@@ -62,113 +59,82 @@ const MultipleQuestionsMultipleChoiceQuestion = observer(({ question, questionNu
     ? (Array.isArray(submittedAnswer) ? submittedAnswer : [submittedAnswer])
     : answer
 
+  // Determine how many answers to select based on question count
+  const answerCount = questionNumbers.length
+
   return (
-    <Card
-      className="mb-4"
+    <div
       ref={containerRef}
-      style={{
-        backgroundColor: 'var(--card-background)',
-        borderColor: isPreviewMode && submittedAnswer
-          ? (isCorrect ? '#52c41a' : '#ff4d4f')
-          : 'var(--border-color)',
-        borderWidth: isPreviewMode && submittedAnswer ? '2px' : '1px'
-      }}
+      style={{ color: 'var(--text-primary)' }}
     >
-      <div className="flex items-start gap-4">
-        <div className="flex-1">
-          <p style={{ color: 'var(--text-primary)' }} className="mb-3 font-medium text-sm">
-            <strong>Questions {questionNumbers[0]}-{questionNumbers[questionNumbers.length - 1]}</strong>
-          </p>
-
-          {/* Display image if available */}
-          {question.imageUrl && (
-            <div className="mb-4">
-              <AuthenticatedImage
-                src={question.imageUrl}
-                alt={`Questions ${questionNumbers[0]}-${questionNumbers[questionNumbers.length - 1]} image`}
-                style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }}
-                className="rounded border"
-              />
-            </div>
-          )}
-
-          {/* Display instruction/passage if available */}
-          {question.text && (
-            <div className="mb-4 p-3 bg-gray-50 rounded" style={{ borderLeft: '3px solid var(--primary-color)' }}>
-              <div style={{ color: 'var(--text-primary)' }} dangerouslySetInnerHTML={{ __html: question.text }} />
-            </div>
-          )}
-
-          {/* Display options once */}
-          {!question?.options || question.options.length === 0 ? (
-            <div className="p-4 bg-red-50 border border-red-200 rounded">
-              <p className="text-red-600 font-semibold">Error: No options defined for this question</p>
-              <p className="text-sm text-red-500 mt-2">Please configure the options in the admin panel.</p>
-            </div>
-          ) : (
-            <>
-              <div className="mb-4 p-3 bg-blue-50 rounded">
-                <h4 className="font-semibold mb-2 text-sm" style={{ color: 'var(--text-primary)' }}>Options:</h4>
-                <div className="space-y-2">
-                  {question.options?.map((option: string, index: number) => {
-                    const optionLabel = String.fromCharCode(65 + index) // A, B, C, D...
-                    return (
-                      <div key={index} className="flex items-start">
-                        <span className="font-semibold mr-2 text-sm" style={{ color: 'var(--text-primary)', minWidth: '24px' }}>{optionLabel}.</span>
-                        <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{option}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              <Divider style={{ margin: '16px 0' }}>Select your answers (applies to all questions {questionNumbers[0]}-{questionNumbers[questionNumbers.length - 1]})</Divider>
-
-              {/* Single checkbox group - same answer for all questions */}
-              <Checkbox.Group
-                value={displayAnswer}
-                onChange={(checkedValues) => handleChange(checkedValues as string[])}
-                disabled={isPreviewMode}
-                className="w-full"
-              >
-                <div className="flex flex-wrap gap-2">
-                  {question.options?.map((option: string, index: number) => {
-                    const optionLabel = String.fromCharCode(65 + index) // A, B, C, D...
-                    return (
-                      <Checkbox
-                        key={index}
-                        value={option}
-                        disabled={isPreviewMode}
-                      >
-                        <span className="font-semibold text-sm">{optionLabel}</span>
-                      </Checkbox>
-                    )
-                  })}
-                </div>
-              </Checkbox.Group>
-
-              <div style={{ color: 'var(--text-secondary)' }} className="mt-2 text-xs">
-                Selected: {displayAnswer.length} option{displayAnswer.length !== 1 ? 's' : ''}
-              </div>
-
-              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                <p className="text-xs" style={{ color: 'var(--text-primary)' }}>
-                  <strong>Note:</strong> Your selected answers will be applied to ALL questions ({questionNumbers.join(', ')})
-                </p>
-              </div>
-            </>
-          )}
+      {/* Display image if available */}
+      {question.imageUrl && (
+        <div className="mb-4">
+          <AuthenticatedImage
+            src={question.imageUrl}
+            alt={`Questions ${questionNumbers[0]}-${questionNumbers[questionNumbers.length - 1]} image`}
+            style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }}
+            className="rounded border"
+          />
         </div>
-        {isPreviewMode && listeningStore.mockId && listeningStore.sectionId && (
+      )}
+
+      {/* Display instruction/question text with HTML rendering */}
+      {question.text && (
+        <div
+          className="mb-4 text-sm leading-relaxed"
+          style={{ color: 'var(--text-primary)' }}
+          dangerouslySetInnerHTML={{ __html: question.text }}
+        />
+      )}
+
+      {/* Options as vertical checkbox list */}
+      {!question?.options || question.options.length === 0 ? (
+        <div className="p-4 bg-red-50 border border-red-200 rounded">
+          <p className="text-red-600 font-semibold">Error: No options defined for this question</p>
+          <p className="text-sm text-red-500 mt-2">Please configure the options in the admin panel.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {question.options?.map((option: string, index: number) => {
+            const isChecked = displayAnswer.includes(option)
+
+            return (
+              <label
+                key={index}
+                className="flex items-start gap-3 cursor-pointer group"
+                style={{ opacity: isPreviewMode ? 0.9 : 1 }}
+              >
+                <Checkbox
+                  checked={isChecked}
+                  onChange={(e) => handleChange(option, e.target.checked)}
+                  disabled={isPreviewMode}
+                  className="mt-0.5"
+                />
+                <span
+                  className="text-sm leading-relaxed"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  {option}
+                </span>
+              </label>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Preview mode marking buttons */}
+      {isPreviewMode && listeningStore.mockId && listeningStore.sectionId && (
+        <div className="mt-4 flex justify-end">
           <QuestionMarkingButtons
             mockId={listeningStore.mockId}
             sectionId={listeningStore.sectionId}
             questionOrd={firstQuestionNum}
             isCorrect={isCorrect}
           />
-        )}
-      </div>
-    </Card>
+        </div>
+      )}
+    </div>
   )
 })
 

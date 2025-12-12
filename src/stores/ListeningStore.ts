@@ -12,6 +12,16 @@ export interface ListeningQuestion {
   correctAnswer?: string | string[] // Correct answer(s) for the question
 }
 
+export interface ListeningQuestionGroup {
+  type?: string
+  instruction?: string
+  imageUrl?: string
+  headingOptions?: string[]
+  matrixOptions?: string[]
+  options?: string[]
+  questions?: any[]
+}
+
 export interface ListeningPart {
   id: number
   title: string
@@ -20,6 +30,7 @@ export interface ListeningPart {
   audioUrl: string
   audioFileId?: string
   questions: ListeningQuestion[]
+  questionGroups?: ListeningQuestionGroup[]
 }
 
 export class ListeningStore {

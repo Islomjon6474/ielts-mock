@@ -434,28 +434,48 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                 const grouped: QuestionGroup[] = []
                 let currentGroup: QuestionGroup | null = null
                 
-                currentPart.questions.forEach((q: ListeningQuestion) => {
-                  // Start a new group if imageUrl, type, groupInstruction, groupIndex, or groupId changes
+                currentPart.questions.forEach((q: ListeningQuestion, qIndex: number) => {
+                  // Start a new group if type, groupIndex, or groupId changes
+                  // NOTE: We use groupIndex as the PRIMARY grouping key, NOT groupInstruction
+                  // This prevents duplicates when instruction is edited but flat questions have old instruction
                   const qGroupIndex = (q as any).groupIndex
                   const qGroupId = (q as any).groupId
                   const currentGroupId = currentGroup?.questions?.[0] ? (currentGroup.questions[0] as any).groupId : undefined
-                  const shouldStartNewGroup = !currentGroup ||
-                    q.imageUrl !== currentGroup.imageUrl ||
-                    q.type !== currentGroup.type ||
-                    (q as any).groupInstruction !== currentGroup.instruction ||
-                    (qGroupIndex !== undefined && qGroupIndex !== (currentGroup as any).groupIndex) ||
-                    (qGroupId && qGroupId !== currentGroupId)
+                  const currentGroupIndex = (currentGroup as any)?.groupIndex
+
+                  // Determine if we should start a new group
+                  let shouldStartNewGroup = !currentGroup || q.type !== currentGroup.type
+
+                  if (!shouldStartNewGroup && currentGroup) {
+                    // Check groupIndex - if both have it, they must match
+                    if (qGroupIndex !== undefined && currentGroupIndex !== undefined) {
+                      shouldStartNewGroup = qGroupIndex !== currentGroupIndex
+                    }
+                    // Check groupId - if current question has groupId, it must match
+                    else if (qGroupId && currentGroupId) {
+                      shouldStartNewGroup = qGroupId !== currentGroupId
+                    }
+                    // For IMAGE_INPUTS, also check imageUrl
+                    else if (q.type === 'IMAGE_INPUTS' && q.imageUrl !== currentGroup.imageUrl) {
+                      shouldStartNewGroup = true
+                    }
+                  }
                   
                   if (shouldStartNewGroup) {
-                    // Use groupInstruction from question data
-                    const instruction = (q as any).groupInstruction || ''
-                    
-                    currentGroup = { 
+                    // Get instruction from preserved questionGroups first, fallback to question data
+                    const questionGroupData = currentPart.questionGroups?.[qGroupIndex]
+                    const instruction = questionGroupData?.instruction || (q as any).groupInstruction || ''
+
+                    // Get matrixOptions from questionGroups for MATRIX_TABLE type
+                    const matrixOptions = questionGroupData?.matrixOptions || []
+
+                    currentGroup = {
                       type: q.type,
-                      imageUrl: q.imageUrl, 
-                      instruction, 
+                      imageUrl: q.imageUrl,
+                      instruction,
                       questions: [q],
-                      options: q.options || [],
+                      options: questionGroupData?.options || q.options || [],
+                      matrixOptions: matrixOptions,
                       groupIndex: qGroupIndex
                     } as QuestionGroup
                     grouped.push(currentGroup)
@@ -509,14 +529,28 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
 
                     console.log('✅ LISTENING - MULTIPLE_QUESTIONS_MULTIPLE_CHOICE:', {
                       groupId: (firstQuestion as any).groupId,
+                      groupIndex: (group as any).groupIndex,
                       range: [startNum, endNum],
                       questionCount: group.questions.length,
                       options: firstQuestion?.options,
-                      hasOptions: !!firstQuestion?.options
+                      hasOptions: !!firstQuestion?.options,
+                      instruction: group.instruction,
+                      hasQuestionGroups: !!currentPart.questionGroups,
+                      questionGroupsLength: currentPart.questionGroups?.length
                     })
 
                     return (
                       <div key={`group-${groupIdx}`} className="mb-8">
+                        {/* Question group header with instruction */}
+                        <div style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }} className="rounded-lg border-l-4 border-amber-500 px-4 py-2 mb-4">
+                          <h3 style={{ color: 'var(--text-primary)' }} className="font-bold text-base mb-1">
+                            Questions {startNum}{endNum !== startNum && `–${endNum}`}
+                          </h3>
+                          {group.instruction && (
+                            <div style={{ color: 'var(--text-secondary)' }} className="text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: group.instruction }} />
+                          )}
+                        </div>
+
                         <MultipleQuestionsMultipleChoiceQuestion
                           question={firstQuestion}
                           questionNumber={startNum}
@@ -529,7 +563,10 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
 
                   // Handle MATRIX_TABLE separately
                   if (group.type === 'MATRIX_TABLE') {
-                    const matrixOptions = group.matrixOptions || []
+                    // Get matrixOptions from group (set during grouping from questionGroups)
+                    // Fallback to first question's matrixOptions if group doesn't have them
+                    const firstQuestion = group.questions[0]
+                    const matrixOptions = group.matrixOptions || (firstQuestion as any)?.matrixOptions || []
 
                     return (
                       <div key={`group-${groupIdx}`} className="mb-8">
