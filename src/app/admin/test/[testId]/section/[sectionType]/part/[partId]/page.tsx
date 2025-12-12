@@ -13,6 +13,7 @@ import { QuestionGroupEditor } from '@/components/admin/questions'
 import { ImageUpload } from '@/components/admin/ImageUpload'
 import { AudioUpload } from '@/components/admin/AudioUpload'
 import { PassageRichTextEditor, PassageRichTextEditorRef } from '@/components/admin/PassageRichTextEditor'
+import { AnswersTable } from '@/components/admin/AnswersTable'
 
 const { Header, Content } = Layout
 const { Title, Text } = Typography
@@ -1282,11 +1283,14 @@ const PartEditorPage = observer(() => {
   const renderAnswersTab = () => {
     return (
       <Card>
-        <Title level={5}>Correct Answers</Title>
-        <Text type="secondary">
-          Answers are stored within each question. Use the Content tab to edit answers.
-        </Text>
-        {/* This tab can show a summary of all answers for review */}
+        <AnswersTable
+          sectionId={sectionId}
+          partId={partId}
+          onAnswerSaved={() => {
+            // Optionally reload content or show notification
+            console.log('Answer saved, refreshing data...')
+          }}
+        />
       </Card>
     )
   }
