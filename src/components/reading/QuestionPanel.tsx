@@ -24,8 +24,10 @@ const QuestionPanel = observer(() => {
 
   useEffect(() => {
     if (!currentPart) return
-    
-    const currentQuestionNumber = currentPart.questionRange[0] + readingStore.currentQuestionIndex
+
+    // Use actual question ID instead of calculating from index
+    const currentQuestionNumber = currentPart.questions[readingStore.currentQuestionIndex]?.id ??
+      (currentPart.questionRange[0] + readingStore.currentQuestionIndex)
     const currentQuestionRef = questionRefs.current[currentQuestionNumber]
     
     if (currentQuestionRef) {
@@ -141,7 +143,8 @@ const QuestionPanel = observer(() => {
     }> = []
 
     currentPart.questions.forEach((question, index) => {
-      const questionNumber = currentPart.questionRange[0] + index
+      // Use actual question ID instead of calculating from index
+      const questionNumber = question.id
       const lastGroup = groups[groups.length - 1]
       const qGroupIndex = (question as any).groupIndex
       const qGroupId = question.groupId
@@ -382,6 +385,23 @@ const QuestionPanel = observer(() => {
         // Render TABLE_COMPLETION as a special group with table and inputs
         if (group.type === 'TABLE_COMPLETION') {
           const questionGroupData = currentPart.questionGroups?.[groupIndex]
+          const firstQuestion = group.questions[0]?.question
+
+          // Get range from the question itself (stored during data processing)
+          // TABLE_COMPLETION questions have rangeStart/rangeEnd set from placeholder extraction
+          const startNum = firstQuestion?.rangeStart || group.startNumber
+          const endNum = firstQuestion?.rangeEnd || group.endNumber
+
+          // Deduplicate TABLE_COMPLETION questions by text (same table appears once)
+          // Multiple flat questions share the same table text but have different placeholder numbers
+          const seenTexts = new Set<string>()
+          const uniqueQuestions = group.questions.filter(({ question }) => {
+            if (seenTexts.has(question.text)) {
+              return false
+            }
+            seenTexts.add(question.text)
+            return true
+          })
 
           return (
             <div key={groupIndex} className="mb-8">
@@ -392,7 +412,7 @@ const QuestionPanel = observer(() => {
               <div className="space-y-4">
                 <div className="rounded-lg border-l-4 p-4 mb-4" style={{ backgroundColor: 'var(--card-background)', borderLeftColor: '#14b8a6' }}>
                   <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
-                    Questions {group.startNumber}–{group.endNumber}
+                    Questions {startNum}–{endNum}
                   </h3>
                   {questionGroupData?.instruction && (
                     <div
@@ -403,7 +423,7 @@ const QuestionPanel = observer(() => {
                   )}
                 </div>
 
-                {group.questions.map(({ question, questionNumber }) => (
+                {uniqueQuestions.map(({ question, questionNumber }) => (
                   <TableCompletionQuestion
                     key={question.id}
                     question={question}

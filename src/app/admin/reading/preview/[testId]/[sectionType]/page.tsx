@@ -283,6 +283,8 @@ const SectionPreviewPage = observer(() => {
                 headingOptions: group.headingOptions, // For MATCH_HEADING
                 matrixOptions: group.matrixOptions,   // For MATRIX_TABLE
                 options: group.options,               // For SENTENCE_COMPLETION
+                range: group.range,                   // Preserve range for display (e.g., "1-5")
+                type: group.type,                     // Preserve type for conditional rendering
                 questions: (group.questions || []).map((q: any) => ({
                   ...q,
                   options: q.options || [],
@@ -298,7 +300,10 @@ const SectionPreviewPage = observer(() => {
             const mappedQuestions = (dataToUse.questions || []).map((q: any) => {
               // Find which group this question belongs to based on question range
               let groupIndex = q.groupIndex
-              if (groupIndex === undefined && dataToUse.questionGroups && Array.isArray(dataToUse.questionGroups)) {
+              let rangeStart = q.rangeStart
+              let rangeEnd = q.rangeEnd
+
+              if (dataToUse.questionGroups && Array.isArray(dataToUse.questionGroups)) {
                 dataToUse.questionGroups.forEach((group: any, gIdx: number) => {
                   if (group.range) {
                     const match = group.range.match(/^(\d+)-(\d+)$/)
@@ -306,7 +311,17 @@ const SectionPreviewPage = observer(() => {
                       const start = parseInt(match[1])
                       const end = parseInt(match[2])
                       if (q.id >= start && q.id <= end) {
-                        groupIndex = gIdx
+                        if (groupIndex === undefined) {
+                          groupIndex = gIdx
+                        }
+                        // Set rangeStart/rangeEnd from group.range if not already set
+                        // This handles legacy data that doesn't have rangeStart/rangeEnd
+                        if (rangeStart === undefined) {
+                          rangeStart = start
+                        }
+                        if (rangeEnd === undefined) {
+                          rangeEnd = end
+                        }
                       }
                     }
                   }
@@ -326,7 +341,9 @@ const SectionPreviewPage = observer(() => {
                 ...q,
                 options: q.options || [],
                 groupIndex: groupIndex,
-                correctAnswer: correctAnswer
+                correctAnswer: correctAnswer,
+                rangeStart: rangeStart,
+                rangeEnd: rangeEnd
               }
             })
             

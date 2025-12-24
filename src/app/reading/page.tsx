@@ -186,6 +186,8 @@ const ReadingPageContent = observer(() => {
               headingOptions: group.headingOptions, // For MATCH_HEADING
               matrixOptions: group.matrixOptions,   // For MATRIX_TABLE
               options: group.options,               // For SENTENCE_COMPLETION
+              range: group.range,                   // Preserve range for display (e.g., "1-5")
+              type: group.type,                     // Preserve type for conditional rendering
               questions: (group.questions || []).map((q: any) => ({
                 ...q,
                 options: q.options || [],
@@ -193,12 +195,15 @@ const ReadingPageContent = observer(() => {
               }))
             }))
           }
-          
+
           // Map questions with options and add groupIndex from questionGroups
           const mappedQuestions = (dataToUse.questions || []).map((q: any) => {
             // Find which group this question belongs to based on question range
             let groupIndex = q.groupIndex
-            if (groupIndex === undefined && hasQuestionGroups) {
+            let rangeStart = q.rangeStart
+            let rangeEnd = q.rangeEnd
+
+            if (hasQuestionGroups) {
               dataToUse.questionGroups.forEach((group: any, gIdx: number) => {
                 if (group.range) {
                   const match = group.range.match(/^(\d+)-(\d+)$/)
@@ -206,17 +211,29 @@ const ReadingPageContent = observer(() => {
                     const start = parseInt(match[1])
                     const end = parseInt(match[2])
                     if (q.id >= start && q.id <= end) {
-                      groupIndex = gIdx
+                      if (groupIndex === undefined) {
+                        groupIndex = gIdx
+                      }
+                      // Set rangeStart/rangeEnd from group.range if not already set
+                      // This handles legacy data that doesn't have rangeStart/rangeEnd
+                      if (rangeStart === undefined) {
+                        rangeStart = start
+                      }
+                      if (rangeEnd === undefined) {
+                        rangeEnd = end
+                      }
                     }
                   }
                 }
               })
             }
-            
+
             return {
               ...q,
               options: q.options || [],
-              groupIndex: groupIndex
+              groupIndex: groupIndex,
+              rangeStart: rangeStart,
+              rangeEnd: rangeEnd
             }
           })
           

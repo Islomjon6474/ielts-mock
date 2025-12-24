@@ -24,6 +24,7 @@ export function transformAdminToListeningPart(
       headingOptions: group.headingOptions,
       matrixOptions: group.matrixOptions,
       options: group.options,
+      range: group.range, // Preserve range for display (e.g., "1-5")
       questions: (group.questions || []).map((q: any) => ({
         ...q,
         groupIndex: groupIndex
@@ -45,10 +46,12 @@ export function transformAdminToListeningPart(
       questionRange = [1, 10] // Default fallback
     }
     
-    // Build a map of question ID to group instruction, groupIndex, and imageUrl from questionGroups
+    // Build a map of question ID to group instruction, groupIndex, imageUrl, and range from questionGroups
     const questionToGroupInstruction: { [key: number]: string } = {}
     const questionToGroupIndex: { [key: number]: number } = {}
     const questionToGroupImageUrl: { [key: number]: string } = {}
+    const questionToRangeStart: { [key: number]: number } = {}
+    const questionToRangeEnd: { [key: number]: number } = {}
     if (adminData.questionGroups && Array.isArray(adminData.questionGroups)) {
       adminData.questionGroups.forEach((group: any, groupIndex: number) => {
         if (group.range) {
@@ -66,6 +69,9 @@ export function transformAdminToListeningPart(
               if (groupImageUrl) {
                 questionToGroupImageUrl[i] = groupImageUrl
               }
+              // Store range for each question (for legacy data support)
+              questionToRangeStart[i] = start
+              questionToRangeEnd[i] = end
             }
           }
         }
@@ -103,7 +109,10 @@ export function transformAdminToListeningPart(
         // Convert FILL_IN_BLANK back to the type expected by listening components
         type: q.type,
         // Include correctAnswer if available (from admin format)
-        correctAnswer: q.answer || q.correctAnswer || undefined
+        correctAnswer: q.answer || q.correctAnswer || undefined,
+        // Add rangeStart/rangeEnd from group.range (for legacy data support)
+        rangeStart: q.rangeStart !== undefined ? q.rangeStart : questionToRangeStart[q.id],
+        rangeEnd: q.rangeEnd !== undefined ? q.rangeEnd : questionToRangeEnd[q.id]
       }
     })
   } else {

@@ -22,7 +22,10 @@ const TableCompletionQuestion = observer(({ question, questionNumber, isPreviewM
     if (readingStore.isPreviewMode) return
 
     // Auto-focus when this is the current question
-    const currentQuestionNumber = readingStore.parts[readingStore.currentPart - 1]?.questionRange[0] + readingStore.currentQuestionIndex
+    // Use actual question ID instead of calculating from index
+    const currentPart = readingStore.parts[readingStore.currentPart - 1]
+    const currentQuestionNumber = currentPart?.questions[readingStore.currentQuestionIndex]?.id ??
+      (currentPart?.questionRange[0] + readingStore.currentQuestionIndex)
 
     // Focus on the specific input for the current question number
     if (containerRef.current) {

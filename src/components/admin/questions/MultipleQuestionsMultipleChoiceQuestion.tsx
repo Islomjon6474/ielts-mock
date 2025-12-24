@@ -137,7 +137,33 @@ export const MultipleQuestionsMultipleChoiceQuestion = ({
         ]}
         style={{ marginBottom: 0 }}
       >
-        <Checkbox.Group onChange={(values) => onAnswerChange?.(questionNumber, values)}>
+        <Checkbox.Group onChange={(values) => {
+          // Distribute answers: Q3 gets first selected (sorted), Q4 gets second, etc.
+          // Get the range from form field (groupPath is like ['questionGroups', 0])
+          const rangeFromForm = form?.getFieldValue([...groupPath, 'range']) || questionRange
+
+          // Sort values alphabetically for consistent distribution
+          const sortedValues = [...values].sort()
+
+          if (rangeFromForm && onAnswerChange) {
+            const match = rangeFromForm.match(/^(\d+)-(\d+)$/)
+            if (match) {
+              const start = parseInt(match[1])
+              const end = parseInt(match[2])
+              // Distribute: Q3 = first value, Q4 = second value, etc.
+              for (let i = 0; i <= end - start; i++) {
+                const qNum = start + i
+                const answerForThisQuestion = sortedValues[i] || ''
+                onAnswerChange(qNum, answerForThisQuestion)
+              }
+            } else {
+              // Fallback: just save for the single question number
+              onAnswerChange(questionNumber, sortedValues[0] || '')
+            }
+          } else if (onAnswerChange) {
+            onAnswerChange(questionNumber, sortedValues[0] || '')
+          }
+        }}>
           <Space>
             {Array.from({ length: optionCount }).map((_, index) => (
               <Checkbox key={index} value={OPTION_LABELS[index]}>

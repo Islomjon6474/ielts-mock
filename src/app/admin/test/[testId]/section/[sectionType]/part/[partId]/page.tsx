@@ -779,6 +779,47 @@ const PartEditorPage = observer(() => {
                   }
                 }
               }
+            } else if (group.type === 'TABLE_COMPLETION') {
+              // For TABLE_COMPLETION, extract placeholders from text and create separate flat questions
+              // Similar to SHORT_ANSWER - extract [n] or data-number="n" placeholders
+              const text = questionWithoutAnswer.text || ''
+
+              // Extract all placeholder numbers from text
+              const plainMatches = text.match(/\[(\d+)\]/g) || []
+              const htmlMatches = text.match(/data-number="(\d+)"/g) || []
+
+              const placeholderNumbers: number[] = []
+
+              plainMatches.forEach((m: string) => {
+                const num = m.match(/\[(\d+)\]/)
+                if (num) placeholderNumbers.push(parseInt(num[1]))
+              })
+
+              htmlMatches.forEach((m: string) => {
+                const num = m.match(/data-number="(\d+)"/)
+                if (num) placeholderNumbers.push(parseInt(num[1]))
+              })
+
+              // Remove duplicates and sort
+              const uniquePlaceholders = [...new Set(placeholderNumbers)].sort((a, b) => a - b)
+
+              // Generate a unique groupId for this question group
+              const groupId = `table_${groupIndex}_${uniquePlaceholders[0] || startNumber}_${uniquePlaceholders[uniquePlaceholders.length - 1] || startNumber}`
+
+              // Create one flat question for each placeholder
+              uniquePlaceholders.forEach((placeholderNum: number) => {
+                flatQuestions.push({
+                  id: placeholderNum,
+                  type: 'TABLE_COMPLETION',
+                  text: questionWithoutAnswer.text || '',
+                  groupId: groupId,
+                  groupIndex: groupIndex,
+                  groupInstruction: group.instruction || '',
+                  rangeStart: uniquePlaceholders[0],
+                  rangeEnd: uniquePlaceholders[uniquePlaceholders.length - 1],
+                  ...(group.imageId && { imageUrl: `/api/file/download/${group.imageId}` }),
+                })
+              })
             } else {
               // For other types, one question object = one flat question
               const questionType = group.type

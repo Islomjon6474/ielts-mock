@@ -590,18 +590,36 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
 
                   // Handle TABLE_COMPLETION separately
                   if (group.type === 'TABLE_COMPLETION') {
+                    const firstQuestion = group.questions[0]
+
+                    // Get range from the question itself (stored during data processing)
+                    // TABLE_COMPLETION questions have rangeStart/rangeEnd set from placeholder extraction
+                    const tableStartNum = (firstQuestion as any)?.rangeStart || startNum
+                    const tableEndNum = (firstQuestion as any)?.rangeEnd || endNum
+
+                    // Deduplicate TABLE_COMPLETION questions by text (same table appears once)
+                    // Multiple flat questions share the same table text but have different placeholder numbers
+                    const seenTexts = new Set<string>()
+                    const uniqueQuestions = group.questions.filter((q: ListeningQuestion) => {
+                      if (seenTexts.has(q.text)) {
+                        return false
+                      }
+                      seenTexts.add(q.text)
+                      return true
+                    })
+
                     return (
                       <div key={`group-${groupIdx}`} className="mb-8">
                         <div style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }} className="rounded-lg border-l-4 border-teal-500 px-4 py-2 mb-4">
                           <h3 style={{ color: 'var(--text-primary)' }} className="font-bold text-base mb-1">
-                            Questions {startNum}{endNum !== startNum && `–${endNum}`}
+                            Questions {tableStartNum}{tableEndNum !== tableStartNum && `–${tableEndNum}`}
                           </h3>
                           {group.instruction && (
                             <div style={{ color: 'var(--text-secondary)' }} className="text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: group.instruction }} />
                           )}
                         </div>
 
-                        {group.questions.map((q: ListeningQuestion) => (
+                        {uniqueQuestions.map((q: ListeningQuestion) => (
                           <TableCompletionQuestion
                             key={q.id}
                             question={q}

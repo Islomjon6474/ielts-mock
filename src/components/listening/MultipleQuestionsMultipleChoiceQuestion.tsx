@@ -14,6 +14,8 @@ interface MultipleQuestionsMultipleChoiceQuestionProps {
   isPreviewMode?: boolean
 }
 
+const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
+
 const MultipleQuestionsMultipleChoiceQuestion = observer(({ question, questionNumber, questionRange, isPreviewMode = false }: MultipleQuestionsMultipleChoiceQuestionProps) => {
   const { listeningStore } = useStore()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -23,9 +25,14 @@ const MultipleQuestionsMultipleChoiceQuestion = observer(({ question, questionNu
     ? Array.from({ length: questionRange[1] - questionRange[0] + 1 }, (_, i) => questionRange[0] + i)
     : [questionNumber]
 
-  // Get answer from the FIRST question (all questions share the same answer)
-  const firstQuestionNum = questionNumbers[0]
-  const answer = (listeningStore.getAnswer(firstQuestionNum) as string[]) || []
+  // Get all selected options (letter labels) by collecting answers from each question in range
+  const selectedLabels: string[] = []
+  questionNumbers.forEach(qNum => {
+    const ans = listeningStore.getAnswer(qNum) as string
+    if (ans && typeof ans === 'string' && ans.trim()) {
+      selectedLabels.push(ans)
+    }
+  })
 
   useEffect(() => {
     const currentQuestionNumber = listeningStore.currentQuestionNumber
@@ -39,28 +46,38 @@ const MultipleQuestionsMultipleChoiceQuestion = observer(({ question, questionNu
     }
   }, [listeningStore.currentQuestionNumber, questionNumbers])
 
-  const handleChange = (option: string, checked: boolean) => {
-    let newAnswer: string[]
+  const handleChange = (optionIndex: number, checked: boolean) => {
+    const optionLabel = OPTION_LABELS[optionIndex]
+
+    let newSelectedLabels: string[]
     if (checked) {
-      newAnswer = [...answer, option]
+      // Add the new label and sort alphabetically
+      newSelectedLabels = [...selectedLabels, optionLabel].sort()
     } else {
-      newAnswer = answer.filter(a => a !== option)
+      newSelectedLabels = selectedLabels.filter(a => a !== optionLabel)
     }
-    // Save the SAME answer for ALL questions in the range
-    questionNumbers.forEach(qNum => {
-      listeningStore.setAnswer(qNum, newAnswer)
+
+    // Distribute answers: Q3 gets first label, Q4 gets second label, etc.
+    // Each question gets ONE answer (letter label)
+    questionNumbers.forEach((qNum, idx) => {
+      const answerForThisQuestion = newSelectedLabels[idx] || ''
+      listeningStore.setAnswer(qNum, answerForThisQuestion)
     })
   }
 
-  // In preview mode, check the first question
-  const submittedAnswer = isPreviewMode ? listeningStore.getSubmittedAnswer(firstQuestionNum) : null
-  const isCorrect = isPreviewMode ? listeningStore.isAnswerCorrect(firstQuestionNum) : null
-  const displayAnswer = isPreviewMode && submittedAnswer
-    ? (Array.isArray(submittedAnswer) ? submittedAnswer : [submittedAnswer])
-    : answer
-
-  // Determine how many answers to select based on question count
-  const answerCount = questionNumbers.length
+  // In preview mode, collect submitted answers from all questions
+  const getPreviewLabels = (): string[] => {
+    if (!isPreviewMode) return selectedLabels
+    const labels: string[] = []
+    questionNumbers.forEach(qNum => {
+      const ans = listeningStore.getSubmittedAnswer(qNum) as string
+      if (ans && typeof ans === 'string' && ans.trim()) {
+        labels.push(ans)
+      }
+    })
+    return labels
+  }
+  const displayLabels = getPreviewLabels()
 
   return (
     <div
@@ -96,8 +113,9 @@ const MultipleQuestionsMultipleChoiceQuestion = observer(({ question, questionNu
         </div>
       ) : (
         <div className="space-y-3">
-          {question.options?.map((option: string, index: number) => {
-            const isChecked = displayAnswer.includes(option)
+          {question.options?.map((optionText: string, index: number) => {
+            const optionLabel = OPTION_LABELS[index]
+            const isChecked = displayLabels.includes(optionLabel)
 
             return (
               <label
@@ -107,7 +125,7 @@ const MultipleQuestionsMultipleChoiceQuestion = observer(({ question, questionNu
               >
                 <Checkbox
                   checked={isChecked}
-                  onChange={(e) => handleChange(option, e.target.checked)}
+                  onChange={(e) => handleChange(index, e.target.checked)}
                   disabled={isPreviewMode}
                   className="mt-0.5"
                 />
@@ -115,7 +133,7 @@ const MultipleQuestionsMultipleChoiceQuestion = observer(({ question, questionNu
                   className="text-sm leading-relaxed"
                   style={{ color: 'var(--text-primary)' }}
                 >
-                  {option}
+                  {optionText}
                 </span>
               </label>
             )
@@ -123,15 +141,20 @@ const MultipleQuestionsMultipleChoiceQuestion = observer(({ question, questionNu
         </div>
       )}
 
-      {/* Preview mode marking buttons */}
+      {/* Preview mode marking buttons for each question in range */}
       {isPreviewMode && listeningStore.mockId && listeningStore.sectionId && (
-        <div className="mt-4 flex justify-end">
-          <QuestionMarkingButtons
-            mockId={listeningStore.mockId}
-            sectionId={listeningStore.sectionId}
-            questionOrd={firstQuestionNum}
-            isCorrect={isCorrect}
-          />
+        <div className="mt-4 space-y-2">
+          {questionNumbers.map(qNum => (
+            <div key={qNum} className="flex items-center justify-between">
+              <span className="text-sm font-medium">Q{qNum}: {listeningStore.getSubmittedAnswer(qNum) || '-'}</span>
+              <QuestionMarkingButtons
+                mockId={listeningStore.mockId!}
+                sectionId={listeningStore.sectionId!}
+                questionOrd={qNum}
+                isCorrect={listeningStore.isAnswerCorrect(qNum)}
+              />
+            </div>
+          ))}
         </div>
       )}
     </div>

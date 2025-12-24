@@ -22,7 +22,10 @@ const FillInBlankQuestion = observer(({ question, questionNumber }: FillInBlankQ
     if (readingStore.isPreviewMode) return
     
     // Auto-focus when this is the current question
-    const currentQuestionNumber = readingStore.parts[readingStore.currentPart - 1]?.questionRange[0] + readingStore.currentQuestionIndex
+    // Use actual question ID instead of calculating from index
+    const currentPart = readingStore.parts[readingStore.currentPart - 1]
+    const currentQuestionNumber = currentPart?.questions[readingStore.currentQuestionIndex]?.id ??
+      (currentPart?.questionRange[0] + readingStore.currentQuestionIndex)
     
     // For fill-in-blank questions, we need to focus on the specific input for the current question number
     if (containerRef.current) {
