@@ -210,7 +210,7 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
       </Header>
 
       {/* Part Title with Admin Grading Panel */}
-      <div className="ielts-part-header" style={{ margin: '0', borderRadius: '0', marginTop: '56px' }}>
+      <div className="ielts-part-header" style={{ margin: '0', borderRadius: '0', marginTop: '70px' }}>
         <div className="flex items-center justify-between gap-4">
           {/* Part Title and Instruction */}
           <div className="flex-1">

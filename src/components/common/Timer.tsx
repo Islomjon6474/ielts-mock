@@ -31,8 +31,8 @@ const Timer = observer(({ timeRemaining, isTimeUp }: TimerProps) => {
       className="timer-display"
       style={{
         color: getColor(),
-        fontSize: '16px',
-        fontWeight: 500,
+        fontSize: '22px',
+        fontWeight: 600,
       }}
     >
       {isTimeUp ? 'Time Up!' : formatTime(timeRemaining)}

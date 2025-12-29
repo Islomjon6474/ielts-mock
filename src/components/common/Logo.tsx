@@ -15,9 +15,9 @@ const Logo = observer(({ size = 'medium', showText = true }: LogoProps) => {
 
   // Size configurations
   const sizes = {
-    small: { width: 100, height: 36 },
-    medium: { width: 140, height: 50 },
-    large: { width: 200, height: 100 },
+    small: { width: 130, height: 48 },
+    medium: { width: 160, height: 60 },
+    large: { width: 220, height: 110 },
   }
 
   const { width, height } = sizes[size]

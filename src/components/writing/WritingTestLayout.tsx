@@ -131,7 +131,7 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
       </Header>
 
       {/* Task Info Header */}
-      <div className="ielts-part-header" style={{ margin: '0', borderRadius: '0', marginTop: '56px' }}>
+      <div className="ielts-part-header" style={{ margin: '0', borderRadius: '0', marginTop: '70px' }}>
         <p style={{ margin: '0 0 4px 0', fontSize: '16px' }}><strong>{currentTask.title}</strong></p>
         <p style={{ margin: '0', color: 'var(--text-secondary)', fontSize: '14px' }}>
           You should spend about {currentTask.timeMinutes} minutes on this task. Write at least {currentTask.minWords} words.

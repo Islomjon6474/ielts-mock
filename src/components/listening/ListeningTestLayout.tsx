@@ -383,7 +383,7 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
       </Header>
 
       {/* Part Title and Status with Admin Grading Panel */}
-      <div className="ielts-part-header" style={{ margin: '0', borderRadius: '0', marginTop: '56px' }}>
+      <div className="ielts-part-header" style={{ margin: '0', borderRadius: '0', marginTop: '70px' }}>
         <div className="flex items-center justify-between gap-4">
           {/* Part Title and Status */}
           <div className="flex-1">
