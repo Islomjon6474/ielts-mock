@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { Layout, Button } from 'antd'
-import {LeftOutlined, RightOutlined, CheckOutlined, ReloadOutlined} from '@ant-design/icons'
+import { Button } from 'antd'
+import { ReloadOutlined } from '@ant-design/icons'
 import { observer } from 'mobx-react-lite'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useStore } from '@/stores/StoreContext'
@@ -14,8 +14,6 @@ import BottomNavigation from './BottomNavigation'
 import SubmitModal from '@/components/common/SubmitModal'
 import AdminGradingPanel from '@/components/admin/AdminGradingPanel'
 import { exitFullscreen } from '@/utils/fullscreen'
-
-const { Content } = Layout
 
 interface ReadingTestLayoutProps {
   isPreviewMode?: boolean
@@ -200,8 +198,8 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
   }
 
   return (
-    <Layout className="h-screen flex flex-col">
-      <Header 
+    <div className="ielts-test-page h-screen flex flex-col">
+      <Header
         isPreviewMode={isPreviewMode}
         previewSectionType="reading"
         onBackClick={onBackClick}
@@ -211,15 +209,14 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
         )}
       </Header>
 
-      {/* Part Title with Admin Grading Panel - Compact */}
-      <div className="px-4 py-1.5 border-b" style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }}>
+      {/* Part Title with Admin Grading Panel */}
+      <div className="ielts-part-header" style={{ margin: '0', borderRadius: '0', marginTop: '56px' }}>
         <div className="flex items-center justify-between gap-4">
           {/* Part Title and Instruction */}
           <div className="flex-1">
-            <h2 className="font-semibold text-sm inline-block mr-4" style={{ color: 'var(--text-primary)' }}>{currentPart.title}</h2>
-            <span
-              className="text-xs prose prose-xs max-w-none inline"
-              style={{ color: 'var(--text-secondary)' }}
+            <p style={{ margin: '0 0 4px 0', fontSize: '16px' }}><strong>{currentPart.title}</strong></p>
+            <p
+              style={{ margin: '0', color: 'var(--text-secondary)', fontSize: '14px' }}
               dangerouslySetInnerHTML={{ __html: currentPart.instruction }}
             />
           </div>
@@ -228,7 +225,7 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
           {showAdminPanel && (
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 text-xs">
-                <span style={{ color: 'var(--text-secondary)' }}>Total: <strong style={{ color: 'var(--text-primary)' }}>{gradingStats.total}</strong></span>
+                <span style={{ color: '#666' }}>Total: <strong>{gradingStats.total}</strong></span>
                 <span className="text-green-600">✓ {gradingStats.correct}</span>
                 <span className="text-red-500">✗ {gradingStats.incorrect}</span>
                 {gradingStats.notAnswered > 0 && (
@@ -237,7 +234,6 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
               </div>
               <Button
                 type="primary"
-
                 size="small"
                 icon={<ReloadOutlined />}
                 onClick={() => window.location.reload()}
@@ -251,14 +247,11 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
       </div>
 
       {/* Main Content Area with Resizable Panes */}
-      <Content className="flex-1 flex overflow-hidden relative" ref={containerRef}>
+      <div className="ielts-panels-container" ref={containerRef} style={{ height: 'calc(100vh - 200px)' }}>
         {/* Left Pane - Reading Passage */}
         <div
-          className="overflow-y-auto"
-          style={{
-            width: `${leftWidth}%`,
-            backgroundColor: 'var(--background)'
-          }}
+          className="ielts-passage-panel"
+          style={{ width: `calc(${leftWidth}% - 8px)` }}
         >
           <ReadingPassage
             passage={currentPart.passage}
@@ -273,38 +266,31 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
 
         {/* Resizable Divider */}
         <div
-          className="w-1 cursor-col-resize transition-colors flex-shrink-0"
+          className="ielts-resizer"
           onMouseDown={handleMouseDown}
-          style={{
-            cursor: isDragging ? 'col-resize' : 'col-resize',
-            backgroundColor: 'var(--border-color)',
-            opacity: isDragging ? 0.8 : 0.5
-          }}
+          style={{ cursor: isDragging ? 'col-resize' : 'col-resize' }}
         />
 
         {/* Right Pane - Questions */}
         <div
-          className="overflow-y-auto flex-1"
-          style={{
-            width: `${100 - leftWidth}%`,
-            backgroundColor: 'var(--card-background)'
-          }}
+          className="ielts-questions-panel"
+          style={{ width: `calc(${100 - leftWidth}% - 8px)` }}
         >
           <QuestionPanel />
         </div>
-      </Content>
+      </div>
 
       {/* Bottom Navigation */}
       <BottomNavigation onSubmit={handleSubmit} isPreviewMode={isPreviewMode} />
 
       {/* Submit Modal */}
-      <SubmitModal 
-        visible={showSubmitModal} 
-        onClose={handleModalClose} 
+      <SubmitModal
+        visible={showSubmitModal}
+        onClose={handleModalClose}
         onConfirm={handleModalConfirm}
         loading={readingStore.isSubmitting}
       />
-    </Layout>
+    </div>
   )
 })
 

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { Layout, Input, Button } from 'antd'
+import { Input, Button } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
 import { observer } from 'mobx-react-lite'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -29,8 +29,6 @@ import MatrixTableQuestion from './MatrixTableQuestion'
 import TableCompletionQuestion from './TableCompletionQuestion'
 import SubmitModal from '@/components/common/SubmitModal'
 import { exitFullscreen } from '@/utils/fullscreen'
-
-const { Content } = Layout
 
 interface ListeningTestLayoutProps {
   isPreviewMode?: boolean
@@ -363,7 +361,7 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
   }
 
   return (
-    <Layout className="h-screen flex flex-col">
+    <div className="ielts-test-page h-screen flex flex-col">
       {/* Hidden Audio Player */}
       <AuthenticatedAudio
         ref={audioRef}
@@ -371,37 +369,33 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
         onLoadedMetadata={handleAudioLoadedMetadata}
         style={{ display: 'none' }}
       />
-      
-      <Header 
+
+      <Header
         isPreviewMode={isPreviewMode}
         previewSectionType="listening"
         onBackClick={onBackClick}
+        showAudioControls={true}
+        isAudioPlaying={listeningStore.isPlaying}
       >
         {!isPreviewMode && listeningStore.hasStarted && (
           <Timer timeRemaining={listeningStore.timeRemaining} isTimeUp={listeningStore.isTimeUp} />
         )}
       </Header>
 
-      {/* Part Title and Status with Admin Grading Panel - Compact */}
-      <div style={{ backgroundColor: 'var(--card-background)', borderBottomColor: 'var(--border-color)' }} className="px-4 py-1.5 border-b">
+      {/* Part Title and Status with Admin Grading Panel */}
+      <div className="ielts-part-header" style={{ margin: '0', borderRadius: '0', marginTop: '56px' }}>
         <div className="flex items-center justify-between gap-4">
           {/* Part Title and Status */}
-          <div className="flex-1 flex items-center gap-4">
-            <h2 style={{ color: 'var(--text-primary)' }} className="font-semibold text-sm inline-block mr-4">{currentPart.title}</h2>
-            <span style={{ color: 'var(--text-secondary)' }} className="text-xs" dangerouslySetInnerHTML={{ __html: currentPart.instruction || '' }} />
-            {listeningStore.isPlaying && (
-              <div className="flex items-center gap-1.5 inline-flex">
-                <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
-                <span style={{ color: 'var(--text-primary)' }} className="text-xs">Audio is playing</span>
-              </div>
-            )}
+          <div className="flex-1">
+            <p style={{ margin: '0 0 4px 0', fontSize: '16px' }}><strong>{currentPart.title}</strong></p>
+            <p style={{ margin: '0', color: 'var(--text-secondary)', fontSize: '14px' }} dangerouslySetInnerHTML={{ __html: currentPart.instruction || '' }} />
           </div>
 
           {/* Admin Grading Panel - Inline Compact */}
           {showAdminPanel && (
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 text-xs">
-                <span style={{ color: 'var(--text-secondary)' }}>Total: <strong style={{ color: 'var(--text-primary)' }}>{gradingStats.total}</strong></span>
+                <span style={{ color: '#666' }}>Total: <strong>{gradingStats.total}</strong></span>
                 <span className="text-green-600">✓ {gradingStats.correct}</span>
                 <span className="text-red-500">✗ {gradingStats.incorrect}</span>
                 {gradingStats.notAnswered > 0 && (
@@ -423,8 +417,8 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
       </div>
 
       {/* Main Content */}
-      <Content style={{ backgroundColor: 'var(--background)' }} className="flex-1 overflow-hidden flex justify-center py-6 px-6">
-        <div style={{ backgroundColor: 'var(--card-background)' }} className="w-full p-8 rounded shadow overflow-y-auto">
+      <div className="ielts-left-panel" style={{ paddingBottom: '100px', height: 'calc(100vh - 200px)', overflowY: 'auto' }}>
+        <div className="w-full">
           {/* Render questions based on part */}
           {/* Dynamic generic renderer: if questions are provided, show them; otherwise fall back to legacy hardcoded UI */}
           {Array.isArray(currentPart.questions) && currentPart.questions.length > 0 && (
@@ -1306,7 +1300,7 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
             )}
           </div>
         </div>
-      </Content>
+      </div>
 
       {/* Bottom Navigation */}
       <BottomNavigationComponent
@@ -1334,13 +1328,13 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
       />
 
       {/* Submit Modal */}
-      <SubmitModal 
-        visible={showSubmitModal} 
-        onClose={handleModalClose} 
+      <SubmitModal
+        visible={showSubmitModal}
+        onClose={handleModalClose}
         onConfirm={handleModalConfirm}
         loading={listeningStore.isSubmitting}
       />
-    </Layout>
+    </div>
   )
 })
 

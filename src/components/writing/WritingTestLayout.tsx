@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Layout, Button, Input } from 'antd'
+import { Button, Input } from 'antd'
 import { LeftOutlined, RightOutlined, CheckOutlined } from '@ant-design/icons'
 import { observer } from 'mobx-react-lite'
 import { useRouter } from 'next/navigation'
@@ -12,7 +12,6 @@ import AuthenticatedImage from '@/components/common/AuthenticatedImage'
 import SubmitModal from '@/components/common/SubmitModal'
 import { exitFullscreen } from '@/utils/fullscreen'
 
-const { Content, Footer } = Layout
 const { TextArea } = Input
 
 interface WritingTestLayoutProps {
@@ -120,8 +119,8 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
   }
 
   return (
-    <Layout className="h-screen flex flex-col">
-      <Header 
+    <div className="ielts-test-page h-screen flex flex-col">
+      <Header
         isPreviewMode={isPreviewMode}
         previewSectionType="writing"
         onBackClick={onBackClick}
@@ -131,178 +130,121 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
         )}
       </Header>
 
-      {/* Task Info - Compact */}
-      <div className="px-4 py-1.5 border-b" style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }}>
-        <h2 className="font-semibold text-sm inline-block mr-3" style={{ color: 'var(--text-primary)' }}>{currentTask.title}</h2>
-        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-          Spend about <span className="text-blue-600 font-semibold">{currentTask.timeMinutes} min</span> • Write at least <span className="text-blue-600 font-semibold">{currentTask.minWords} words</span>
-        </span>
+      {/* Task Info Header */}
+      <div className="ielts-part-header" style={{ margin: '0', borderRadius: '0', marginTop: '56px' }}>
+        <p style={{ margin: '0 0 4px 0', fontSize: '16px' }}><strong>{currentTask.title}</strong></p>
+        <p style={{ margin: '0', color: 'var(--text-secondary)', fontSize: '14px' }}>
+          You should spend about {currentTask.timeMinutes} minutes on this task. Write at least {currentTask.minWords} words.
+        </p>
       </div>
 
       {/* Main Content Area with Resizable Panes */}
-      <Content ref={containerRef} className="flex-1 flex relative overflow-hidden">
-        {/* Left Pane - Question */}
+      <div className="ielts-panels-container" ref={containerRef} style={{ height: 'calc(100vh - 200px)' }}>
+        {/* Left Pane - Question/Task */}
         <div
-          className="overflow-y-auto p-6"
-          style={{ width: `${leftWidth}%`, backgroundColor: 'var(--card-background)' }}
+          className="ielts-left-panel"
+          style={{ width: `calc(${leftWidth}% - 8px)` }}
         >
-          <div className="prose prose-base max-w-none">
-            {currentTask.instruction && (
-              <div
-                className="mb-4 prose prose-base max-w-none"
-                style={{
-                  color: 'var(--text-secondary)',
-                  whiteSpace: 'pre-wrap'
-                }}
-                dangerouslySetInnerHTML={{ __html: currentTask.instruction }}
-              />
-            )}
-            <div
-              className="leading-relaxed prose prose-base max-w-none"
-              style={{
-                color: 'var(--text-primary)',
-                whiteSpace: 'pre-wrap'
-              }}
-              dangerouslySetInnerHTML={{ __html: currentTask.question }}
-            />
-            {currentTask.image && (
-              <div className="mt-6">
-                <AuthenticatedImage src={currentTask.image} alt="Task visual" className="max-w-full h-auto" />
-              </div>
-            )}
+          {currentTask.instruction && (
+            <div className="ielts-instruction" dangerouslySetInnerHTML={{ __html: currentTask.instruction }} />
+          )}
+
+          <div className="ielts-task-prompt">
+            <div dangerouslySetInnerHTML={{ __html: currentTask.question }} />
           </div>
+
+          {currentTask.image && (
+            <div className="chart-container" style={{ textAlign: 'center', margin: '20px 0' }}>
+              <AuthenticatedImage
+                src={currentTask.image}
+                alt="Task visual"
+                style={{ maxWidth: '80%', height: 'auto', border: '1px solid var(--border-color)' }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Resizable Divider */}
         <div
-          className="w-1 cursor-col-resize transition-colors flex-shrink-0"
+          className="ielts-resizer"
           onMouseDown={handleMouseDown}
-          style={{
-            cursor: 'col-resize',
-            backgroundColor: isDragging ? 'var(--border-color)' : 'var(--border-color)',
-            opacity: isDragging ? 0.8 : 0.5
-          }}
+          style={{ cursor: isDragging ? 'col-resize' : 'col-resize' }}
         />
 
-        {/* Right Pane - Answer Input */}
+        {/* Right Pane - Writing Area */}
         <div
-          className="flex flex-col p-6"
-          style={{ width: `${100 - leftWidth}%`, backgroundColor: 'var(--background)' }}
+          className="ielts-right-panel"
+          style={{ width: `calc(${100 - leftWidth}% - 8px)`, display: 'flex', flexDirection: 'column' }}
         >
-          <div className="flex-1 flex flex-col" style={{ minHeight: 0 }}>
-            <TextArea
+          <div className="ielts-writing-area">
+            <textarea
+              className="ielts-writing-textarea"
               value={answer}
               onChange={(e) => handleTextChange(e.target.value)}
-              placeholder="Type your answer here..."
-              className="w-full flex-1 resize-none text-base leading-relaxed"
-              style={{
-                height: '100%',
-                minHeight: '100%',
-                fontFamily: 'inherit',
-                backgroundColor: 'var(--input-background)',
-                borderColor: 'var(--input-border)',
-                color: 'var(--text-primary)'
-              }}
-              autoSize={false}
+              placeholder="Start writing your response here..."
+              style={{ flex: 1 }}
             />
-            <div className="mt-2 text-right">
-              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                Words: <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{wordCount}</span>
-              </span>
+            <div className="ielts-word-count">
+              Words: <span style={{ fontWeight: 'bold' }}>{wordCount}</span>
             </div>
           </div>
         </div>
-      </Content>
+      </div>
 
       {/* Bottom Navigation */}
-      <Footer className="border-t p-0" style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }}>
-        <div className="flex items-center justify-between px-4 py-2 gap-3">
-          {/* Part Buttons - Compact */}
-          <div className="flex items-center gap-2">
-            {writingStore.tasks.map((task) => {
-              const isCurrentTask = writingStore.currentTask === task.id
-              const taskWordCount = writingStore.getWordCount(task.id)
-              const isComplete = taskWordCount >= task.minWords
+      <nav className="ielts-nav-row" aria-label="Tasks">
+        {writingStore.tasks.map((task) => {
+          const isCurrentTask = writingStore.currentTask === task.id
+          const taskWordCount = writingStore.getWordCount(task.id)
+          const isComplete = taskWordCount >= task.minWords
 
-              return (
-                <div
-                  key={task.id}
-                  className="flex items-center gap-1.5 cursor-pointer px-2 py-1 rounded border transition-all"
-                  style={{
-                    backgroundColor: isCurrentTask ? 'var(--background)' : 'var(--card-background)',
-                    borderColor: isCurrentTask ? 'var(--border-color)' : 'var(--border-color)',
-                    opacity: isCurrentTask ? 1 : 0.8,
-                    minWidth: 'fit-content'
-                  }}
-                  onClick={() => handleTaskChange(task.id)}
-                >
-                  <span
-                    className="font-medium text-xs whitespace-nowrap"
-                    style={{ color: isCurrentTask ? 'var(--text-primary)' : 'var(--text-secondary)' }}
-                  >
-                    {task.title}
-                  </span>
-                  <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    {taskWordCount}/{task.minWords}
-                  </span>
-                  {isComplete && <CheckOutlined className="text-green-500" style={{ fontSize: '10px' }} />}
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Navigation Arrows and Submit */}
-          <div className="flex items-center gap-2">
-            {/* Previous Button */}
-            <Button
-              icon={<LeftOutlined />}
-              onClick={() => handleTaskChange(writingStore.currentTask - 1)}
-              disabled={writingStore.currentTask === 1}
-              size="small"
-              style={{
-                backgroundColor: writingStore.currentTask !== 1 ? 'var(--card-background)' : 'var(--background)',
-                borderColor: 'var(--border-color)',
-                color: writingStore.currentTask !== 1 ? 'var(--text-primary)' : 'var(--text-secondary)',
-                opacity: writingStore.currentTask !== 1 ? 1 : 0.5
-              }}
-            />
-
-            {/* Next Button */}
-            <Button
-              icon={<RightOutlined />}
-              onClick={() => handleTaskChange(writingStore.currentTask + 1)}
-              disabled={writingStore.currentTask === writingStore.tasks.length}
-              size="small"
-              style={{
-                backgroundColor: writingStore.currentTask !== writingStore.tasks.length ? 'var(--text-primary)' : 'var(--background)',
-                borderColor: writingStore.currentTask !== writingStore.tasks.length ? 'var(--text-primary)' : 'var(--border-color)',
-                color: writingStore.currentTask !== writingStore.tasks.length ? 'var(--card-background)' : 'var(--text-secondary)'
-              }}
-            />
-
-            {/* Submit Button */}
-            <Button
-              type="primary"
-              icon={<CheckOutlined />}
-              onClick={handleSubmit}
-              disabled={isPreviewMode}
-              size="small"
-              className="bg-green-600 hover:bg-green-700"
+          return (
+            <div
+              key={task.id}
+              className={`ielts-section-wrapper ${isCurrentTask ? 'selected' : ''} ${isComplete ? 'completed' : ''}`}
+              style={{ position: 'relative' }}
             >
-              Submit
-            </Button>
-          </div>
-        </div>
-      </Footer>
+              {/* Completion indicator bar */}
+              {isComplete && (
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '3px',
+                  backgroundColor: '#28a745'
+                }} />
+              )}
+              <button
+                className="ielts-section-btn"
+                onClick={() => handleTaskChange(task.id)}
+              >
+                <span className="ielts-section-nr">{task.title}</span>
+                <span className="ielts-attempted-count">{taskWordCount}/{task.minWords}</span>
+              </button>
+            </div>
+          )
+        })}
+
+        {/* Submit Button */}
+        <button
+          className="ielts-submit-btn"
+          onClick={handleSubmit}
+          disabled={isPreviewMode}
+        >
+          <CheckOutlined />
+          <span>Submit</span>
+        </button>
+      </nav>
 
       {/* Submit Modal */}
-      <SubmitModal 
-        visible={showSubmitModal} 
-        onClose={handleModalClose} 
+      <SubmitModal
+        visible={showSubmitModal}
+        onClose={handleModalClose}
         onConfirm={handleModalConfirm}
         loading={writingStore.isSubmitting}
       />
-    </Layout>
+    </div>
   )
 })
 

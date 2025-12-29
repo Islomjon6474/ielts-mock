@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from 'antd'
-import { WifiOutlined, BellOutlined, MenuOutlined, ArrowLeftOutlined } from '@ant-design/icons'
+import { WifiOutlined, BellOutlined, MenuOutlined, ArrowLeftOutlined, SoundOutlined } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
 import Logo from './Logo'
 import SettingsDrawer from './SettingsDrawer'
@@ -13,6 +13,10 @@ interface HeaderProps {
   previewSectionType?: string
   onBackClick?: () => void
   children?: React.ReactNode
+  showAudioControls?: boolean
+  volume?: number
+  onVolumeChange?: (volume: number) => void
+  isAudioPlaying?: boolean
 }
 
 const Header = ({
@@ -20,7 +24,11 @@ const Header = ({
   isPreviewMode = false,
   previewSectionType = '',
   onBackClick,
-  children
+  children,
+  showAudioControls = false,
+  volume = 100,
+  onVolumeChange,
+  isAudioPlaying = false
 }: HeaderProps) => {
   const router = useRouter()
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -39,61 +47,92 @@ const Header = ({
     setSettingsOpen(false)
   }
 
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (onVolumeChange) {
+      onVolumeChange(Number(e.target.value))
+    }
+  }
+
   return (
-    <header
-      className="border-b shadow-sm px-4 py-2 flex items-center justify-between"
-      style={{
-        backgroundColor: 'var(--header-background)',
-        borderColor: 'var(--border-color)'
-      }}
-    >
-      <div className="flex items-center gap-3">
-        {isPreviewMode && onBackClick && (
+    <header className="ielts-header">
+      <div className="header-left">
+        {isPreviewMode && onBackClick ? (
           <Button
             icon={<ArrowLeftOutlined />}
             onClick={handleBackClick}
             size="small"
+            style={{
+              backgroundColor: 'var(--secondary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '4px',
+              color: 'var(--text-primary)'
+            }}
           >
-            Back to Sections
+            Back
           </Button>
+        ) : (
+          <Logo size="small" />
         )}
-        <Logo size="small" showText={true} />
-        <span
-          className="text-xs font-medium"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          {testTakerId}
-        </span>
+
+        {/* Test Taker Info Section */}
+        <div className="test-taker-info">
+          {children ? (
+            <div className="timer-container">{children}</div>
+          ) : (
+            <span className="test-taker-id">{testTakerId}</span>
+          )}
+          {isAudioPlaying && (
+            <span className="audio-status">
+              <SoundOutlined />
+              Audio is playing
+            </span>
+          )}
+        </div>
+
         {isPreviewMode && previewSectionType && (
           <span
-            className="font-semibold text-xs ml-2"
-            style={{ color: '#cf1322' }}
+            style={{
+              color: '#cf1322',
+              fontWeight: 600,
+              fontSize: '12px',
+              marginLeft: '10px'
+            }}
           >
-            PREVIEW MODE - {previewSectionType.toUpperCase()} - All inputs are disabled
+            PREVIEW MODE - {previewSectionType.toUpperCase()}
           </span>
         )}
       </div>
-      <div className="flex items-center gap-3">
-        {children}
-        <Button
-          type="text"
-          icon={<WifiOutlined />}
-          size="small"
-          style={{ color: 'var(--text-secondary)' }}
-        />
-        <Button
-          type="text"
-          icon={<BellOutlined />}
-          size="small"
-          style={{ color: 'var(--text-secondary)' }}
-        />
-        <Button
-          type="text"
-          icon={<MenuOutlined />}
-          size="small"
-          style={{ color: 'var(--text-secondary)' }}
-          onClick={handleSettingsClick}
-        />
+
+      <div className="header-icons">
+        {/* Audio Controls - Volume slider */}
+        {showAudioControls && (
+          <div className="audio-indicator" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <SoundOutlined style={{ fontSize: '18px', color: 'var(--text-primary)' }} />
+            <input
+              type="range"
+              id="volume-slider"
+              min="0"
+              max="100"
+              value={volume}
+              onChange={handleVolumeChange}
+              style={{
+                width: '80px',
+                height: '4px',
+                cursor: 'pointer'
+              }}
+            />
+          </div>
+        )}
+
+        <button className="icon" title="Network Status">
+          <WifiOutlined />
+        </button>
+        <button className="icon" title="Notifications">
+          <BellOutlined />
+        </button>
+        <button className="icon" onClick={handleSettingsClick} title="Settings">
+          <MenuOutlined />
+        </button>
       </div>
 
       {/* Settings Drawer */}

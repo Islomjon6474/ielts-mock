@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import IELTS Official Test Platform Styles */
+@import '../styles/ielts-test.css';
+
 :root {
   /* Default theme: Black on White */
   --background: #ffffff;

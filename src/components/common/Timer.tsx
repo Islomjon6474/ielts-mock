@@ -1,7 +1,6 @@
 'use client'
 
 import { observer } from 'mobx-react-lite'
-import { ClockCircleOutlined } from '@ant-design/icons'
 
 interface TimerProps {
   timeRemaining: number // in seconds
@@ -17,39 +16,27 @@ const Timer = observer(({ timeRemaining, isTimeUp }: TimerProps) => {
     if (hours > 0) {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
     }
-    return `${minutes}:${secs.toString().padStart(2, '0')}`
+    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
+  // Use CSS variable for normal color, only override for warning states
   const getColor = () => {
-    if (isTimeUp) return '#ff4d4f' // red
-    if (timeRemaining < 300) return '#faad14' // orange (less than 5 minutes)
-    return '#52c41a' // green
-  }
-
-  const getBgColor = () => {
-    if (isTimeUp) return '#fff1f0' // light red
-    if (timeRemaining < 300) return '#fffbe6' // light orange
-    return '#f6ffed' // light green
+    if (isTimeUp) return '#dc3545' // Red for time up
+    if (timeRemaining < 300) return '#faad14' // Orange warning (less than 5 minutes)
+    return 'var(--text-primary)' // Use theme color
   }
 
   return (
-    <div
+    <span
+      className="timer-display"
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        padding: '8px 16px',
-        backgroundColor: getBgColor(),
-        border: `2px solid ${getColor()}`,
-        borderRadius: '8px',
-        fontWeight: 'bold',
-        fontSize: '1.125rem',
         color: getColor(),
+        fontSize: '16px',
+        fontWeight: 500,
       }}
     >
-      <ClockCircleOutlined style={{ fontSize: '1.25rem' }} />
-      <span>{isTimeUp ? 'Time Up!' : formatTime(timeRemaining)}</span>
-    </div>
+      {isTimeUp ? 'Time Up!' : formatTime(timeRemaining)}
+    </span>
   )
 })
 
