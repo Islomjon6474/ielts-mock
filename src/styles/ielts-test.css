@@ -683,14 +683,19 @@
 }
 
 .ielts-subquestion.answered {
-  background-color: var(--secondary);
+  background-color: var(--card-background);
   border-color: var(--border-color);
+  border-top: 3px solid #28a745;
 }
 
 .ielts-subquestion.active {
   background-color: var(--primary);
   color: var(--button-text);
   border-color: var(--primary);
+}
+
+.ielts-subquestion.active.answered {
+  border-top: 3px solid #28a745;
 }
 
 .ielts-subquestion.correct {
