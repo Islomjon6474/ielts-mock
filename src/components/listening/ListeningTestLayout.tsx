@@ -424,10 +424,29 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
           {Array.isArray(currentPart.questions) && currentPart.questions.length > 0 && (
             <div className="space-y-4">
               {(() => {
+                // Track rendered image URLs to avoid duplicates across groups and questions
+                const renderedImageUrls = new Set<string>()
+
+                // Helper function to check and mark image as rendered
+                const shouldRenderImage = (imageUrl: string | undefined): boolean => {
+                  if (!imageUrl) return false
+                  if (renderedImageUrls.has(imageUrl)) return false
+                  renderedImageUrls.add(imageUrl)
+                  return true
+                }
+
+                // Helper function to get question with imageUrl cleared if already rendered
+                const getQuestionWithUniqueImage = (q: ListeningQuestion): ListeningQuestion => {
+                  if (q.imageUrl && renderedImageUrls.has(q.imageUrl)) {
+                    return { ...q, imageUrl: undefined }
+                  }
+                  return q
+                }
+
                 // Group questions by imageUrl and type to show image once per group
                 const grouped: QuestionGroup[] = []
                 let currentGroup: QuestionGroup | null = null
-                
+
                 currentPart.questions.forEach((q: ListeningQuestion, qIndex: number) => {
                   // Start a new group if type, groupIndex, or groupId changes
                   // NOTE: We use groupIndex as the PRIMARY grouping key, NOT groupInstruction
@@ -639,13 +658,13 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                     </div>
                     
                     {/* Image and questions side by side */}
-                    {group.imageUrl ? (
+                    {group.imageUrl && shouldRenderImage(group.imageUrl) ? (
                       <div className="flex gap-6">
                         {/* Image on the left - fixed width */}
                         <div className="flex-shrink-0">
-                          <AuthenticatedImage 
-                            src={group.imageUrl} 
-                            alt={`Question group ${groupIdx + 1}`} 
+                          <AuthenticatedImage
+                            src={group.imageUrl}
+                            alt={`Question group ${groupIdx + 1}`}
                             className="rounded border"
                             style={{ maxWidth: '450px', maxHeight: '500px', objectFit: 'contain' }}
                           />
@@ -685,13 +704,13 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                                 
                                 case 'FILL_IN_BLANK':
                                 case 'SHORT_ANSWER':
-                                  return <FillInBlankQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
+                                  return <FillInBlankQuestion key={q.id} question={getQuestionWithUniqueImage(q)} questionNumber={q.id} isPreviewMode={isPreviewMode} />
 
                                 case 'TABLE_COMPLETION':
-                                  return <TableCompletionQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
+                                  return <TableCompletionQuestion key={q.id} question={getQuestionWithUniqueImage(q)} questionNumber={q.id} isPreviewMode={isPreviewMode} />
 
                                 case 'MULTIPLE_CORRECT_ANSWERS':
-                                  return <MultipleCorrectAnswersQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
+                                  return <MultipleCorrectAnswersQuestion key={q.id} question={getQuestionWithUniqueImage(q)} questionNumber={q.id} isPreviewMode={isPreviewMode} />
 
                                 case 'IMAGE_INPUTS':
                                   return (
@@ -761,13 +780,13 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                               
                               case 'FILL_IN_BLANK':
                               case 'SHORT_ANSWER':
-                                return <FillInBlankQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
+                                return <FillInBlankQuestion key={q.id} question={getQuestionWithUniqueImage(q)} questionNumber={q.id} isPreviewMode={isPreviewMode} />
 
                               case 'TABLE_COMPLETION':
-                                return <TableCompletionQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
+                                return <TableCompletionQuestion key={q.id} question={getQuestionWithUniqueImage(q)} questionNumber={q.id} isPreviewMode={isPreviewMode} />
 
                               case 'MULTIPLE_CORRECT_ANSWERS':
-                                return <MultipleCorrectAnswersQuestion key={q.id} question={q} questionNumber={q.id} isPreviewMode={isPreviewMode} />
+                                return <MultipleCorrectAnswersQuestion key={q.id} question={getQuestionWithUniqueImage(q)} questionNumber={q.id} isPreviewMode={isPreviewMode} />
 
                               case 'IMAGE_INPUTS':
                                 return (

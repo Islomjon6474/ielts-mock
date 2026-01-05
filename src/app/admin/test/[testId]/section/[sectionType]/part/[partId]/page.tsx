@@ -739,6 +739,7 @@ const PartEditorPage = observer(() => {
               }).filter((n: number) => n > 0)
 
               // Create separate flat question objects for user-side (1 per placeholder)
+              // Note: imageUrl is NOT added here - it's stored at the group level only
               placeholderNumbers.forEach((placeholderNum: number) => {
                 flatQuestions.push({
                   id: placeholderNum,
@@ -746,7 +747,6 @@ const PartEditorPage = observer(() => {
                   text: questionWithoutAnswer.text || '',
                   groupIndex: groupIndex,
                   groupInstruction: group.instruction || '',
-                  ...(group.imageId && { imageUrl: `/api/file/download/${group.imageId}` }),
                 })
               })
             } else if (group.type === 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE') {
@@ -762,6 +762,7 @@ const PartEditorPage = observer(() => {
                   const groupId = `mqmc_${groupIndex}_${rangeStart}_${rangeEnd}`
 
                   // Create one flat question for each number in the range
+                  // Note: imageUrl is NOT added here - it's stored at the group level only
                   for (let qNum = rangeStart; qNum <= rangeEnd; qNum++) {
                     flatQuestions.push({
                       id: qNum,
@@ -774,7 +775,6 @@ const PartEditorPage = observer(() => {
                       rangeEnd: rangeEnd,
                       groupIndex: groupIndex, // Add groupIndex to map back to questionGroups
                       groupInstruction: group.instruction || '', // Add instruction directly
-                      ...(group.imageId && { imageUrl: `/api/file/download/${group.imageId}` }),
                     })
                   }
                 }
@@ -807,6 +807,7 @@ const PartEditorPage = observer(() => {
               const groupId = `table_${groupIndex}_${uniquePlaceholders[0] || startNumber}_${uniquePlaceholders[uniquePlaceholders.length - 1] || startNumber}`
 
               // Create one flat question for each placeholder
+              // Note: imageUrl is NOT added here - it's stored at the group level only
               uniquePlaceholders.forEach((placeholderNum: number) => {
                 flatQuestions.push({
                   id: placeholderNum,
@@ -817,7 +818,6 @@ const PartEditorPage = observer(() => {
                   groupInstruction: group.instruction || '',
                   rangeStart: uniquePlaceholders[0],
                   rangeEnd: uniquePlaceholders[uniquePlaceholders.length - 1],
-                  ...(group.imageId && { imageUrl: `/api/file/download/${group.imageId}` }),
                 })
               })
             } else {
@@ -825,6 +825,7 @@ const PartEditorPage = observer(() => {
               const questionType = group.type
               const questionId = startNumber + index
 
+              // Note: imageUrl is NOT added to flat questions - it's stored at the group level only
               const flatQuestion: any = {
                 id: questionId,
                 type: questionType,
@@ -833,8 +834,6 @@ const PartEditorPage = observer(() => {
                 // This is critical for proper grouping on student side
                 groupIndex: groupIndex,
                 groupInstruction: group.instruction || '',
-                // Add imageUrl from group's imageId if available (for all types)
-                ...(group.imageId && { imageUrl: `/api/file/download/${group.imageId}` }),
               }
 
               // Add type-specific fields

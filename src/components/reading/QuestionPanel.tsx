@@ -207,6 +207,25 @@ const QuestionPanel = observer(() => {
 
   const questionGroups = groupQuestions()
 
+  // Track rendered image URLs to avoid duplicates across groups and questions
+  const renderedImageUrls = new Set<string>()
+
+  // Helper function to check and mark image as rendered
+  const shouldRenderImage = (imageUrl: string | undefined): boolean => {
+    if (!imageUrl) return false
+    if (renderedImageUrls.has(imageUrl)) return false
+    renderedImageUrls.add(imageUrl)
+    return true
+  }
+
+  // Helper function to get question with imageUrl cleared if already rendered
+  const getQuestionWithUniqueImage = (question: Question): Question => {
+    if (question.imageUrl && renderedImageUrls.has(question.imageUrl)) {
+      return { ...question, imageUrl: undefined }
+    }
+    return question
+  }
+
   return (
     <div className="p-6 space-y-6">
       {questionGroups.map((group, groupIndex) => {
@@ -426,7 +445,7 @@ const QuestionPanel = observer(() => {
                 {uniqueQuestions.map(({ question, questionNumber }) => (
                   <TableCompletionQuestion
                     key={question.id}
-                    question={question}
+                    question={getQuestionWithUniqueImage(question)}
                     questionNumber={questionNumber}
                     isPreviewMode={readingStore.isPreviewMode}
                   />
@@ -520,8 +539,8 @@ const QuestionPanel = observer(() => {
                 )}
               </div>
 
-              {/* Display image for this question group if available */}
-              {currentPart.questionGroups && currentPart.questionGroups[groupIndex]?.imageUrl && (
+              {/* Display image for this question group if available and not already rendered */}
+              {currentPart.questionGroups && shouldRenderImage(currentPart.questionGroups[groupIndex]?.imageUrl) && (
                 <div className="mb-6">
                   <div className="border rounded-lg p-1" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--card-background)' }}>
                     <AuthenticatedImage
@@ -536,6 +555,8 @@ const QuestionPanel = observer(() => {
               {/* Questions in Group */}
               {questionsToRender.map(({ question, index, questionNumber }) => {
                 const isCurrent = index === readingStore.currentQuestionIndex
+                // Clear imageUrl if already rendered at group level
+                const questionToRender = getQuestionWithUniqueImage(question)
 
                 return (
                   <div
@@ -545,7 +566,7 @@ const QuestionPanel = observer(() => {
                     }}
                     className={`transition-all ${isCurrent ? 'ring-2 ring-blue-400 rounded-lg' : ''}`}
                   >
-                    {renderQuestion(question, questionNumber)}
+                    {renderQuestion(questionToRender, questionNumber)}
                   </div>
                 )
               })}
