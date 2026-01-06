@@ -305,6 +305,28 @@ const PartEditorPage = observer(() => {
                         answers.join(', ')
                       )
                       console.log(`✅ Set answer for IMAGE_INPUTS Q${questionNum}:`, answers.join(', '))
+                    } else if (group.type === 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE') {
+                      // MULTIPLE_QUESTIONS_MULTIPLE_CHOICE uses Checkbox.Group which expects an array
+                      // Collect all answers from all questions in the range
+                      const rangeMatch = group.range?.match(/(\d+)-(\d+)/)
+                      if (rangeMatch) {
+                        const rangeStart = parseInt(rangeMatch[1])
+                        const rangeEnd = parseInt(rangeMatch[2])
+                        const allAnswers: string[] = []
+                        for (let qNum = rangeStart; qNum <= rangeEnd; qNum++) {
+                          const qAnswers = answersMap.get(qNum)
+                          if (qAnswers && qAnswers.length > 0) {
+                            allAnswers.push(...qAnswers)
+                          }
+                        }
+                        // Remove duplicates and set as array
+                        const uniqueAnswers = [...new Set(allAnswers)]
+                        form.setFieldValue(
+                          ['questionGroups', groupIndex, 'questions', questionIndex, 'correctAnswer'],
+                          uniqueAnswers
+                        )
+                        console.log(`✅ Set correctAnswer array for MULTIPLE_QUESTIONS_MC Q${questionNum}:`, uniqueAnswers)
+                      }
                     } else {
                       // For other types, join answers as a string
                       form.setFieldValue(
