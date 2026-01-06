@@ -96,8 +96,8 @@ export const AnswersTable = ({ sectionId, partId, onAnswerSaved }: AnswersTableP
             const questions = normalizeArrayMaybeStringOrObject<AdminQuestion>(group.questions)
 
             questions.forEach((q, idx) => {
-              // For SHORT_ANSWER, extract placeholders
-              if (groupType === 'SHORT_ANSWER' && q.text) {
+              // For SHORT_ANSWER and FILL_IN_BLANKS_DRAG_DROP, extract placeholders
+              if ((groupType === 'SHORT_ANSWER' || groupType === 'FILL_IN_BLANKS_DRAG_DROP') && q.text) {
                 const placeholders = (q.text.match(/\[(\d+)\]/g) || []).map((m: string) => {
                   const num = m.match(/\[(\d+)\]/)
                   return num ? parseInt(num[1]) : 0
@@ -106,7 +106,8 @@ export const AnswersTable = ({ sectionId, partId, onAnswerSaved }: AnswersTableP
                 placeholders.forEach((placeholderNum: number) => {
                   questionContentMap.set(placeholderNum, {
                     text: q.text,
-                    type: 'SHORT_ANSWER',
+                    type: groupType,
+                    options: Array.isArray(group.options) ? group.options : undefined,
                     groupInstruction
                   })
                 })
@@ -246,7 +247,8 @@ export const AnswersTable = ({ sectionId, partId, onAnswerSaved }: AnswersTableP
       'MULTIPLE_CORRECT_ANSWERS': 'Multiple Correct',
       'MATRIX_TABLE': 'Matrix Table',
       'TABLE_COMPLETION': 'Table Completion',
-      'IMAGE_INPUTS': 'Image Inputs'
+      'IMAGE_INPUTS': 'Image Inputs',
+      'FILL_IN_BLANKS_DRAG_DROP': 'Fill Blanks (D&D)'
     }
     return typeLabels[type || ''] || type || 'Unknown'
   }
@@ -261,7 +263,8 @@ export const AnswersTable = ({ sectionId, partId, onAnswerSaved }: AnswersTableP
       'MULTIPLE_CHOICE',
       'MATCH_HEADING',
       'MATRIX_TABLE',
-      'MULTIPLE_CORRECT_ANSWERS'
+      'MULTIPLE_CORRECT_ANSWERS',
+      'FILL_IN_BLANKS_DRAG_DROP'
     ]
     return !simpleAnswerTypes.includes(type || '')
   }
@@ -379,6 +382,21 @@ export const AnswersTable = ({ sectionId, partId, onAnswerSaved }: AnswersTableP
                           label: `${String.fromCharCode(65 + i)}`
                         }))}
                       />
+                    ) : record.type === 'FILL_IN_BLANKS_DRAG_DROP' && record.options ? (
+                      <Select
+                        value={value}
+                        onChange={(v) => updateEditValue(record.ord, idx, v)}
+                        style={{ width: 300 }}
+                        placeholder="Select correct answer (Letter + Word)"
+                        options={record.options.map((opt, i) => {
+                          const letter = String.fromCharCode(65 + i)
+                          const cleanOpt = opt.replace(/<[^>]*>/g, '').trim()
+                          return {
+                            value: `${letter} ${cleanOpt}`,
+                            label: `${letter} - ${cleanOpt.length > 30 ? cleanOpt.substring(0, 30) + '...' : cleanOpt}`
+                          }
+                        })}
+                      />
                     ) : needsRichTextEditor(record.type) ? (
                       <AnswerRichTextEditor
                         value={value}
@@ -409,7 +427,7 @@ export const AnswersTable = ({ sectionId, partId, onAnswerSaved }: AnswersTableP
               ))}
 
               {/* Allow multiple answers for certain types */}
-              {(record.type === 'SHORT_ANSWER' || record.type === 'SENTENCE_COMPLETION' || record.type === 'TABLE_COMPLETION' || !record.type) && (
+              {(record.type === 'SHORT_ANSWER' || record.type === 'SENTENCE_COMPLETION' || record.type === 'TABLE_COMPLETION' || record.type === 'FILL_IN_BLANKS_DRAG_DROP' || !record.type) && (
                 <Button
                   type="dashed"
                   size="small"

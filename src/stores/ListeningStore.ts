@@ -3,7 +3,7 @@ import { mockSubmissionApi } from '@/services/testManagementApi'
 
 export interface ListeningQuestion {
   id: number
-  type: 'FILL_IN_BLANK' | 'MULTIPLE_CHOICE' | 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE' | 'MATCHING' | 'TABLE' | 'IMAGE_INPUTS' | 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN' | 'SENTENCE_COMPLETION' | 'SHORT_ANSWER' | 'MULTIPLE_CORRECT_ANSWERS' | 'MATRIX_TABLE' | 'TABLE_COMPLETION'
+  type: 'FILL_IN_BLANK' | 'MULTIPLE_CHOICE' | 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE' | 'MATCHING' | 'TABLE' | 'IMAGE_INPUTS' | 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN' | 'SENTENCE_COMPLETION' | 'SHORT_ANSWER' | 'MULTIPLE_CORRECT_ANSWERS' | 'MATRIX_TABLE' | 'TABLE_COMPLETION' | 'FILL_IN_BLANKS_DRAG_DROP'
   text: string
   options?: string[]
   maxAnswers?: number
@@ -283,8 +283,14 @@ export class ListeningStore {
     correctAnswer: string | string[],
     questionType: string
   ): boolean {
-    // Normalize answers for comparison (trim, lowercase)
-    const normalize = (str: string) => str.trim().toLowerCase()
+    // Strip HTML tags from string
+    const stripHtml = (str: string) => {
+      if (!str) return ''
+      return str.replace(/<[^>]*>/g, '').trim()
+    }
+
+    // Normalize answers for comparison (strip HTML, trim, lowercase)
+    const normalize = (str: string) => stripHtml(str).trim().toLowerCase()
 
     if (questionType === 'MULTIPLE_CHOICE' || questionType === 'MULTIPLE_CORRECT_ANSWERS' || questionType === 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE') {
       // For multiple choice with multiple answers
@@ -298,7 +304,7 @@ export class ListeningStore {
 
       return normalizedUser.every((ans, i) => ans === normalizedCorrect[i])
     } else {
-      // For single answer questions
+      // For single answer questions (including FILL_IN_BLANKS_DRAG_DROP)
       const userAns = Array.isArray(userAnswer) ? userAnswer[0] : userAnswer
       const correctAns = Array.isArray(correctAnswer) ? correctAnswer[0] : correctAnswer
 

@@ -27,6 +27,7 @@ import TrueFalseQuestion from './TrueFalseQuestion'
 import SentenceCompletionQuestion from './SentenceCompletionQuestion'
 import MatrixTableQuestion from './MatrixTableQuestion'
 import TableCompletionQuestion from './TableCompletionQuestion'
+import FillInBlanksDragDropQuestion from './FillInBlanksDragDropQuestion'
 import SubmitModal from '@/components/common/SubmitModal'
 import { exitFullscreen } from '@/utils/fullscreen'
 
@@ -522,6 +523,33 @@ const ListeningTestLayout = observer(({ isPreviewMode = false, onBackClick }: Li
                         </div>
 
                         <SentenceCompletionQuestion
+                          questions={group.questions}
+                          questionNumbers={questionNumbers}
+                          options={options}
+                          imageUrl={group.imageUrl}
+                          isPreviewMode={isPreviewMode}
+                        />
+                      </div>
+                    )
+                  }
+
+                  // Handle FILL_IN_BLANKS_DRAG_DROP separately
+                  if (group.type === 'FILL_IN_BLANKS_DRAG_DROP') {
+                    const questionNumbers = group.questions.map(q => q.id)
+                    const options = group.options || []
+
+                    return (
+                      <div key={`group-${groupIdx}`} className="mb-8">
+                        <div style={{ backgroundColor: 'var(--card-background)', borderColor: 'var(--border-color)' }} className="rounded-lg border-l-4 border-emerald-500 px-4 py-2 mb-4">
+                          <h3 style={{ color: 'var(--text-primary)' }} className="font-bold text-base mb-1">
+                            Questions {startNum}{endNum !== startNum && `–${endNum}`}
+                          </h3>
+                          {group.instruction && (
+                            <div style={{ color: 'var(--text-secondary)' }} className="text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: group.instruction }} />
+                          )}
+                        </div>
+
+                        <FillInBlanksDragDropQuestion
                           questions={group.questions}
                           questionNumbers={questionNumbers}
                           options={options}

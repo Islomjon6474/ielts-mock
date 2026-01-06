@@ -3,6 +3,7 @@ export { MultipleChoiceSingleQuestion } from './MultipleChoiceSingleQuestion'
 export { MultipleQuestionsMultipleChoiceQuestion } from './MultipleQuestionsMultipleChoiceQuestion'
 export { TrueFalseQuestion } from './TrueFalseQuestion'
 export { SentenceCompletionQuestion } from './SentenceCompletionQuestion'
+export { FillInBlanksDragDropQuestion } from './FillInBlanksDragDropQuestion'
 export { MatchHeadingQuestion } from './MatchHeadingQuestion'
 export { ShortAnswerQuestion } from './ShortAnswerQuestion'
 export { MultipleCorrectAnswersQuestion } from './MultipleCorrectAnswersQuestion'
@@ -21,6 +22,7 @@ export const questionTypes = [
   { value: 'MULTIPLE_CORRECT_ANSWERS', label: 'Multiple Correct Answers' },
   { value: 'IMAGE_INPUTS', label: 'Image with Inputs (Listening)' },
   { value: 'SENTENCE_COMPLETION', label: 'Sentence Completion (Drag & Drop)' },
+  { value: 'FILL_IN_BLANKS_DRAG_DROP', label: 'Fill in the Blanks (Drag & Drop)' },
   { value: 'MATRIX_TABLE', label: 'Matrix/Table (Multi-select Grid)' },
   { value: 'TABLE_COMPLETION', label: 'Table Completion (Table with Fill-in Blanks)' },
 ]

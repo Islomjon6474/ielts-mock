@@ -14,6 +14,7 @@ import ImageInputsQuestion from './questions/ImageInputsQuestion'
 import SentenceCompletionQuestion from './questions/SentenceCompletionQuestion'
 import MatrixTableQuestion from './questions/MatrixTableQuestion'
 import TableCompletionQuestion from './questions/TableCompletionQuestion'
+import FillInBlanksDragDropQuestion from './questions/FillInBlanksDragDropQuestion'
 import { Question } from '@/stores/ReadingStore'
 import AuthenticatedImage from '@/components/common/AuthenticatedImage'
 
@@ -85,6 +86,9 @@ const QuestionPanel = observer(() => {
         return null
       case 'SENTENCE_COMPLETION':
         // Don't render individual sentence completion questions - they're handled by drag and drop
+        return null
+      case 'FILL_IN_BLANKS_DRAG_DROP':
+        // Don't render individual questions - they're handled as a group
         return null
       case 'MATRIX_TABLE':
         // Don't render individual matrix table questions - they're handled as a group
@@ -490,6 +494,49 @@ const QuestionPanel = observer(() => {
                 </div>
                 
                 <SentenceCompletionQuestion
+                  questions={group.questions.map(q => q.question)}
+                  questionNumbers={group.questions.map(q => q.questionNumber)}
+                  options={parsedOptions}
+                  imageUrl={questionGroupData?.imageUrl}
+                />
+              </div>
+            </div>
+          )
+        }
+
+        // Render FILL_IN_BLANKS_DRAG_DROP as a special group with passage and letter options
+        if (group.type === 'FILL_IN_BLANKS_DRAG_DROP') {
+          const questionGroupData = currentPart.questionGroups?.[groupIndex]
+          // Try to get options from questionGroups first, then from the first question
+          let options = questionGroupData?.options || []
+          if (!options || options.length === 0) {
+            // Fallback: get options from first question in the group
+            options = group.questions[0]?.question?.options || []
+          }
+          // Options are already an array of strings (words to choose from)
+          const parsedOptions = Array.isArray(options) ? options : []
+
+          return (
+            <div key={groupIndex} className="mb-8">
+              {groupIndex > 0 && (
+                <div className="border-t-2 my-6" style={{ borderColor: 'var(--border-color)' }}></div>
+              )}
+
+              <div className="space-y-4">
+                <div className="rounded-lg border-l-4 p-4 mb-4" style={{ backgroundColor: 'var(--card-background)', borderLeftColor: '#10b981' }}>
+                  <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
+                    Questions {group.startNumber}–{group.endNumber}
+                  </h3>
+                  {questionGroupData?.instruction && (
+                    <div
+                      className="text-sm prose prose-sm max-w-none"
+                      style={{ color: 'var(--text-secondary)' }}
+                      dangerouslySetInnerHTML={{ __html: questionGroupData.instruction }}
+                    />
+                  )}
+                </div>
+
+                <FillInBlanksDragDropQuestion
                   questions={group.questions.map(q => q.question)}
                   questionNumbers={group.questions.map(q => q.questionNumber)}
                   options={parsedOptions}

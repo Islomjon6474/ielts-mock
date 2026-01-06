@@ -6,6 +6,7 @@ import { MultipleChoiceSingleQuestion } from './MultipleChoiceSingleQuestion'
 import { MultipleQuestionsMultipleChoiceQuestion } from './MultipleQuestionsMultipleChoiceQuestion'
 import { TrueFalseQuestion } from './TrueFalseQuestion'
 import { SentenceCompletionQuestion } from './SentenceCompletionQuestion'
+import { FillInBlanksDragDropQuestion } from './FillInBlanksDragDropQuestion'
 import { MatchHeadingQuestion } from './MatchHeadingQuestion'
 import { ShortAnswerQuestion } from './ShortAnswerQuestion'
 import { MultipleCorrectAnswersQuestion } from './MultipleCorrectAnswersQuestion'
@@ -126,6 +127,9 @@ export const QuestionGroupEditor = ({
       case 'SENTENCE_COMPLETION':
         newQuestion = { text: '', correctAnswer: '', wordLimit: 'THREE' }
         break
+      case 'FILL_IN_BLANKS_DRAG_DROP':
+        newQuestion = { text: '', correctAnswer: '' }
+        break
       case 'MULTIPLE_CORRECT_ANSWERS':
         newQuestion = { text: '', correctAnswers: [] }
         break
@@ -230,6 +234,8 @@ export const QuestionGroupEditor = ({
         return <ImageInputsQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} />
       case 'SENTENCE_COMPLETION':
         return <SentenceCompletionQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
+      case 'FILL_IN_BLANKS_DRAG_DROP':
+        return <FillInBlanksDragDropQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
       case 'MULTIPLE_CORRECT_ANSWERS':
         return <MultipleCorrectAnswersQuestion key={index} groupPath={groupPath} questionIndex={index} questionNumber={qNum} onRemove={() => removeQuestion(index)} onAnswerChange={onAnswerChange} form={form} />
       case 'MATRIX_TABLE':
@@ -378,6 +384,50 @@ export const QuestionGroupEditor = ({
                   icon={<PlusOutlined />}
                 >
                   Add Option
+                </Button>
+              </>
+            )}
+          </Form.List>
+        </div>
+      )}
+
+      {/* Options for Fill in Blanks Drag & Drop question type */}
+      {selectedType === 'FILL_IN_BLANKS_DRAG_DROP' && (
+        <div>
+          <Form.List name={[...groupPath, 'options']}>
+            {(fields, { add, remove }) => (
+              <>
+                <div className="mb-2 font-medium">Word Options (A-J) *</div>
+                <div className="text-xs text-gray-500 mb-3">
+                  Add words that students can drag into the blanks. Each word will be labeled with a letter (A, B, C, etc.)
+                </div>
+                {fields.map((field, index) => (
+                  <div key={field.key} className="mb-3 flex gap-2 items-center">
+                    <span className="font-bold text-blue-600 w-6">{String.fromCharCode(65 + index)}</span>
+                    <div className="flex-1">
+                      <Form.Item
+                        {...field}
+                        rules={[{ required: true, message: 'Please enter word' }]}
+                        className="mb-0"
+                      >
+                        <Input placeholder={`e.g., popular, artistic, completed...`} />
+                      </Form.Item>
+                    </div>
+                    <Button
+                      type="text"
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={() => remove(field.name)}
+                    />
+                  </div>
+                ))}
+                <Button
+                  type="dashed"
+                  onClick={() => add()}
+                  block
+                  icon={<PlusOutlined />}
+                >
+                  Add Word Option
                 </Button>
               </>
             )}

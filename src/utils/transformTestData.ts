@@ -177,6 +177,12 @@ function transformQuestions(
           type: 'FILL_IN_BLANK',
         }
 
+      case 'FILL_IN_BLANKS_DRAG_DROP':
+        return {
+          ...baseQuestion,
+          type: 'FILL_IN_BLANKS_DRAG_DROP',
+        }
+
       default:
         return {
           ...baseQuestion,

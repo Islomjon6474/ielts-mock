@@ -13,6 +13,7 @@ export type QuestionType =
   | 'MULTIPLE_CORRECT_ANSWERS'
   | 'MATRIX_TABLE'
   | 'TABLE_COMPLETION'
+  | 'FILL_IN_BLANKS_DRAG_DROP'
 
 export interface AdminQuestion {
   questionNumber?: number
@@ -30,6 +31,7 @@ export interface AdminQuestionGroup {
   imageId?: string
   questions?: AdminQuestion[] | string | Record<string, AdminQuestion>
   matrixOptions?: string[] // For MATRIX_TABLE type - column headers
+  options?: string[] // For FILL_IN_BLANKS_DRAG_DROP and SENTENCE_COMPLETION types - drag options
 }
 
 export interface AdminPartContent {

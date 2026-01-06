@@ -2,7 +2,7 @@ import { makeAutoObservable } from 'mobx'
 import * as R from 'ramda'
 import { mockSubmissionApi } from '@/services/testManagementApi'
 
-export type QuestionType = 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN' | 'FILL_IN_BLANK' | 'MATCH_HEADING' | 'MULTIPLE_CHOICE' | 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE' | 'IMAGE_INPUTS' | 'SENTENCE_COMPLETION' | 'MULTIPLE_CORRECT_ANSWERS' | 'MATRIX_TABLE' | 'TABLE_COMPLETION'
+export type QuestionType = 'TRUE_FALSE_NOT_GIVEN' | 'YES_NO_NOT_GIVEN' | 'FILL_IN_BLANK' | 'MATCH_HEADING' | 'MULTIPLE_CHOICE' | 'MULTIPLE_CHOICE_SINGLE' | 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE' | 'IMAGE_INPUTS' | 'SENTENCE_COMPLETION' | 'FILL_IN_BLANKS_DRAG_DROP' | 'MULTIPLE_CORRECT_ANSWERS' | 'MATRIX_TABLE' | 'TABLE_COMPLETION'
 
 export interface Answer {
   questionId: number
@@ -300,8 +300,14 @@ export class ReadingStore {
     correctAnswer: string | string[],
     questionType: QuestionType
   ): boolean {
-    // Normalize answers for comparison (trim, lowercase)
-    const normalize = (str: string) => str.trim().toLowerCase()
+    // Strip HTML tags from string
+    const stripHtml = (str: string) => {
+      if (!str) return ''
+      return str.replace(/<[^>]*>/g, '').trim()
+    }
+
+    // Normalize answers for comparison (strip HTML, trim, lowercase)
+    const normalize = (str: string) => stripHtml(str).trim().toLowerCase()
 
     if (questionType === 'MULTIPLE_CHOICE' || questionType === 'MULTIPLE_CORRECT_ANSWERS' || questionType === 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE') {
       // For multiple choice with multiple answers
