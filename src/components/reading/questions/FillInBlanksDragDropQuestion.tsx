@@ -110,11 +110,22 @@ const FillInBlanksDragDropQuestion = observer(({
   // Check if text contains HTML (from rich text editor)
   const isHtml = passageText.includes('<') && passageText.includes('>')
 
+  // Convert block elements to inline to preserve text flow
+  const convertBlockToInline = (html: string) => {
+    return html
+      .replace(/<p>/gi, '<span>')
+      .replace(/<\/p>/gi, '</span> ')
+      .replace(/<div>/gi, '<span>')
+      .replace(/<\/div>/gi, '</span> ')
+      .replace(/<br\s*\/?>/gi, ' ')
+  }
+
   // Parse the passage and replace [37], [38], etc. with drop zones
   const renderPassageWithDropZones = () => {
     // Split by placeholders like [37], [38], etc.
     const DROPZONE_MARKER = '__DROPZONE__'
-    let processedText = passageText
+    // Convert block elements to inline first
+    let processedText = convertBlockToInline(passageText)
 
     // Create a map of placeholder numbers to question IDs
     const placeholderMap: { [key: number]: number } = {}
@@ -122,71 +133,59 @@ const FillInBlanksDragDropQuestion = observer(({
       placeholderMap[questionNumbers[idx]] = q.id
     })
 
-    // Find all placeholder numbers in the text
+    // Find all placeholder numbers in the text (use original passageText for extraction)
     // Handle both plain text [n] format and HTML data-number="n" format
     const placeholderMatches: number[] = []
 
-    if (isHtml) {
-      // For HTML format, extract from data-number attributes
-      const htmlRegex = /data-number="(\d+)"/g
-      let htmlMatch
-      while ((htmlMatch = htmlRegex.exec(passageText)) !== null) {
-        placeholderMatches.push(parseInt(htmlMatch[1]))
-      }
-
-      // Replace HTML placeholder spans with markers
-      // Handle various attribute orders: data-placeholder can come before or after data-number
-      // Pattern 1: data-placeholder comes first
-      processedText = processedText.replace(
-        /<span[^>]*data-placeholder[^>]*data-number="(\d+)"[^>]*>[^<]*<\/span>/g,
-        DROPZONE_MARKER
-      )
-      // Pattern 2: data-number comes first
-      processedText = processedText.replace(
-        /<span[^>]*data-number="(\d+)"[^>]*data-placeholder[^>]*>[^<]*<\/span>/g,
-        DROPZONE_MARKER
-      )
-
-      // If no HTML placeholders found, also check for plain text [n] within HTML
-      if (placeholderMatches.length === 0) {
-        const plainRegex = /\[(\d+)\]/g
-        let plainMatch
-        while ((plainMatch = plainRegex.exec(passageText)) !== null) {
-          placeholderMatches.push(parseInt(plainMatch[1]))
-        }
-        processedText = processedText.replace(/\[(\d+)\]/g, DROPZONE_MARKER)
-      }
-    } else {
-      // For plain text format, use simple regex
-      const regex = /\[(\d+)\]/g
-      let match
-      while ((match = regex.exec(passageText)) !== null) {
-        placeholderMatches.push(parseInt(match[1]))
-      }
-      // Replace placeholders with markers
-      processedText = processedText.replace(/\[(\d+)\]/g, DROPZONE_MARKER)
+    // First, try to extract from HTML data-number attributes
+    const htmlRegex = /data-number="(\d+)"/g
+    let htmlMatch
+    while ((htmlMatch = htmlRegex.exec(passageText)) !== null) {
+      placeholderMatches.push(parseInt(htmlMatch[1]))
     }
 
-    // Fallback: If still no placeholders found but text contains [n] pattern, try plain replacement
+    // Replace HTML placeholder spans with markers in the processed text
+    // Handle various attribute orders: data-placeholder can come before or after data-number
+    // Pattern 1: data-placeholder comes first
+    processedText = processedText.replace(
+      /<span[^>]*data-placeholder[^>]*data-number="(\d+)"[^>]*>[^<]*<\/span>/g,
+      DROPZONE_MARKER
+    )
+    // Pattern 2: data-number comes first
+    processedText = processedText.replace(
+      /<span[^>]*data-number="(\d+)"[^>]*data-placeholder[^>]*>[^<]*<\/span>/g,
+      DROPZONE_MARKER
+    )
+
+    // If no HTML placeholders found, also check for plain text [n] format
     if (placeholderMatches.length === 0) {
-      const fallbackRegex = /\[(\d+)\]/g
-      let fallbackMatch
-      while ((fallbackMatch = fallbackRegex.exec(passageText)) !== null) {
-        placeholderMatches.push(parseInt(fallbackMatch[1]))
-      }
-      if (placeholderMatches.length > 0) {
-        processedText = passageText.replace(/\[(\d+)\]/g, DROPZONE_MARKER)
+      const plainRegex = /\[(\d+)\]/g
+      let plainMatch
+      while ((plainMatch = plainRegex.exec(passageText)) !== null) {
+        placeholderMatches.push(parseInt(plainMatch[1]))
       }
     }
+
+    // Always try to replace plain text [n] patterns as well (they might exist alongside HTML)
+    processedText = processedText.replace(/\[(\d+)\]/g, DROPZONE_MARKER)
 
     const textParts = processedText.split(DROPZONE_MARKER)
 
     return (
-      <div className="leading-relaxed text-base" style={{ color: 'var(--text-primary)' }}>
+      <div
+        className="leading-relaxed text-base"
+        style={{
+          color: 'var(--text-primary)',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '0.25rem'
+        }}
+      >
         {textParts.map((part: string, partIndex: number) => (
-          <span key={partIndex}>
+          <span key={partIndex} style={{ display: 'contents' }}>
             {/* Render text part with HTML support */}
-            <span dangerouslySetInnerHTML={{ __html: part }} />
+            <span dangerouslySetInnerHTML={{ __html: part }} style={{ display: 'inline' }} />
 
             {/* Add drop zone after each part except the last one */}
             {partIndex < textParts.length - 1 && (() => {
