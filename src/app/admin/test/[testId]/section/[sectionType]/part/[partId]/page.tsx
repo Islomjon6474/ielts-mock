@@ -130,12 +130,13 @@ const PartEditorPage = observer(() => {
                 totalQuestions += count
               }
             } else if (group.questions) {
-              // For SHORT_ANSWER, count placeholders
-              if (group.type === 'SHORT_ANSWER') {
+              // For SHORT_ANSWER and FILL_IN_BLANKS_DRAG_DROP, count placeholders
+              if (group.type === 'SHORT_ANSWER' || group.type === 'FILL_IN_BLANKS_DRAG_DROP') {
                 group.questions.forEach((q: any) => {
                   if (q.text) {
-                    const matches = q.text.match(/\[(\d+)\]/g) || []
-                    totalQuestions += matches.length
+                    const plainMatches = q.text.match(/\[(\d+)\]/g) || []
+                    const htmlMatches = q.text.match(/data-number="(\d+)"/g) || []
+                    totalQuestions += plainMatches.length + htmlMatches.length
                   }
                 })
               } else {
@@ -182,7 +183,7 @@ const PartEditorPage = observer(() => {
 
       // Calculate question count for this group
       let questionCount = 0
-      
+
       if (group.range) {
         // Parse existing range to get count
         const match = group.range.match(/^(\d+)-(\d+)$/)
@@ -193,11 +194,13 @@ const PartEditorPage = observer(() => {
         }
       } else if (group.questions && group.questions.length > 0) {
         // Count based on question type
-        if (group.type === 'SHORT_ANSWER') {
+        if (group.type === 'SHORT_ANSWER' || group.type === 'FILL_IN_BLANKS_DRAG_DROP') {
           group.questions.forEach((q: any) => {
             if (q.text) {
-              const matches = q.text.match(/\[(\d+)\]/g) || []
-              questionCount += matches.length
+              // Count placeholders in both plain text [n] and HTML data-number="n" format
+              const plainMatches = q.text.match(/\[(\d+)\]/g) || []
+              const htmlMatches = q.text.match(/data-number="(\d+)"/g) || []
+              questionCount += plainMatches.length + htmlMatches.length
             }
           })
         } else {
@@ -269,8 +272,8 @@ const PartEditorPage = observer(() => {
                 return [...new Set(numbers)] // Remove duplicates
               }
 
-              // For SHORT_ANSWER and TABLE_COMPLETION with placeholders
-              if (group.type === 'SHORT_ANSWER' || group.type === 'TABLE_COMPLETION') {
+              // For SHORT_ANSWER, TABLE_COMPLETION, and FILL_IN_BLANKS_DRAG_DROP with placeholders
+              if (group.type === 'SHORT_ANSWER' || group.type === 'TABLE_COMPLETION' || group.type === 'FILL_IN_BLANKS_DRAG_DROP') {
                 const placeholderNumbers = extractPlaceholders(question.text)
 
                 placeholderNumbers.forEach((placeholderNum: number) => {
@@ -538,20 +541,21 @@ const PartEditorPage = observer(() => {
           
           const updatedGroups = questionGroups.map((group: any) => {
             if (!group) return group
-            
+
             let questionCount = 0
-            
+
             if (group.range) {
               const match = group.range.match(/^(\d+)-(\d+)$/)
               if (match) {
                 questionCount = parseInt(match[2]) - parseInt(match[1]) + 1
               }
             } else if (group.questions) {
-              if (group.type === 'SHORT_ANSWER') {
+              if (group.type === 'SHORT_ANSWER' || group.type === 'FILL_IN_BLANKS_DRAG_DROP') {
                 group.questions.forEach((q: any) => {
                   if (q.text) {
-                    const matches = q.text.match(/\[(\d+)\]/g) || []
-                    questionCount += matches.length
+                    const plainMatches = q.text.match(/\[(\d+)\]/g) || []
+                    const htmlMatches = q.text.match(/data-number="(\d+)"/g) || []
+                    questionCount += plainMatches.length + htmlMatches.length
                   }
                 })
               } else {
@@ -771,6 +775,46 @@ const PartEditorPage = observer(() => {
                   groupInstruction: group.instruction || '',
                 })
               })
+            } else if (group.type === 'FILL_IN_BLANKS_DRAG_DROP') {
+              // Extract all placeholders from the text (similar to SHORT_ANSWER)
+              // HTML format: data-number="37" or plain text format: [37]
+              const text = questionWithoutAnswer.text || ''
+              const plainMatches = text.match(/\[(\d+)\]/g) || []
+              const htmlMatches = text.match(/data-number="(\d+)"/g) || []
+
+              const placeholderNumbers: number[] = []
+
+              plainMatches.forEach((m: string) => {
+                const num = m.match(/\[(\d+)\]/)
+                if (num) placeholderNumbers.push(parseInt(num[1]))
+              })
+
+              htmlMatches.forEach((m: string) => {
+                const num = m.match(/data-number="(\d+)"/)
+                if (num) placeholderNumbers.push(parseInt(num[1]))
+              })
+
+              // Remove duplicates and sort
+              const uniquePlaceholders = [...new Set(placeholderNumbers)].sort((a, b) => a - b)
+
+              // Generate a unique groupId for this question group
+              const groupId = `fill_blanks_dd_${groupIndex}_${uniquePlaceholders[0] || startNumber}_${uniquePlaceholders[uniquePlaceholders.length - 1] || startNumber}`
+
+              // Create one flat question for each placeholder
+              // Keep type as FILL_IN_BLANKS_DRAG_DROP so display component knows to use drag-drop
+              uniquePlaceholders.forEach((placeholderNum: number) => {
+                flatQuestions.push({
+                  id: placeholderNum,
+                  type: 'FILL_IN_BLANKS_DRAG_DROP',
+                  text: questionWithoutAnswer.text || '',
+                  options: group.options || [], // Include the word options for drag-drop
+                  groupId: groupId,
+                  groupIndex: groupIndex,
+                  groupInstruction: group.instruction || '',
+                  rangeStart: uniquePlaceholders[0],
+                  rangeEnd: uniquePlaceholders[uniquePlaceholders.length - 1],
+                })
+              })
             } else if (group.type === 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE') {
               // For MULTIPLE_QUESTIONS_MULTIPLE_CHOICE, create multiple flat questions
               // One for each question number in the range, all with the same options and groupId
@@ -941,12 +985,13 @@ const PartEditorPage = observer(() => {
           nextStart = parseInt(match[2]) + 1
         }
       } else if (group && group.questions) {
-        // For SHORT_ANSWER, count placeholders, not question objects
-        if (group.type === 'SHORT_ANSWER') {
+        // For SHORT_ANSWER and FILL_IN_BLANKS_DRAG_DROP, count placeholders, not question objects
+        if (group.type === 'SHORT_ANSWER' || group.type === 'FILL_IN_BLANKS_DRAG_DROP') {
           group.questions.forEach((question: any) => {
             if (question.text) {
-              const matches = question.text.match(/\[(\d+)\]/g) || []
-              nextStart += matches.length
+              const plainMatches = question.text.match(/\[(\d+)\]/g) || []
+              const htmlMatches = question.text.match(/data-number="(\d+)"/g) || []
+              nextStart += plainMatches.length + htmlMatches.length
             }
           })
         } else {

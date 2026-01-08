@@ -53,18 +53,21 @@ export const QuestionGroupEditor = ({
     if (type && type !== selectedType) {
       setSelectedType(type)
     }
-    
-    // For SHORT_ANSWER and MULTIPLE_QUESTIONS_MULTIPLE_CHOICE, always ensure there's 1 question
+
+    // For SHORT_ANSWER, MULTIPLE_QUESTIONS_MULTIPLE_CHOICE, and FILL_IN_BLANKS_DRAG_DROP, always ensure there's 1 question
     if (type === 'SHORT_ANSWER' && questions.length === 0) {
       form.setFieldValue([...groupPath, 'questions'], [{ text: '' }])
       setQuestionCount(1)
     } else if (type === 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE' && questions.length === 0) {
       form.setFieldValue([...groupPath, 'questions'], [{ options: ['', '', ''], correctAnswers: {} }])
       setQuestionCount(1)
+    } else if (type === 'FILL_IN_BLANKS_DRAG_DROP' && questions.length === 0) {
+      form.setFieldValue([...groupPath, 'questions'], [{ text: '', answers: {} }])
+      setQuestionCount(1)
     } else if (range && range !== questionRange) {
       setQuestionRange(range)
     }
-    
+
     if (Array.isArray(questions) && questions.length !== questionCount) {
       setQuestionCount(questions.length)
     }
@@ -184,7 +187,7 @@ export const QuestionGroupEditor = ({
   const handleQuestionTypeChange = (value: string) => {
     setSelectedType(value)
 
-    // For SHORT_ANSWER, MULTIPLE_QUESTIONS_MULTIPLE_CHOICE, and TABLE_COMPLETION, immediately create 1 question
+    // For SHORT_ANSWER, MULTIPLE_QUESTIONS_MULTIPLE_CHOICE, TABLE_COMPLETION, and FILL_IN_BLANKS_DRAG_DROP, immediately create 1 question
     if (value === 'SHORT_ANSWER') {
       form.setFieldValue([...groupPath, 'questions'], [{ text: '' }])
       setQuestionCount(1)
@@ -192,6 +195,9 @@ export const QuestionGroupEditor = ({
       form.setFieldValue([...groupPath, 'questions'], [{ options: ['', '', ''], correctAnswers: {} }])
       setQuestionCount(1)
     } else if (value === 'TABLE_COMPLETION') {
+      form.setFieldValue([...groupPath, 'questions'], [{ text: '', answers: {} }])
+      setQuestionCount(1)
+    } else if (value === 'FILL_IN_BLANKS_DRAG_DROP') {
       form.setFieldValue([...groupPath, 'questions'], [{ text: '', answers: {} }])
       setQuestionCount(1)
     } else {
@@ -500,7 +506,7 @@ export const QuestionGroupEditor = ({
         </>
       )}
       
-      {selectedType && selectedType !== 'SHORT_ANSWER' && selectedType !== 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE' && selectedType !== 'TABLE_COMPLETION' && (
+      {selectedType && selectedType !== 'SHORT_ANSWER' && selectedType !== 'MULTIPLE_QUESTIONS_MULTIPLE_CHOICE' && selectedType !== 'TABLE_COMPLETION' && selectedType !== 'FILL_IN_BLANKS_DRAG_DROP' && (
         <Button
           type="dashed"
           block
