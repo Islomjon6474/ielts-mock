@@ -110,14 +110,16 @@ const FillInBlanksDragDropQuestion = observer(({
   // Check if text contains HTML (from rich text editor)
   const isHtml = passageText.includes('<') && passageText.includes('>')
 
-  // Convert block elements to inline to preserve text flow
+  // Convert block elements to inline while preserving intentional line breaks
   const convertBlockToInline = (html: string) => {
     return html
-      .replace(/<p>/gi, '<span>')
-      .replace(/<\/p>/gi, '</span> ')
-      .replace(/<div>/gi, '<span>')
-      .replace(/<\/div>/gi, '</span> ')
-      .replace(/<br\s*\/?>/gi, ' ')
+      // Convert paragraph tags - keep line breaks between paragraphs
+      .replace(/<p>/gi, '')
+      .replace(/<\/p>/gi, '<br/>')
+      // Convert div tags similarly
+      .replace(/<div>/gi, '')
+      .replace(/<\/div>/gi, '<br/>')
+      // Keep <br> tags as they are for intentional line breaks
   }
 
   // Parse the passage and replace [37], [38], etc. with drop zones
@@ -174,18 +176,12 @@ const FillInBlanksDragDropQuestion = observer(({
     return (
       <div
         className="leading-relaxed text-base"
-        style={{
-          color: 'var(--text-primary)',
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          gap: '0.25rem'
-        }}
+        style={{ color: 'var(--text-primary)' }}
       >
         {textParts.map((part: string, partIndex: number) => (
-          <span key={partIndex} style={{ display: 'contents' }}>
+          <span key={partIndex}>
             {/* Render text part with HTML support */}
-            <span dangerouslySetInnerHTML={{ __html: part }} style={{ display: 'inline' }} />
+            <span dangerouslySetInnerHTML={{ __html: part }} />
 
             {/* Add drop zone after each part except the last one */}
             {partIndex < textParts.length - 1 && (() => {
