@@ -161,6 +161,13 @@ body {
   min-width: 200px;
   background-color: var(--background);
   flex-shrink: 0;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.ielts-left-panel ::selection {
+  background-color: #b4d5fe;
+  color: inherit;
 }
 
 .ielts-right-panel {
@@ -181,6 +188,20 @@ body {
   min-width: 200px;
   background-color: var(--background);
   flex-shrink: 0;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.ielts-passage-panel .passage-content,
+.ielts-passage-panel .prose {
+  -webkit-user-select: text;
+  user-select: text;
+  cursor: text;
+}
+
+.ielts-passage-panel ::selection {
+  background-color: #b4d5fe;
+  color: inherit;
 }
 
 /* Questions Panel (Reading) */

@@ -273,6 +273,9 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
             font-size: 1rem;
             line-height: 1.7;
             color: var(--text-primary);
+            -webkit-user-select: text;
+            user-select: text;
+            cursor: text;
           }
 
           .passage-content :global(p) {
@@ -327,6 +330,10 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
 
           .passage-content :global([style*="text-align: left"]) {
             text-align: left;
+          }
+
+          .passage-content :global(::selection) {
+            background-color: #b4d5fe;
           }
         `}</style>
       </div>
