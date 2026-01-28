@@ -1012,6 +1012,16 @@ body {
 }
 
 /* ============================================
+   DRAG-IN-PROGRESS: disable panel auto-scroll
+   ============================================ */
+body.ielts-dragging .ielts-left-panel,
+body.ielts-dragging .ielts-right-panel,
+body.ielts-dragging .ielts-passage-panel,
+body.ielts-dragging .ielts-questions-panel {
+  overflow: hidden !important;
+}
+
+/* ============================================
    UTILITY CLASSES
    ============================================ */
 .ielts-hidden {

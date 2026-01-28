@@ -262,8 +262,13 @@ const QuestionPanel = observer(() => {
               e.preventDefault()
               return
             }
+            document.body.classList.add('ielts-dragging')
             e.dataTransfer.setData('heading', heading)
             e.dataTransfer.effectAllowed = 'move'
+          }
+
+          const handleDragEnd = () => {
+            document.body.classList.remove('ielts-dragging')
           }
           
           return (
@@ -299,6 +304,7 @@ const QuestionPanel = observer(() => {
                           key={index}
                           draggable={!isUsed}
                           onDragStart={(e) => handleDragStart(e, heading)}
+                          onDragEnd={handleDragEnd}
                           className="px-4 py-3 border-2 rounded-md text-sm transition-all shadow-sm"
                           style={{
                             backgroundColor: isUsed ? '#d1d5db' : 'var(--card-background)',

@@ -94,8 +94,14 @@ const MapLabelingQuestion = observer(({
   }, [mapUrl])
 
   const handleDragStart = (e: React.DragEvent, option: string) => {
+    document.body.classList.add('ielts-dragging')
     setDraggedItem(option)
     e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragEnd = () => {
+    document.body.classList.remove('ielts-dragging')
+    setDraggedItem(null)
   }
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -105,6 +111,7 @@ const MapLabelingQuestion = observer(({
 
   const handleDrop = (e: React.DragEvent, questionId: number) => {
     e.preventDefault()
+    document.body.classList.remove('ielts-dragging')
     if (draggedItem) {
       listeningStore.setAnswer(questionId, draggedItem)
     }
@@ -246,6 +253,7 @@ const MapLabelingQuestion = observer(({
                   key={index}
                   draggable={!isUsed && !isPreviewMode}
                   onDragStart={(e) => !isUsed && !isPreviewMode && handleDragStart(e, option)}
+                  onDragEnd={handleDragEnd}
                   style={{
                     backgroundColor: 'var(--card-background)',
                     borderColor: 'var(--border-color)',

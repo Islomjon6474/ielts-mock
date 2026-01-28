@@ -75,10 +75,16 @@ const FillInBlanksDragDropQuestion = observer(({
       return
     }
 
+    document.body.classList.add('ielts-dragging')
     const fullText = `${letter} ${option}`
     setDraggedItem(fullText)
     e.dataTransfer.setData('text/plain', fullText)
     e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragEnd = () => {
+    document.body.classList.remove('ielts-dragging')
+    setDraggedItem(null)
   }
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -88,6 +94,7 @@ const FillInBlanksDragDropQuestion = observer(({
 
   const handleDrop = (e: React.DragEvent, questionId: number) => {
     e.preventDefault()
+    document.body.classList.remove('ielts-dragging')
     const fullText = e.dataTransfer.getData('text/plain') || draggedItem
     if (fullText) {
       readingStore.setAnswer(questionId, fullText)
@@ -304,6 +311,7 @@ const FillInBlanksDragDropQuestion = observer(({
                       <div
                         draggable={!isUsed && !readingStore.isPreviewMode}
                         onDragStart={!readingStore.isPreviewMode ? (e) => handleDragStart(e, option, letter) : undefined}
+                        onDragEnd={handleDragEnd}
                         className={`flex items-center gap-2 px-2 py-1 rounded transition-all ${
                           isUsed
                             ? 'opacity-50 cursor-not-allowed'

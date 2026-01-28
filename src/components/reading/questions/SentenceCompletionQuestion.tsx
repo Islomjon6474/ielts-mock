@@ -55,14 +55,20 @@ const SentenceCompletionQuestion = observer(({
       const answer = readingStore.getAnswer(qNum) as string
       return answer === option
     })
-    
+
     if (isUsed) {
       e.preventDefault()
       return
     }
-    
+
+    document.body.classList.add('ielts-dragging')
     setDraggedItem(option)
     e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragEnd = () => {
+    document.body.classList.remove('ielts-dragging')
+    setDraggedItem(null)
   }
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -72,6 +78,7 @@ const SentenceCompletionQuestion = observer(({
 
   const handleDrop = (e: React.DragEvent, questionId: number) => {
     e.preventDefault()
+    document.body.classList.remove('ielts-dragging')
     if (draggedItem) {
       readingStore.setAnswer(questionId, draggedItem)
     }
@@ -308,6 +315,7 @@ const SentenceCompletionQuestion = observer(({
                   key={index}
                   draggable={!isUsed && !readingStore.isPreviewMode}
                   onDragStart={!readingStore.isPreviewMode ? (e) => handleDragStart(e, option) : undefined}
+                  onDragEnd={handleDragEnd}
                   disabled={isUsed || readingStore.isPreviewMode}
                   className={`w-full px-3 py-1.5 border rounded-md text-xs font-medium transition-all ${
                     isUsed

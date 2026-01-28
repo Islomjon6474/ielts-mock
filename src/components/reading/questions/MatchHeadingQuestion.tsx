@@ -28,15 +28,21 @@ const MatchHeadingQuestion = observer(({
       const answer = readingStore.getAnswer(qNum) as string
       return answer === heading
     })
-    
+
     if (isUsed) {
       e.preventDefault()
       return
     }
-    
+
+    document.body.classList.add('ielts-dragging')
     setDraggedItem(heading)
     e.dataTransfer.setData('heading', heading)
     e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragEnd = () => {
+    document.body.classList.remove('ielts-dragging')
+    setDraggedItem(null)
   }
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -46,6 +52,7 @@ const MatchHeadingQuestion = observer(({
 
   const handleDrop = (e: React.DragEvent, questionId: number) => {
     e.preventDefault()
+    document.body.classList.remove('ielts-dragging')
     if (draggedItem) {
       readingStore.setAnswer(questionId, draggedItem)
     }
@@ -173,6 +180,7 @@ const MatchHeadingQuestion = observer(({
                 key={index}
                 draggable={!isUsed && !isPreviewMode}
                 onDragStart={!isPreviewMode ? (e) => handleDragStart(e, heading) : undefined}
+                onDragEnd={handleDragEnd}
                 className="px-4 py-3 border-2 rounded-md text-sm transition-all shadow-sm"
                 style={{
                   backgroundColor: isUsed ? '#d1d5db' : 'var(--card-background)',

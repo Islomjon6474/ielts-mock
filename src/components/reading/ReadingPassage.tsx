@@ -144,11 +144,12 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
 
   const handleDrop = (e: React.DragEvent, sectionNumber: number) => {
     e.preventDefault()
+    document.body.classList.remove('ielts-dragging')
     const heading = e.dataTransfer.getData('heading')
     if (heading && onHeadingDrop) {
       // Clear the old heading from this section if it exists
       const currentHeading = getHeadingForSection?.(sectionNumber)
-      
+
       onHeadingDrop(sectionNumber, heading)
     }
     setDragOverSection(null)

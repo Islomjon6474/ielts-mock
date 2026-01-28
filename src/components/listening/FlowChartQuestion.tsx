@@ -24,8 +24,14 @@ const FlowChartQuestion = observer(({
   const [draggedItem, setDraggedItem] = useState<string | null>(null)
 
   const handleDragStart = (e: React.DragEvent, option: string) => {
+    document.body.classList.add('ielts-dragging')
     setDraggedItem(option)
     e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragEnd = () => {
+    document.body.classList.remove('ielts-dragging')
+    setDraggedItem(null)
   }
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -35,6 +41,7 @@ const FlowChartQuestion = observer(({
 
   const handleDrop = (e: React.DragEvent, questionId: number) => {
     e.preventDefault()
+    document.body.classList.remove('ielts-dragging')
     if (draggedItem) {
       listeningStore.setAnswer(questionId, draggedItem)
     }
@@ -186,6 +193,7 @@ const FlowChartQuestion = observer(({
                   key={index}
                   draggable={!isUsed}
                   onDragStart={(e) => !isUsed && handleDragStart(e, option)}
+                  onDragEnd={handleDragEnd}
                   style={{
                     backgroundColor: 'var(--card-background)',
                     borderColor: 'var(--border-color)',
