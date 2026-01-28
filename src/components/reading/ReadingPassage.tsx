@@ -269,8 +269,8 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
 
         <style jsx>{`
           .passage-content {
-            font-family: serif;
-            font-size: 1rem;
+            font-family: Georgia, serif;
+            font-size: 1.25em;
             line-height: 1.7;
             color: var(--text-primary);
             -webkit-user-select: text;
@@ -279,21 +279,26 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
           }
 
           .passage-content :global(p) {
-            margin: 0.75em 0;
+            margin: 0.2em 0 0.8em 0;
             color: var(--text-primary);
           }
 
           .passage-content :global(h2) {
-            font-size: 1.5em;
-            font-weight: 700;
+            font-family: Georgia, serif;
+            font-size: 1.4em;
+            font-weight: bold;
+            font-style: normal;
             margin: 1em 0 0.5em 0;
             line-height: 1.3;
+            text-align: center;
             color: var(--text-primary);
           }
 
           .passage-content :global(h3) {
-            font-size: 1.25em;
-            font-weight: 600;
+            font-family: Georgia, serif;
+            font-size: 1.2em;
+            font-weight: bold;
+            font-style: normal;
             margin: 0.9em 0 0.4em 0;
             line-height: 1.4;
             color: var(--text-primary);
@@ -302,16 +307,16 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
           .passage-content :global(ul),
           .passage-content :global(ol) {
             padding-left: 1.5em;
-            margin: 0.75em 0;
+            margin: 0.5em 0;
           }
 
           .passage-content :global(li) {
-            margin: 0.25em 0;
+            margin: 0.2em 0;
             color: var(--text-primary);
           }
 
           .passage-content :global(strong) {
-            font-weight: 700;
+            font-weight: bold;
             color: var(--text-primary);
           }
 

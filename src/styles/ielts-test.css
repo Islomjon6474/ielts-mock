@@ -190,6 +190,9 @@ body {
   flex-shrink: 0;
   -webkit-user-select: text;
   user-select: text;
+  font-family: Georgia, serif;
+  font-size: 1.25em;
+  line-height: 1.7;
 }
 
 .ielts-passage-panel .passage-content,
@@ -197,6 +200,9 @@ body {
   -webkit-user-select: text;
   user-select: text;
   cursor: text;
+  font-family: Georgia, serif;
+  font-size: 1em; /* already 1.25em from parent */
+  line-height: 1.7;
 }
 
 .ielts-passage-panel ::selection {
@@ -211,6 +217,9 @@ body {
   min-width: 200px;
   background-color: var(--card-background);
   flex-shrink: 0;
+  font-family: Arial, sans-serif;
+  font-size: 1em;
+  line-height: 1.5;
 }
 
 /* Scrollbar styling */
@@ -504,17 +513,35 @@ body {
 /* ============================================
    READING PASSAGE STYLES
    ============================================ */
+.ielts-reading-passage,
+.passage-content,
+.prose {
+  font-family: Georgia, serif;
+  font-size: 1.25em;
+  line-height: 1.7;
+}
+
 .ielts-reading-passage h4 {
-  font-size: 20px;
+  font-family: Georgia, serif;
+  font-size: 1.4em;
   font-weight: bold;
+  font-style: normal;
   margin-bottom: 15px;
   text-align: center;
   color: var(--text-primary);
 }
 
 .ielts-reading-passage p {
-  margin-bottom: 1.2em;
+  margin: 0.2em 0 0.8em 0;
   color: var(--text-primary);
+}
+
+.ielts-reading-passage em {
+  font-style: italic;
+}
+
+.ielts-reading-passage strong {
+  font-weight: bold;
 }
 
 /* ============================================
