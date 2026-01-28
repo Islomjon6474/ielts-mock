@@ -198,7 +198,7 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
   }
 
   return (
-    <div className="ielts-test-page h-screen flex flex-col">
+    <div className="ielts-test-page ielts-reading-page">
       <Header
         isPreviewMode={isPreviewMode}
         previewSectionType="reading"
@@ -210,11 +210,11 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
       </Header>
 
       {/* Part Title with Admin Grading Panel */}
-      <div className="ielts-part-header" style={{ margin: '0', borderRadius: '0', marginTop: '70px' }}>
+      <div className="ielts-part-header">
         <div className="flex items-center justify-between gap-4">
           {/* Part Title and Instruction */}
           <div className="flex-1">
-            <p style={{ margin: '0 0 4px 0', fontSize: '16px' }}><strong>{currentPart.title}</strong></p>
+            <p style={{ margin: '0 0 4px 0' }}><strong>{currentPart.title}</strong></p>
             <p
               style={{ margin: '0', color: 'var(--text-secondary)', fontSize: '14px' }}
               dangerouslySetInnerHTML={{ __html: currentPart.instruction }}
@@ -247,7 +247,7 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
       </div>
 
       {/* Main Content Area with Resizable Panes */}
-      <div className="ielts-panels-container" ref={containerRef} style={{ height: 'calc(100vh - 200px)' }}>
+      <div className="ielts-panels-container ielts-reading-panels" ref={containerRef}>
         {/* Left Pane - Reading Passage */}
         <div
           className="ielts-passage-panel"
@@ -268,7 +268,6 @@ const ReadingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Read
         <div
           className="ielts-resizer"
           onMouseDown={handleMouseDown}
-          style={{ cursor: isDragging ? 'col-resize' : 'col-resize' }}
         />
 
         {/* Right Pane - Questions */}

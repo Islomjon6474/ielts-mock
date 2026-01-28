@@ -183,11 +183,10 @@ body {
 
 /* Passage Panel (Reading) */
 .ielts-passage-panel {
-  padding: 20px 20px 100px;
+  padding: 20px;
   overflow-y: auto;
   min-width: 200px;
   background-color: var(--background);
-  flex-shrink: 0;
   -webkit-user-select: text;
   user-select: text;
   font-family: Arial, sans-serif;
@@ -212,11 +211,10 @@ body {
 
 /* Questions Panel (Reading) */
 .ielts-questions-panel {
-  padding: 20px 20px 100px;
+  padding: 20px;
   overflow-y: auto;
   min-width: 200px;
   background-color: var(--card-background);
-  flex-shrink: 0;
   font-family: Arial, sans-serif;
   font-size: 1em;
   line-height: 1.5;
@@ -508,6 +506,36 @@ body {
   border: 1px solid var(--border-color);
   line-height: 1.8;
   color: var(--text-primary);
+}
+
+/* ============================================
+   READING PAGE LAYOUT
+   ============================================ */
+.ielts-reading-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding-top: 70px;   /* fixed header */
+  padding-bottom: 60px; /* fixed bottom nav */
+}
+
+.ielts-reading-page > .ielts-part-header {
+  flex-shrink: 0;
+  margin: 0;
+  border-radius: 0;
+}
+
+.ielts-reading-panels {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.ielts-reading-page .ielts-passage-panel,
+.ielts-reading-page .ielts-questions-panel {
+  overflow-y: auto;
+  padding-bottom: 20px;
 }
 
 /* ============================================
