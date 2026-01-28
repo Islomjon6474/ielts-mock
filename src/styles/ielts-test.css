@@ -190,9 +190,9 @@ body {
   flex-shrink: 0;
   -webkit-user-select: text;
   user-select: text;
-  font-family: Georgia, serif;
-  font-size: 1.25em;
-  line-height: 1.7;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
 }
 
 .ielts-passage-panel .passage-content,
@@ -200,9 +200,9 @@ body {
   -webkit-user-select: text;
   user-select: text;
   cursor: text;
-  font-family: Georgia, serif;
-  font-size: 1em; /* already 1.25em from parent */
-  line-height: 1.7;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
 }
 
 .ielts-passage-panel ::selection {
@@ -516,14 +516,14 @@ body {
 .ielts-reading-passage,
 .passage-content,
 .prose {
-  font-family: Georgia, serif;
-  font-size: 1.25em;
-  line-height: 1.7;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
 }
 
 .ielts-reading-passage h4 {
-  font-family: Georgia, serif;
-  font-size: 1.4em;
+  font-family: Arial, sans-serif;
+  font-size: 18px;
   font-weight: bold;
   font-style: normal;
   margin-bottom: 15px;
@@ -532,7 +532,7 @@ body {
 }
 
 .ielts-reading-passage p {
-  margin: 0.2em 0 0.8em 0;
+  margin: 0 0 1em 0;
   color: var(--text-primary);
 }
 

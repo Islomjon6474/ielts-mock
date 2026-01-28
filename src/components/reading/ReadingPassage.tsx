@@ -269,9 +269,9 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
 
         <style jsx>{`
           .passage-content {
-            font-family: Georgia, serif;
-            font-size: 1.25em;
-            line-height: 1.7;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
             color: var(--text-primary);
             -webkit-user-select: text;
             user-select: text;
@@ -279,13 +279,13 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
           }
 
           .passage-content :global(p) {
-            margin: 0.2em 0 0.8em 0;
+            margin: 0 0 1em 0;
             color: var(--text-primary);
           }
 
           .passage-content :global(h2) {
-            font-family: Georgia, serif;
-            font-size: 1.4em;
+            font-family: Arial, sans-serif;
+            font-size: 18px;
             font-weight: bold;
             font-style: normal;
             margin: 1em 0 0.5em 0;
@@ -295,8 +295,8 @@ const ReadingPassage = observer(({ passage, imageUrl, sections, onHeadingDrop, g
           }
 
           .passage-content :global(h3) {
-            font-family: Georgia, serif;
-            font-size: 1.2em;
+            font-family: Arial, sans-serif;
+            font-size: 17px;
             font-weight: bold;
             font-style: normal;
             margin: 0.9em 0 0.4em 0;
