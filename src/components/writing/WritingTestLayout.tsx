@@ -25,6 +25,7 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
   const [leftWidth, setLeftWidth] = useState(50)
   const [isDragging, setIsDragging] = useState(false)
   const [showSubmitModal, setShowSubmitModal] = useState(false)
+  const [localAnswer, setLocalAnswer] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -35,12 +36,12 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging || !containerRef.current) return
-      
+
       const containerRect = containerRef.current.getBoundingClientRect()
       const containerWidth = containerRect.width
       const offsetX = e.clientX - containerRect.left
       const newLeftWidth = (offsetX / containerWidth) * 100
-      
+
       if (newLeftWidth >= 25 && newLeftWidth <= 75) {
         setLeftWidth(newLeftWidth)
       }
@@ -65,25 +66,36 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
     }
   }, [isDragging])
 
+  const currentTask = writingStore.currentTaskData
+
+  // Sync local answer with store when task changes
+  useEffect(() => {
+    if (currentTask) {
+      const storeAnswer = writingStore.getAnswer(currentTask.id)
+      setLocalAnswer(storeAnswer)
+    }
+  }, [currentTask?.id, writingStore])
+
   // Check if tasks are loaded
   if (!writingStore.tasks || writingStore.tasks.length === 0) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>
   }
 
-  const currentTask = writingStore.currentTaskData
-  
   if (!currentTask) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>
   }
 
-  const answer = writingStore.getAnswer(currentTask.id)
-  const wordCount = writingStore.getWordCount(currentTask.id)
+  // Calculate word count from local state for proper reactivity
+  const wordCount = localAnswer && localAnswer.trim() ? localAnswer.trim().split(/\s+/).length : 0
 
   const handleTaskChange = (taskId: number) => {
+    // Save current answer before switching
+    writingStore.setAnswer(currentTask.id, localAnswer)
     writingStore.setCurrentTask(taskId)
   }
 
   const handleTextChange = (text: string) => {
+    setLocalAnswer(text)
     if (currentTask) {
       writingStore.setAnswer(currentTask.id, text)
     }
@@ -119,7 +131,7 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
   }
 
   return (
-    <div className="ielts-test-page h-screen flex flex-col">
+    <div className="ielts-test-page ielts-writing-page">
       <Header
         isPreviewMode={isPreviewMode}
         previewSectionType="writing"
@@ -131,15 +143,15 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
       </Header>
 
       {/* Task Info Header */}
-      <div className="ielts-part-header" style={{ margin: '0', borderRadius: '0', marginTop: '70px' }}>
-        <p style={{ margin: '0 0 4px 0', fontSize: '16px' }}><strong>{currentTask.title}</strong></p>
+      <div className="ielts-part-header">
+        <p style={{ margin: '0 0 4px 0' }}><strong>{currentTask.title}</strong></p>
         <p style={{ margin: '0', color: 'var(--text-secondary)', fontSize: '14px' }}>
           You should spend about {currentTask.timeMinutes} minutes on this task. Write at least {currentTask.minWords} words.
         </p>
       </div>
 
       {/* Main Content Area with Resizable Panes */}
-      <div className="ielts-panels-container" ref={containerRef} style={{ height: 'calc(100vh - 200px)' }}>
+      <div className="ielts-panels-container ielts-writing-panels" ref={containerRef}>
         {/* Left Pane - Question/Task */}
         <div
           className="ielts-left-panel"
@@ -168,25 +180,21 @@ const WritingTestLayout = observer(({ isPreviewMode = false, onBackClick }: Writ
         <div
           className="ielts-resizer"
           onMouseDown={handleMouseDown}
-          style={{ cursor: isDragging ? 'col-resize' : 'col-resize' }}
         />
 
         {/* Right Pane - Writing Area */}
         <div
           className="ielts-right-panel"
-          style={{ width: `calc(${100 - leftWidth}% - 8px)`, display: 'flex', flexDirection: 'column' }}
+          style={{ width: `calc(${100 - leftWidth}% - 8px)` }}
         >
-          <div className="ielts-writing-area">
-            <textarea
-              className="ielts-writing-textarea"
-              value={answer}
-              onChange={(e) => handleTextChange(e.target.value)}
-              placeholder="Start writing your response here..."
-              style={{ flex: 1 }}
-            />
-            <div className="ielts-word-count">
-              Words: <span style={{ fontWeight: 'bold' }}>{wordCount}</span>
-            </div>
+          <textarea
+            className="ielts-writing-textarea"
+            value={localAnswer}
+            onChange={(e) => handleTextChange(e.target.value)}
+            placeholder="Start writing your response here..."
+          />
+          <div className="ielts-word-count">
+            Words: <span style={{ fontWeight: 'bold' }}>{wordCount}</span>
           </div>
         </div>
       </div>

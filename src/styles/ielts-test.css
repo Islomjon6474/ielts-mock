@@ -13,6 +13,10 @@
   font-size: 16px;
 }
 
+body {
+  box-sizing: border-box;
+}
+
 /* ============================================
    HEADER STYLES
    ============================================ */
@@ -161,11 +165,13 @@
 
 .ielts-right-panel {
   padding: 20px;
-  overflow-y: auto;
+  overflow: hidden;
   min-width: 200px;
   border-left: 1px solid var(--border-color);
   background-color: var(--card-background);
-  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 /* Passage Panel (Reading) */
@@ -491,14 +497,40 @@
 }
 
 /* ============================================
-   WRITING AREA STYLES
+   WRITING PAGE LAYOUT
    ============================================ */
-.ielts-writing-area {
-  flex: 1;
+.ielts-writing-page {
+  height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding-top: 70px;   /* fixed header */
+  padding-bottom: 60px; /* fixed bottom nav */
 }
 
+.ielts-writing-page > .ielts-part-header {
+  flex-shrink: 0;
+  margin: 0;
+  border-radius: 0;
+}
+
+.ielts-writing-panels {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.ielts-writing-page .ielts-right-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 15px;
+  box-sizing: border-box;
+}
+
+/* ============================================
+   WRITING AREA STYLES
+   ============================================ */
 .ielts-writing-textarea {
   border: 1px solid var(--input-border);
   padding: 15px;
@@ -507,11 +539,14 @@
   line-height: 1.5;
   resize: none;
   outline: none;
-  min-height: 300px;
+  flex: 1 1 0;
+  min-height: 0;
   width: 100%;
-  flex: 1;
   background-color: var(--input-background);
   color: var(--text-primary);
+  overflow: auto;
+  box-sizing: border-box;
+  border-radius: 4px;
 }
 
 .ielts-writing-textarea:focus {
@@ -524,9 +559,14 @@
 
 .ielts-word-count {
   text-align: right;
-  margin-top: 10px;
+  margin-top: 8px;
+  padding: 6px 15px;
   font-size: 14px;
-  color: var(--text-secondary);
+  color: var(--text-primary);
+  background-color: var(--secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
 /* Part Header (Writing) */
