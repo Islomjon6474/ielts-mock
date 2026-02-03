@@ -60,16 +60,28 @@ export class ListeningStore {
   timerInterval: NodeJS.Timeout | null = null
   isTimeUp: boolean = false
 
+  // Queue for pending answer submissions (private - not observable, underscore prefix tells MobX to ignore)
+  private _pendingAnswers: Map<number, { value: string | string[], retries: number }> = new Map()
+  private _isProcessingQueue: boolean = false
+
   constructor() {
     makeAutoObservable(this)
   }
 
   setMockId(mockId: string) {
     this.mockId = mockId
+    // Try to process pending answers when mockId is set
+    if (this.sectionId) {
+      this.processPendingAnswers()
+    }
   }
 
   setSectionId(sectionId: string) {
     this.sectionId = sectionId
+    // Try to process pending answers when sectionId is set
+    if (this.mockId) {
+      this.processPendingAnswers()
+    }
   }
 
   setPreviewMode(isPreview: boolean) {
@@ -92,6 +104,16 @@ export class ListeningStore {
 
     try {
       this.isSubmitting = true
+
+      // Process any pending answers before finishing
+      if (this._pendingAnswers.size > 0) {
+        console.log(`📤 Flushing ${this._pendingAnswers.size} pending answers before finishing...`)
+        await this.processPendingAnswers()
+      }
+
+      // Clear timer state when section is finished
+      this.clearTimerState()
+
       await mockSubmissionApi.finishSection(this.mockId, this.sectionId)
       console.log('✅ Section finished successfully')
       return true
@@ -148,17 +170,69 @@ export class ListeningStore {
 
   async setAnswer(questionId: number, value: string | string[]) {
     this.answers.set(questionId, value)
-    
+
     // Auto-submit answer if not in preview mode
-    if (!this.isPreviewMode && this.mockId && this.sectionId) {
+    if (!this.isPreviewMode) {
+      // Check if mockId and sectionId are set
+      if (!this.mockId || !this.sectionId) {
+        console.warn(`⚠️ Cannot submit answer for Q${questionId}: mockId or sectionId not set. Queueing for later.`)
+        this._pendingAnswers.set(questionId, { value, retries: 0 })
+        return
+      }
+
       try {
         const answerString = Array.isArray(value) ? value.join(',') : value
+        // Only submit if answer is not empty
+        if (answerString.trim() === '') {
+          console.log(`⏭️ Skipping empty answer for Q${questionId}`)
+          return
+        }
         await mockSubmissionApi.sendAnswer(this.mockId, this.sectionId, questionId, answerString)
         console.log(`✅ Submitted answer for Q${questionId}:`, answerString)
+        // Remove from pending if it was there
+        this._pendingAnswers.delete(questionId)
       } catch (error) {
         console.error(`❌ Failed to submit answer for Q${questionId}:`, error)
+        // Queue for retry
+        const existing = this._pendingAnswers.get(questionId)
+        this._pendingAnswers.set(questionId, { value, retries: (existing?.retries || 0) + 1 })
+        // Try to process queue
+        this.processPendingAnswers()
       }
     }
+  }
+
+  // Process pending answers queue
+  async processPendingAnswers() {
+    if (this._isProcessingQueue || !this.mockId || !this.sectionId) return
+    if (this._pendingAnswers.size === 0) return
+
+    this._isProcessingQueue = true
+    console.log(`📤 Processing ${this._pendingAnswers.size} pending answers...`)
+
+    for (const [questionId, { value, retries }] of this._pendingAnswers) {
+      if (retries >= 3) {
+        console.error(`❌ Giving up on Q${questionId} after 3 retries`)
+        this._pendingAnswers.delete(questionId)
+        continue
+      }
+
+      try {
+        const answerString = Array.isArray(value) ? value.join(',') : value
+        if (answerString.trim() === '') {
+          this._pendingAnswers.delete(questionId)
+          continue
+        }
+        await mockSubmissionApi.sendAnswer(this.mockId!, this.sectionId!, questionId, answerString)
+        console.log(`✅ Retry succeeded for Q${questionId}:`, answerString)
+        this._pendingAnswers.delete(questionId)
+      } catch (error) {
+        console.error(`❌ Retry failed for Q${questionId}:`, error)
+        this._pendingAnswers.set(questionId, { value, retries: retries + 1 })
+      }
+    }
+
+    this._isProcessingQueue = false
   }
 
   getAnswer(questionId: number): string | string[] | undefined {
@@ -198,25 +272,75 @@ export class ListeningStore {
   }
 
   // Start timer after audio ends (audio duration + 10 minutes)
-  startTimerAfterAudio(audioDurationInSeconds: number, onTimeUp: () => void) {
+  startTimerAfterAudio(audioDurationInSeconds: number, onTimeUp: () => void, forceReset: boolean = false) {
     if (this.isPreviewMode) return
-    
+
     this.audioDuration = audioDurationInSeconds
     const totalTime = audioDurationInSeconds + (10 * 60) // audio + 10 minutes
-    this.timeRemaining = totalTime
-    this.isTimeUp = false
-    
+
     this.stopTimer()
-    
+
+    // Try to restore timer from localStorage (only if not forcing reset)
+    if (!forceReset && this.mockId && this.sectionId) {
+      const savedTimer = this.restoreTimerState()
+      if (savedTimer !== null) {
+        this.timeRemaining = savedTimer
+        console.log(`⏱️ Restored listening timer: ${Math.floor(savedTimer / 60)}:${String(savedTimer % 60).padStart(2, '0')}`)
+      } else {
+        this.timeRemaining = totalTime
+        console.log(`⏱️ Starting fresh listening timer: ${Math.round(totalTime / 60)} minutes`)
+      }
+    } else {
+      this.timeRemaining = totalTime
+    }
+
+    this.isTimeUp = false
+
     this.timerInterval = setInterval(() => {
       if (this.timeRemaining > 0) {
         this.timeRemaining--
+        // Save timer state every 10 seconds
+        if (this.timeRemaining % 10 === 0) {
+          this.saveTimerState()
+        }
       } else {
         this.isTimeUp = true
         this.stopTimer()
+        this.clearTimerState()
         onTimeUp()
       }
     }, 1000)
+  }
+
+  // Save timer state to localStorage
+  private saveTimerState() {
+    if (this.mockId && this.sectionId) {
+      const key = `listening_timer_${this.mockId}_${this.sectionId}`
+      localStorage.setItem(key, String(this.timeRemaining))
+    }
+  }
+
+  // Restore timer state from localStorage
+  private restoreTimerState(): number | null {
+    if (this.mockId && this.sectionId) {
+      const key = `listening_timer_${this.mockId}_${this.sectionId}`
+      const saved = localStorage.getItem(key)
+      if (saved) {
+        const remaining = parseInt(saved, 10)
+        if (!isNaN(remaining) && remaining > 0) {
+          return remaining
+        }
+      }
+    }
+    return null
+  }
+
+  // Clear timer state from localStorage
+  private clearTimerState() {
+    if (this.mockId && this.sectionId) {
+      const key = `listening_timer_${this.mockId}_${this.sectionId}`
+      localStorage.removeItem(key)
+    }
   }
 
   stopTimer() {
@@ -332,6 +456,8 @@ export class ListeningStore {
     this.answers.clear()
     this.submittedAnswers.clear()
     this.answerCorrectness.clear()
+    this._pendingAnswers.clear()
+    this._isProcessingQueue = false
     this.parts = []
     this.audioUrls = []
     this.isPlaying = false
